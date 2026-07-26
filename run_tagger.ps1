@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     WD14 Tagger Universal Wrapper (日本語版)
 
@@ -245,9 +245,31 @@ function Prepare-Environment {
     }
     
     Write-Host "[INFO] 環境確認: $EnvName" -ForegroundColor Cyan
+    if (Test-Path $TargetVenv) {
+        $VenvPy = if ($IsWindowsOS) { Join-Path $TargetVenv "Scripts/python.exe" } else { Join-Path $TargetVenv "bin/python" }
+        try {
+            $verMinor = & $VenvPy -c "import sys; print(sys.version_info.minor)" 2>$null
+            if ([int]$verMinor -ge 14) {
+                Write-Host "  -> 既存環境が PyPI非対応の Python 3.$verMinor です。再作成します..." -ForegroundColor Yellow
+                Remove-Item -Recurse -Force $TargetVenv
+            }
+        } catch {}
+    }
     if (-not (Test-Path $TargetVenv)) {
         Write-Host "  -> 仮想環境を作成中..." -ForegroundColor Yellow
-        if ($IsWindowsOS) { python -m venv $TargetVenv } else { python3 -m venv $TargetVenv }
+        $PyCmd = if ($IsWindowsOS) { "python" } else { "python3" }
+        try {
+            $sysVer = & $PyCmd -c "import sys; print(sys.version_info.minor)" 2>$null
+            if ([int]$sysVer -ge 14) {
+                foreach ($candidate in @("python3.13", "python3.12", "python3.11", "python3.10")) {
+                    if (Get-Command $candidate -ErrorAction SilentlyContinue) {
+                        $PyCmd = $candidate
+                        break
+                    }
+                }
+            }
+        } catch {}
+        & $PyCmd -m venv $TargetVenv
     }
     
     if ($IsWindowsOS) {

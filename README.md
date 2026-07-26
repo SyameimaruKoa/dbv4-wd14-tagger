@@ -141,6 +141,47 @@ GPUを使う場合は `-Gpu` をつける（推奨）。
    - セッションを完全に終了し、Tailscale からデバイスを切断するには、ノートブックの最後にある `## 4. 終了処理（Tailscaleの切断）` セル（`!tailscale logout`）を実行するのじゃ。
    - ※認証キー作成時に **Ephemeral** を有効にしているため、ログアウト処理を実行し忘れて Colab のタブを閉じた場合でも、しばらくすると自動的に Tailscale のデバイスリストから削除されるぞ。
 
+## 使い方 (Linux / Bash)
+
+基本的には `run_tagger.sh` を使用する。
+
+### 1. 初回セットアップ
+引数なしで実行すると必要な仮想環境が自動構築される。
+```bash
+./run_tagger.sh
+```
+
+> **Python バージョンに関する注意事項:**  
+> `onnxruntime` などの各種ライブラリは、現在 Python 3.14 用の公式バイナリ(wheel)がPyPIに存在しない。システム全体の標準 `python3` が 3.14 の場合、`run_tagger.sh` は自動的にシステム内の Python 3.13 以下の互換バージョン（`python3.13` など）を検出して仮想環境を作成するぞ。
+
+### 2. Intel GPU (OpenVINO) 有効化セットアップ
+Linux 上で Intel GPU（HD Graphics / Iris Xe / Arc）を使用して推論を高速化する場合、OpenCL ドライバーとデバイスアクセス権限が必要じゃ。初回のみ以下のコマンドを実行しておくのじゃ。
+
+```bash
+# 1. OpenCL ドライバーとツールのインストール
+sudo apt update && sudo apt install -y intel-opencl-icd clinfo
+
+# 2. ユーザーに GPU アクセス権限を付与
+sudo usermod -aG render,video $USER
+
+# 3. 権限の反映（またはターミナル再起動）
+newgrp render
+```
+
+設定後、`-g`（または `--gpu`）を付けて実行すると Intel GPU (OpenVINO) で高速動作するぞ！
+```bash
+./run_tagger.sh -g -p /path/to/images
+```
+
+## 処理速度・統計表示について
+
+進捗バー（tqdm）および処理完了時のサマリーログでは、以下の **2通りの速度・処理件数** が個別に分離して表示されるぞ。
+
+1. **推論実行ファイル (AI演算あり)**:  
+   実際に AI モデルに画像を入力し、メタデータ解析・タグ推論計算を行ったファイルとその平均処理速度 (`img/s`, `ms/img`)。
+2. **演算スキップファイル (既存タグ)**:  
+   既に画像メタデータ (XMP) にタグが存在し、AI 推論計算をスキップして既存タグで高速判定・整理を行ったファイルとその処理速度。
+
 
 ## オプション一覧
 

@@ -1,4 +1,4 @@
-import argparse, csv, os, sys, subprocess, glob, uuid, shutil, platform, json, io, socket, warnings, urllib.request, urllib.error
+import argparse, csv, os, sys, subprocess, glob, uuid, shutil, platform, json, io, socket, warnings, urllib.request, urllib.error, time
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import onnxruntime as ort
@@ -363,14 +363,15 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
         elif IS_LINUX:
             desired_providers.extend(
                 [
-                    "OpenVINOExecutionProvider",
+                    ("OpenVINOExecutionProvider", {"device_type": "GPU"}),
                     "CUDAExecutionProvider",
                     "ROCMExecutionProvider",
                     "MIGraphXExecutionProvider",
                 ]
             )
         for p in desired_providers:
-            if p in available_providers:
+            p_name = p[0] if isinstance(p, tuple) else p
+            if p_name in available_providers:
                 providers.append(p)
     providers.append("CPUExecutionProvider")
     sess_options = ort.SessionOptions()
@@ -380,7 +381,12 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
         sess = ort.InferenceSession(
             model_path, sess_options=sess_options, providers=providers
         )
-        print(f"[INFO] アクティブプロバイダ: {sess.get_providers()}")
+        active_p = sess.get_providers()
+        print(f"[INFO] アクティブプロバイダ: {active_p}")
+        if "OpenVINOExecutionProvider" in active_p:
+            ov_opts = sess.get_provider_options().get("OpenVINOExecutionProvider", {})
+            ov_dev = ov_opts.get("device_type", "CPU")
+            print(f"[INFO] OpenVINO 推論デバイス: {ov_dev}")
     except Exception as e:
         print(
             f"[WARN] GPUプロバイダのロードに失敗しました: {e}\n[INFO] CPUモードに切り替えます。"
@@ -505,18 +511,6 @@ def calculate_rating(
     fname_disp="",
 ):
     rating_probs = probs[:4]
-    if fname_disp:
-        fmt_prob = lambda p: "100.0%" if p * 100 >= 100 else f"{p * 100:04.1f}%"
-        b_gen, b_sen, b_que, b_exp = (
-            get_bar(rating_probs[0], Colors.GREEN),
-            get_bar(rating_probs[1], Colors.YELLOW),
-            get_bar(rating_probs[2], Colors.MAGENTA),
-            get_bar(rating_probs[3], Colors.RED),
-        )
-        safe_write(
-            f"[{fname_disp}] Gen:{b_gen}{fmt_prob(rating_probs[0])} Sen:{b_sen}{fmt_prob(rating_probs[1])} Que:{b_que}{fmt_prob(rating_probs[2])} Exp:{b_exp}{fmt_prob(rating_probs[3])}",
-            end="",
-        )
     if rating_probs[0] >= gen_thresh:
         rating_idx = 0
     else:
@@ -535,7 +529,15 @@ def calculate_rating(
         )
     if rating in ["sensitive", "sensitive_mild", "sensitive_high"] and ignore_sensitive:
         rating = "general"
+
     if fname_disp:
+        fmt_prob = lambda p: "100.0%" if p * 100 >= 100 else f"{p * 100:04.1f}%"
+        b_gen, b_sen, b_que, b_exp = (
+            get_bar(rating_probs[0], Colors.GREEN),
+            get_bar(rating_probs[1], Colors.YELLOW),
+            get_bar(rating_probs[2], Colors.MAGENTA),
+            get_bar(rating_probs[3], Colors.RED),
+        )
         folder_mapping = APP_CONFIG.get("folder_names", {})
         folder_name = folder_mapping.get(rating, rating)
         res_color = Colors.CYAN
@@ -547,7 +549,13 @@ def calculate_rating(
             res_color = Colors.YELLOW
         elif rating == "general":
             res_color = Colors.GREEN
-        tqdm.write(f" => {res_color}[{folder_name}]{Colors.RESET}")
+        tqdm.write(
+            f"[{fname_disp}] Gen:{b_gen}{fmt_prob(rating_probs[0])} "
+            f"Sen:{b_sen}{fmt_prob(rating_probs[1])} "
+            f"Que:{b_que}{fmt_prob(rating_probs[2])} "
+            f"Exp:{b_exp}{fmt_prob(rating_probs[3])} "
+            f"=> {res_color}[{folder_name}]{Colors.RESET}"
+        )
     return rating
 
 
@@ -646,7 +654,16 @@ def process_images(args):
     if (not is_client) and batch_size > 1:
         print(f"[INFO] バッチ推論: {batch_size} / IOワーカー: {io_workers}")
     processed_count, skipped_count, organized_count = 0, 0, 0
-    pbar = tqdm(total=len(target_files), unit="img", ncols=80)
+    inferred_count, inferred_time = 0, 0.0
+    skipped_tag_count, skipped_tag_time = 0, 0.0
+
+    pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
+
+    def update_pbar_postfix():
+        inf_sp = f"{inferred_count / inferred_time:.1f}/s" if inferred_time > 0 else "0.0/s"
+        skip_sp = f"{skipped_tag_count / skipped_tag_time:.1f}/s" if skipped_tag_time > 0 else "0.0/s"
+        pbar.set_postfix_str(f"推論:{inferred_count}枚({inf_sp}) Skip:{skipped_tag_count}枚({skip_sp})")
+
     executor = (
         ThreadPoolExecutor(max_workers=io_workers)
         if (not is_client and batch_size > 1 and io_workers > 0)
@@ -699,8 +716,10 @@ def process_images(args):
         finalize_result(item["path"], item["existing_tags"], detected_tags, rating, probs)
 
     def run_batch(batch_items):
+        nonlocal inferred_count, inferred_time
         if not batch_items:
             return
+        t_batch_start = time.time()
         paths = [item["path"] for item in batch_items]
         if executor:
             results = list(executor.map(load_and_preprocess, paths))
@@ -724,15 +743,26 @@ def process_images(args):
         except Exception as e:
             tqdm.write(f"[WARN] バッチ推論に失敗: {e} -> 1枚ずつに切り替えます。")
             for item, img_input in zip(valid_items, inputs):
+                t_single = time.time()
                 try:
                     probs = sess_global.run(
                         [label_name_cache], {input_name_cache: img_input}
                     )[0][0]
+                    t_el = time.time() - t_single
+                    inferred_count += 1
+                    inferred_time += t_el
+                    update_pbar_postfix()
                     handle_inference_result(item, probs)
                 except Exception as e2:
                     tqdm.write(f"エラー {os.path.basename(item['path'])}: {e2}")
                     pbar.update(1)
             return
+
+        t_batch_elapsed = time.time() - t_batch_start
+        inferred_count += len(valid_items)
+        inferred_time += t_batch_elapsed
+        update_pbar_postfix()
+
         if len(valid_items) == 1:
             probs_list = (
                 [batch_probs[0]] if getattr(batch_probs, "ndim", 1) > 1 else [batch_probs]
@@ -746,6 +776,7 @@ def process_images(args):
     aborted = False
     try:
         for img_path in target_files:
+            t_file_start = time.time()
             try:
                 rating, existing_tags, need_inference = None, [], True
                 if not args.no_tag or args.organize:
@@ -767,6 +798,7 @@ def process_images(args):
                             need_inference = False
                 if need_inference:
                     if is_client:
+                        t_client_start = time.time()
                         with open(img_path, "rb") as f:
                             img_data = f.read()
                         req = urllib.request.Request(
@@ -779,6 +811,10 @@ def process_images(args):
                                 pbar.update(1)
                                 continue
                             probs = np.array(json.loads(res.read().decode("utf-8")))
+                        t_client_elapsed = time.time() - t_client_start
+                        inferred_count += 1
+                        inferred_time += t_client_elapsed
+                        update_pbar_postfix()
                         handle_inference_result(
                             {"path": img_path, "existing_tags": existing_tags}, probs
                         )
@@ -788,6 +824,10 @@ def process_images(args):
                             run_batch(pending[:batch_size])
                             pending = pending[batch_size:]
                 else:
+                    t_skip_elapsed = time.time() - t_file_start
+                    skipped_tag_count += 1
+                    skipped_tag_time += t_skip_elapsed
+                    update_pbar_postfix()
                     finalize_result(img_path, existing_tags, [], rating, None)
             except urllib.error.HTTPError as e:
                 tqdm.write(f"サーバー処理エラー {os.path.basename(img_path)}: {e}")
@@ -812,9 +852,23 @@ def process_images(args):
         if not args.no_tag:
             et_wrapper.stop()
         pbar.close()
-    print(
-        f"\n[完了] タグ付け: {processed_count}, スキップ: {skipped_count}, 整理: {organized_count}"
-    )
+
+    print(f"\n[完了] 処理結果サマリー:")
+    if inferred_count > 0:
+        inf_fps = inferred_count / inferred_time if inferred_time > 0 else 0
+        inf_ms = (inferred_time / inferred_count) * 1000 if inferred_count > 0 else 0
+        print(f"  ・推論実行ファイル (AI演算あり) : {inferred_count} 枚 | 速度: {inf_fps:.2f} img/s ({inf_ms:.1f} ms/img)")
+    else:
+        print("  ・推論実行ファイル (AI演算あり) : 0 枚")
+
+    if skipped_tag_count > 0:
+        skip_fps = skipped_tag_count / skipped_tag_time if skipped_tag_time > 0 else 0
+        skip_ms = (skipped_tag_time / skipped_tag_count) * 1000 if skipped_tag_count > 0 else 0
+        print(f"  ・演算スキップファイル (既存タグ) : {skipped_tag_count} 枚 | 速度: {skip_fps:.2f} img/s ({skip_ms:.1f} ms/img)")
+    else:
+        print("  ・演算スキップファイル (既存タグ) : 0 枚")
+
+    print(f"  ・詳細: タグ書き込み: {processed_count} 枚, 整理移動: {organized_count} 枚")
     if not args.no_report:
         if REPORT_DATA:
             with open(REPORT_LOG_FILE, "w", encoding="utf-8") as f:

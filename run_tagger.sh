@@ -75,6 +75,23 @@ detect_gpu_vendor() {
     fi
 }
 
+# --- サポートされているPythonバージョンの検出 ---
+find_supported_python() {
+    for py_candidate in python3 python3.13 python3.12 python3.11 python3.10; do
+        if command -v "$py_candidate" >/dev/null 2>&1; then
+            local ver_minor=$("$py_candidate" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+            local ver_major_num=$(echo "$ver_minor" | cut -d. -f1)
+            local ver_minor_num=$(echo "$ver_minor" | cut -d. -f2)
+            if [ "$ver_major_num" -eq 3 ] && [ "$ver_minor_num" -le 13 ]; then
+                echo "$py_candidate"
+                return 0
+            fi
+        fi
+    done
+    echo ""
+    return 1
+}
+
 # --- 環境セットアップ ---
 setup_env() {
     local backend=$1 # nvidia, intel, amd, cpu, client
@@ -123,12 +140,28 @@ setup_env() {
 
     VENV_DIR="$SCRIPT_DIR/$venv_name"
     
+    if [ -d "$VENV_DIR" ]; then
+        local current_venv_py_ver=$("$VENV_DIR/bin/python" -c "import sys; print(sys.version_info.minor)" 2>/dev/null || echo "99")
+        if [ "$current_venv_py_ver" -ge 14 ]; then
+            echo "[WARN] 既存の仮想環境 ($venv_name) は PyPI非対応の Python 3.$current_venv_py_ver で作成されています。"
+            echo "[INFO] 互換性のある Python バージョンで仮想環境を再作成します..."
+            rm -rf "$VENV_DIR"
+        fi
+    fi
+
     if [ ! -d "$VENV_DIR" ]; then
-        echo "[INFO] 仮想環境を作成中 ($venv_name)..."
-        python3 -m venv "$VENV_DIR"
+        PY_BIN=$(find_supported_python)
+        if [ -z "$PY_BIN" ]; then
+            echo "[ERROR] onnxruntime 等のライブラリは Python 3.14 以降のビルド(wheel)がPyPI上に存在しません。"
+            echo "        Python 3.13 以下のバージョン (例: python3.13) をインストールしてください。"
+            exit 1
+        fi
+        echo "[INFO] 仮想環境を作成中 ($venv_name, python: $PY_BIN)..."
+        "$PY_BIN" -m venv "$VENV_DIR"
     fi
     
     PIP_CMD="$VENV_DIR/bin/pip"
+    $PIP_CMD install --upgrade pip >/dev/null 2>&1
     
     # 必要なパッケージのインストール
     echo "[INFO] 依存ライブラリを確認・インストール中 ($backend)..."
@@ -173,7 +206,7 @@ if [ $# -eq 0 ]; then
     echo "引数が指定されなかったため、環境構築のみを行います。"
     # CPUのみ作っておく（クライアントフラグ0）
     setup_env "cpu" "0"
-    "$SCRIPT_DIR/venv_std/bin/python" "$PYTHON_SCRIPT" --gen-config
+    "$VENV_DIR/bin/python" "$PYTHON_SCRIPT" --gen-config
     echo "[INFO] セットアップ完了。GPU環境は --gpu 指定時に構築されます。"
     exit 0
 fi
