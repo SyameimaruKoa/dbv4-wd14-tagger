@@ -75,6 +75,23 @@ detect_gpu_vendor() {
     fi
 }
 
+# --- CUDAバージョン検出関数 ---
+detect_cuda_major() {
+    local cuda_major=12
+    if command -v nvcc >/dev/null 2>&1; then
+        local nvcc_out=$(nvcc --version 2>/dev/null)
+        if [[ "$nvcc_out" =~ release\ ([0-9]+)\. ]]; then
+            cuda_major="${BASH_REMATCH[1]}"
+        fi
+    elif [ -e "/usr/local/cuda" ]; then
+        local real_path=$(readlink -f /usr/local/cuda 2>/dev/null)
+        if [[ "$real_path" =~ cuda-([0-9]+)\. ]]; then
+            cuda_major="${BASH_REMATCH[1]}"
+        fi
+    fi
+    echo "$cuda_major"
+}
+
 # --- サポートされているPythonバージョンの検出 ---
 find_supported_python() {
     for py_candidate in python3 python3.13 python3.12 python3.11 python3.10; do
@@ -171,7 +188,16 @@ setup_env() {
     if [ "$backend" = "client" ]; then
         $PIP_CMD install -r "$REQ_FILE" || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "nvidia" ]; then
-        $PIP_CMD install -r "$REQ_FILE" onnxruntime-gpu || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
+        local cuda_ver=$(detect_cuda_major)
+        local ort_pkg="onnxruntime-gpu"
+        if [ "$cuda_ver" -ge 13 ]; then
+            ort_pkg="onnxruntime-gpu"
+        elif [ "$cuda_ver" -eq 12 ]; then
+            ort_pkg="onnxruntime-gpu<1.27.0"
+        else
+            ort_pkg="onnxruntime-gpu<1.17.0"
+        fi
+        $PIP_CMD install -r "$REQ_FILE" "$ort_pkg" || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "intel" ]; then
         $PIP_CMD install -r "$REQ_FILE" onnxruntime-openvino || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "amd" ]; then
@@ -294,6 +320,13 @@ if [ "$BACKEND_MODE" = "cpu" ]; then
 fi
 
 setup_env "$BACKEND_MODE" "$IS_CLIENT"
+
+if [ "$BACKEND_MODE" = "nvidia" ]; then
+    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64"]; [paths.append(os.path.join(root, "lib")) for p in site.getsitepackages() if os.path.exists(os.path.join(p, "nvidia")) for root, dirs, _ in os.walk(os.path.join(p, "nvidia")) if "lib" in dirs]; print(":".join(paths))' 2>/dev/null)
+    if [ -n "$EXTRA_LD_PATHS" ]; then
+        export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
+    fi
+fi
 
 echo "[INFO] Pythonスクリプトを実行 ($BACKEND_MODE)..."
 "$VENV_DIR/bin/python" "$PYTHON_SCRIPT" "${PY_ARGS[@]}"
