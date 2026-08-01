@@ -323,7 +323,7 @@ fi
 setup_env "$BACKEND_MODE" "$IS_CLIENT"
 
 if [ "$BACKEND_MODE" = "nvidia" ]; then
-    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("lib" in dirs and ("nvidia" in root or "tensorrt" in root)) or any(f.startswith("libnvinfer.so") or f.startswith("libcublas.so") for f in files)]; print(":".join(list(dict.fromkeys(paths))))' 2>/dev/null)
+    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("nvidia" in root or "tensorrt" in root) and any(f.endswith(".so") or ".so." in f for f in files)]; print(":".join(list(dict.fromkeys(paths))))' 2>/dev/null)
     if [ -n "$EXTRA_LD_PATHS" ]; then
         export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
     fi
