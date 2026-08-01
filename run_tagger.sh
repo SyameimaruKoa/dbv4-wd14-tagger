@@ -190,16 +190,13 @@ setup_env() {
     elif [ "$backend" = "nvidia" ]; then
         local cuda_ver=$(detect_cuda_major)
         local ort_pkg="onnxruntime-gpu"
-        local nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
+        local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12"
         if [ "$cuda_ver" -ge 13 ]; then
             ort_pkg="onnxruntime-gpu"
-            nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
         elif [ "$cuda_ver" -eq 12 ]; then
             ort_pkg="onnxruntime-gpu<1.27.0"
-            nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
         else
             ort_pkg="onnxruntime-gpu<1.17.0"
-            nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
         fi
         $PIP_CMD install -r "$REQ_FILE" "$ort_pkg" $nvidia_pkgs || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "intel" ]; then
