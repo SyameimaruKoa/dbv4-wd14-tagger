@@ -384,6 +384,12 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
         )
         active_p = sess.get_providers()
         print(f"[INFO] アクティブプロバイダ: {active_p}")
+        compiling_providers = {"TensorrtExecutionProvider", "OpenVINOExecutionProvider", "MIGraphXExecutionProvider", "DmlExecutionProvider"}
+        active_compiling = [p for p in active_p if (p[0] if isinstance(p, tuple) else p) in compiling_providers]
+        if active_compiling:
+            comp_str = ", ".join(active_compiling)
+            print(f"[INFO] 注意: コンパイルを伴うプロバイダ ({comp_str}) が有効です。")
+            print(f"[INFO]        初回推論（モデル構築）時にはエンジンのコンパイルが発生するため、最初の処理に時間がかかる場合があります。")
         if "OpenVINOExecutionProvider" in active_p:
             ov_opts = sess.get_provider_options().get("OpenVINOExecutionProvider", {})
             ov_dev = ov_opts.get("device_type", "CPU")
@@ -657,6 +663,7 @@ def process_images(args):
     processed_count, skipped_count, organized_count = 0, 0, 0
     inferred_count, inferred_time = 0, 0.0
     skipped_tag_count, skipped_tag_time = 0, 0.0
+    is_first_inference = True
 
     pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
 
@@ -717,7 +724,7 @@ def process_images(args):
         finalize_result(item["path"], item["existing_tags"], detected_tags, rating, probs)
 
     def run_batch(batch_items):
-        nonlocal inferred_count, inferred_time
+        nonlocal inferred_count, inferred_time, is_first_inference
         if not batch_items:
             return
         t_batch_start = time.time()
@@ -751,7 +758,10 @@ def process_images(args):
                     )[0][0]
                     t_el = time.time() - t_single
                     inferred_count += 1
-                    inferred_time += t_el
+                    if is_first_inference:
+                        is_first_inference = False
+                    else:
+                        inferred_time += t_el
                     update_pbar_postfix()
                     handle_inference_result(item, probs)
                 except Exception as e2:
@@ -761,7 +771,10 @@ def process_images(args):
 
         t_batch_elapsed = time.time() - t_batch_start
         inferred_count += len(valid_items)
-        inferred_time += t_batch_elapsed
+        if is_first_inference:
+            is_first_inference = False
+        else:
+            inferred_time += t_batch_elapsed
         update_pbar_postfix()
 
         if len(valid_items) == 1:
