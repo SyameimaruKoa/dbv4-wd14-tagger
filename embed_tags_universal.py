@@ -663,6 +663,7 @@ def process_images(args):
         print(f"[INFO] バッチ推論: {batch_size} / IOワーカー: {io_workers}")
 
     # 確定された batch_size に対応したウォームアップ推論（エンジン構築）
+    warmup_time = 0.0
     if sess_global is not None:
         try:
             active_p = sess_global.get_providers()
@@ -670,6 +671,7 @@ def process_images(args):
             active_compiling = [p for p in active_p if (p[0] if isinstance(p, tuple) else p) in compiling_providers]
             if active_compiling:
                 print(f"[INFO] ウォームアップ推論（バッチサイズ: {batch_size}）を実行中...")
+                t_wu_start = time.time()
                 dummy_shape_full = (batch_size, 448, 448, 3)
                 dummy_input_full = np.zeros(dummy_shape_full, dtype=np.float32)
                 sess_global.run([label_name_cache], {input_name_cache: dummy_input_full})
@@ -677,14 +679,15 @@ def process_images(args):
                     dummy_shape_single = (1, 448, 448, 3)
                     dummy_input_single = np.zeros(dummy_shape_single, dtype=np.float32)
                     sess_global.run([label_name_cache], {input_name_cache: dummy_input_single})
-                print("[INFO] ウォームアップ完了。エンジンの準備が整いました。")
+                warmup_time = time.time() - t_wu_start
+                print(f"[INFO] ウォームアップ完了 (所要時間: {warmup_time:.2f}秒)。エンジンの準備が整いました。")
         except Exception as e:
             print(f"[WARN] ウォームアップ推論スキップ: {e}")
 
     processed_count, skipped_count, organized_count = 0, 0, 0
     inferred_count, inferred_time = 0, 0.0
     skipped_tag_count, skipped_tag_time = 0, 0.0
-    is_first_inference = True
+    batch_history = []
 
     pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
 
@@ -745,7 +748,7 @@ def process_images(args):
         finalize_result(item["path"], item["existing_tags"], detected_tags, rating, probs)
 
     def run_batch(batch_items):
-        nonlocal inferred_count, inferred_time, is_first_inference
+        nonlocal inferred_count, inferred_time
         if not batch_items:
             return
         t_batch_start = time.time()
@@ -779,10 +782,8 @@ def process_images(args):
                     )[0][0]
                     t_el = time.time() - t_single
                     inferred_count += 1
-                    if is_first_inference:
-                        is_first_inference = False
-                    else:
-                        inferred_time += t_el
+                    inferred_time += t_el
+                    batch_history.append({"count": 1, "time": t_el})
                     update_pbar_postfix()
                     handle_inference_result(item, probs)
                 except Exception as e2:
@@ -792,10 +793,8 @@ def process_images(args):
 
         t_batch_elapsed = time.time() - t_batch_start
         inferred_count += len(valid_items)
-        if is_first_inference:
-            is_first_inference = False
-        else:
-            inferred_time += t_batch_elapsed
+        inferred_time += t_batch_elapsed
+        batch_history.append({"count": len(valid_items), "time": t_batch_elapsed})
         update_pbar_postfix()
 
         if len(valid_items) == 1:
@@ -889,10 +888,35 @@ def process_images(args):
         pbar.close()
 
     print(f"\n[完了] 処理結果サマリー:")
+    if warmup_time > 0:
+        print(f"  ・ウォームアップ時間 (エンジン事前構築) : {warmup_time:.2f} 秒")
+
     if inferred_count > 0:
-        inf_fps = inferred_count / inferred_time if inferred_time > 0 else 0
-        inf_ms = (inferred_time / inferred_count) * 1000 if inferred_count > 0 else 0
+        outlier_detected = False
+        main_count, main_time = inferred_count, inferred_time
+        first_b_time, first_b_count = 0.0, 0
+        if len(batch_history) >= 2:
+            first_b_count = batch_history[0]["count"]
+            first_b_time = batch_history[0]["time"]
+            t1_per_img = first_b_time / first_b_count
+            
+            rest_count = sum(b["count"] for b in batch_history[1:])
+            rest_time = sum(b["time"] for b in batch_history[1:])
+            t_rest_per_img = rest_time / rest_count if rest_count > 0 else 0
+            
+            if rest_count > 0 and (first_b_time > 1.0) and (t1_per_img > 2.0 * t_rest_per_img):
+                outlier_detected = True
+                main_count, main_time = rest_count, rest_time
+
+        inf_fps = main_count / main_time if main_time > 0 else 0
+        inf_ms = (main_time / main_count) * 1000 if main_count > 0 else 0
         print(f"  ・推論実行ファイル (AI演算あり) : {inferred_count} 枚 | 速度: {inf_fps:.2f} img/s ({inf_ms:.1f} ms/img)")
+        if outlier_detected:
+            all_fps = inferred_count / inferred_time if inferred_time > 0 else 0
+            t1_per_img_ms = (first_b_time / first_b_count) * 1000 if first_b_count > 0 else 0
+            print(f"       ├─ 1枚目(初回バッチ)処理時間: {first_b_time:.2f} 秒 ({t1_per_img_ms:.1f} ms/img)")
+            print(f"       ├─ 1枚目を含む全推論速度: {all_fps:.2f} img/s (合計処理時間: {inferred_time:.2f} 秒)")
+            print(f"       └─ ※初回バッチの遅延 ({first_b_time:.2f}秒) をコンパイル外れ値としてメイン速度から自動除外しました。")
     else:
         print("  ・推論実行ファイル (AI演算あり) : 0 枚")
 
