@@ -190,7 +190,7 @@ setup_env() {
     elif [ "$backend" = "nvidia" ]; then
         local cuda_ver=$(detect_cuda_major)
         local ort_pkg="onnxruntime-gpu"
-        local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12"
+        local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt<11 tensorrt-cu12<11"
         if [ "$cuda_ver" -ge 13 ]; then
             ort_pkg="onnxruntime-gpu"
         elif [ "$cuda_ver" -eq 12 ]; then
@@ -323,7 +323,7 @@ fi
 setup_env "$BACKEND_MODE" "$IS_CLIENT"
 
 if [ "$BACKEND_MODE" = "nvidia" ]; then
-    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64"]; [paths.append(os.path.join(root, "lib")) for p in site.getsitepackages() if os.path.exists(os.path.join(p, "nvidia")) for root, dirs, _ in os.walk(os.path.join(p, "nvidia")) if "lib" in dirs]; print(":".join(paths))' 2>/dev/null)
+    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("lib" in dirs and ("nvidia" in root or "tensorrt" in root)) or any(f.startswith("libnvinfer.so") or f.startswith("libcublas.so") for f in files)]; print(":".join(list(dict.fromkeys(paths))))' 2>/dev/null)
     if [ -n "$EXTRA_LD_PATHS" ]; then
         export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
     fi

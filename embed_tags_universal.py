@@ -359,11 +359,12 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
         available_providers = ort.get_available_providers()
         desired_providers = []
         if IS_WINDOWS:
-            desired_providers.extend(["DmlExecutionProvider", "CUDAExecutionProvider"])
+            desired_providers.extend(["DmlExecutionProvider", "TensorrtExecutionProvider", "CUDAExecutionProvider"])
         elif IS_LINUX:
             desired_providers.extend(
                 [
                     ("OpenVINOExecutionProvider", {"device_type": "GPU"}),
+                    "TensorrtExecutionProvider",
                     "CUDAExecutionProvider",
                     "ROCMExecutionProvider",
                     "MIGraphXExecutionProvider",
