@@ -402,6 +402,34 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
             model_path, sess_options=sess_options, providers=["CPUExecutionProvider"]
         )
     MODEL_BATCH_LIMIT = get_batch_limit(sess)
+
+    # ウォームアップ推論（コンパイル・JITエンジン構築をモデルロード時に完了させるのじゃ）
+    try:
+        active_p = sess.get_providers()
+        compiling_providers = {"TensorrtExecutionProvider", "OpenVINOExecutionProvider", "MIGraphXExecutionProvider", "DmlExecutionProvider"}
+        active_compiling = [p for p in active_p if (p[0] if isinstance(p, tuple) else p) in compiling_providers]
+        if active_compiling:
+            print("[INFO] ウォームアップ推論（エンジン構築）を実行中...")
+
+        input_tensor = sess.get_inputs()[0]
+        input_shape = input_tensor.shape
+        shape_dim = []
+        for dim in input_shape:
+            if isinstance(dim, int) and dim > 0:
+                shape_dim.append(dim)
+            else:
+                shape_dim.append(1 if len(shape_dim) == 0 else 448)
+        if len(shape_dim) == 4:
+            dummy_input = np.zeros(tuple(shape_dim), dtype=np.float32)
+        else:
+            dummy_input = np.zeros((1, 448, 448, 3), dtype=np.float32)
+
+        sess.run([sess.get_outputs()[0].name], {input_tensor.name: dummy_input})
+        if active_compiling:
+            print("[INFO] ウォームアップ完了。エンジンの準備が整いました。")
+    except Exception as e:
+        print(f"[WARN] ウォームアップ推論スキップ: {e}")
+
     return sess, tags, sess.get_inputs()[0].name, sess.get_outputs()[0].name
 
 
@@ -663,7 +691,6 @@ def process_images(args):
     processed_count, skipped_count, organized_count = 0, 0, 0
     inferred_count, inferred_time = 0, 0.0
     skipped_tag_count, skipped_tag_time = 0, 0.0
-    is_first_inference = True
 
     pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
 
@@ -724,7 +751,7 @@ def process_images(args):
         finalize_result(item["path"], item["existing_tags"], detected_tags, rating, probs)
 
     def run_batch(batch_items):
-        nonlocal inferred_count, inferred_time, is_first_inference
+        nonlocal inferred_count, inferred_time
         if not batch_items:
             return
         t_batch_start = time.time()
@@ -758,10 +785,7 @@ def process_images(args):
                     )[0][0]
                     t_el = time.time() - t_single
                     inferred_count += 1
-                    if is_first_inference:
-                        is_first_inference = False
-                    else:
-                        inferred_time += t_el
+                    inferred_time += t_el
                     update_pbar_postfix()
                     handle_inference_result(item, probs)
                 except Exception as e2:
@@ -771,10 +795,7 @@ def process_images(args):
 
         t_batch_elapsed = time.time() - t_batch_start
         inferred_count += len(valid_items)
-        if is_first_inference:
-            is_first_inference = False
-        else:
-            inferred_time += t_batch_elapsed
+        inferred_time += t_batch_elapsed
         update_pbar_postfix()
 
         if len(valid_items) == 1:
