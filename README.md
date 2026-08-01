@@ -154,7 +154,20 @@ GPUを使う場合は `-Gpu` をつける（推奨）。
 > **Python バージョンに関する注意事項:**  
 > `onnxruntime` などの各種ライブラリは、現在 Python 3.14 用の公式バイナリ(wheel)がPyPIに存在しない。システム全体の標準 `python3` が 3.14 の場合、`run_tagger.sh` は自動的にシステム内の Python 3.13 以下の互換バージョン（`python3.13` など）を検出して仮想環境を作成するぞ。
 
-### 2. Intel GPU (OpenVINO) 有効化セットアップ
+### 2. NVIDIA GPU (CUDA / TensorRT) 有効化セットアップ
+Linux 環境において NVIDIA GPU (`CUDAExecutionProvider` / `TensorrtExecutionProvider`) を使用して推論を最高速化する場合、`run_tagger.sh` が必要な runtime ライブラリ（`nvidia-cuda-runtime`, `nvidia-cublas`, `nvidia-cudnn`, `tensorrt` 10.x 等）を仮想環境へ自動的に組み込み、ライブラリパスを自動構成するぞ。
+
+`-g`（または `--gpu` / `--force-nvidia`）を付けて実行するのじゃ：
+```bash
+./run_tagger.sh -g -p /path/to/images
+```
+
+* **TensorRT ウォームアップ処理**:  
+  TensorRT 等のコンパイルを伴うプロバイダが有効な場合、初回起動時やバッチサイズ変更時にエンジンの自動事前構築（ウォームアップ推論）が行われるぞ。初回のみ準備に時間がかかるが、ウォームアップ完了後は非常に高速に推論が行われるのじゃ。
+* **外れ値判定サマリー**:  
+  推論処理完了時のサマリーログでは、ウォームアップ所要時間や、万が一発生したコンパイル遅延（外れ値）の自動除外・初回処理時間などの詳細データが分かりやすく報告されるぞ。
+
+### 3. Intel GPU (OpenVINO) 有効化セットアップ
 Linux 上で Intel GPU（HD Graphics / Iris Xe / Arc）を使用して推論を高速化する場合、OpenCL ドライバーとデバイスアクセス権限が必要じゃ。初回のみ以下のコマンドを実行しておくのじゃ。
 
 ```bash

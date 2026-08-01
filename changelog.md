@@ -1,6 +1,15 @@
 
 # 実装履歴
 
+## 2026-08-01
+
+- NVIDIA GPU (CUDA / TensorRT) 高速化機能の追加および動作の最適化
+  - `run_tagger.sh`: システムの CUDA バージョンに合わせた `nvidia-*` ランタイムパッケージおよび ONNX Runtime 互換の `tensorrt<11` (10.x系) パッケージの自動検出・自動インストールロジックを追加。
+  - `run_tagger.sh`: `LD_LIBRARY_PATH` の動的生成ロジックを改善し、`site-packages` 内の NVIDIA / TensorRT ライブラリディレクトリを正確に追加して共有ライブラリのロードエラーを解決。
+  - `embed_tags_universal.py`: コンパイルを伴う ExecutionProvider (`TensorrtExecutionProvider` 等) 使用時の注意事項出力機能を追加。
+  - `embed_tags_universal.py`: 実効バッチサイズに対応したダミーテンソルによる事前ウォームアップ推論（エンジン自動構築）を追加し、ウォームアップ所要時間をログ出力。
+  - `embed_tags_universal.py`: 1枚目（初回バッチ）の処理時間に関する外れ値判定ロジックを組み込み、コンパイルによる遅延を選択的に除外した実効推論速度の報告、および1枚目処理時間・全体の詳細サマリー出力を追加。
+
 ## 2026-05-15 (Update 2)
 
 - デフォルトモデルを最新のV3系 (`SmilingWolf/wd-swinv2-tagger-v3`) に変更しました。
