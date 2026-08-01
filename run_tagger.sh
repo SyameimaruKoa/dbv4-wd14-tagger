@@ -190,14 +190,18 @@ setup_env() {
     elif [ "$backend" = "nvidia" ]; then
         local cuda_ver=$(detect_cuda_major)
         local ort_pkg="onnxruntime-gpu"
+        local nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
         if [ "$cuda_ver" -ge 13 ]; then
             ort_pkg="onnxruntime-gpu"
+            nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
         elif [ "$cuda_ver" -eq 12 ]; then
             ort_pkg="onnxruntime-gpu<1.27.0"
+            nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
         else
             ort_pkg="onnxruntime-gpu<1.17.0"
+            nvidia_pkgs="nvidia-cublas-cu12 nvidia-cudnn-cu12"
         fi
-        $PIP_CMD install -r "$REQ_FILE" "$ort_pkg" || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
+        $PIP_CMD install -r "$REQ_FILE" "$ort_pkg" $nvidia_pkgs || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "intel" ]; then
         $PIP_CMD install -r "$REQ_FILE" onnxruntime-openvino || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "amd" ]; then
