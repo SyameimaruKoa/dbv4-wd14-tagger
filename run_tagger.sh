@@ -202,7 +202,8 @@ setup_env() {
     elif [ "$backend" = "intel" ]; then
         $PIP_CMD install -r "$REQ_FILE" onnxruntime-openvino || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "amd" ]; then
-        # AMD用 ROCm対応パッケージは「onnxruntime-migraphx」に変更されておるのじゃ
+        # AMD用 ROCm対応パッケージ（onnxruntime-rocm または onnxruntime-migraphx）をインストールするのじゃ
+        $PIP_CMD install -r "$REQ_FILE" onnxruntime-rocm -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ 2>/dev/null || \
         $PIP_CMD install -r "$REQ_FILE" onnxruntime-migraphx -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
         
         # Ubuntu等の新しいLinux環境では、実行可能スタックのフラグが原因でロードエラーになるため解除するのじゃ
@@ -327,6 +328,89 @@ if [ "$BACKEND_MODE" = "nvidia" ]; then
     if [ -n "$EXTRA_LD_PATHS" ]; then
         export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
     fi
+elif [ "$BACKEND_MODE" = "amd" ]; then
+    EXTRA_LD_PATHS=$(VENV_DIR="$VENV_DIR" "$VENV_DIR/bin/python" -c '
+import os, glob, site
+vdir = os.environ.get("VENV_DIR", "")
+cdir = os.path.join(vdir, "lib", "rocm_compat") if vdir else ""
+if cdir:
+    os.makedirs(cdir, exist_ok=True)
+    sdirs = ["/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/usr/local/lib", "/opt/rocm/lib", "/opt/rocm/lib64"]
+    fallback_src = None
+    for sdir in sdirs:
+        m = glob.glob(os.path.join(sdir, "libamdhip64.so*")) or glob.glob(os.path.join(sdir, "libhsa-runtime64.so*"))
+        if m:
+            m.sort(key=len)
+            fallback_src = m[0]
+            break
+    known_targets = [
+        "librocm_smi64.so", "libroctracer64.so", "libroctx64.so", "libamdhip64.so",
+        "librocblas.so", "libhsa-runtime64.so", "libMIOpen.so", "libmigraphx_c.so",
+        "librocsolver.so", "librocsparse.so", "librocrand.so", "librccl.so", "libamd_comgr.so"
+    ]
+    prefixes = ("libroc", "libamd", "libhsa", "libMIOpen", "libmigraphx", "librccl", "libhip")
+    bases = set(known_targets)
+    for sdir in sdirs:
+        if os.path.exists(sdir):
+            try:
+                for fname in os.listdir(sdir):
+                    if fname.startswith(prefixes) and (".so" in fname):
+                        base = fname.split(".so")[0] + ".so"
+                        bases.add(base)
+            except Exception:
+                pass
+    for lbase in bases:
+        fsrc = None
+        for sdir in sdirs:
+            matches = glob.glob(os.path.join(sdir, lbase + "*"))
+            if matches:
+                matches.sort(key=len)
+                fsrc = matches[0]
+                break
+        if not fsrc:
+            fsrc = fallback_src
+        if fsrc:
+            lpath = os.path.join(cdir, lbase)
+            if not os.path.exists(lpath):
+                try:
+                    os.symlink(fsrc, lpath)
+                except Exception:
+                    pass
+            for ver in range(1, 8):
+                vname = f"{lbase}.{ver}"
+                lpath = os.path.join(cdir, vname)
+                if not os.path.exists(lpath):
+                    try:
+                        os.symlink(fsrc, lpath)
+                    except Exception:
+                        pass
+paths = [cdir] if cdir else []
+paths.extend(["/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/usr/local/lib", "/opt/rocm/lib", "/opt/rocm/migraphx/lib", "/opt/rocm/lib64", "/opt/rocm/hsa/lib"])
+for p in site.getsitepackages():
+    if os.path.exists(p):
+        for root, dirs, files in os.walk(p):
+            if any(f.startswith(("libmigraphx", "libamd", "libhsa", "libroc", "libonnxruntime")) for f in files):
+                paths.append(root)
+print(":".join(list(dict.fromkeys([p for p in paths if p and os.path.exists(p)]))))
+' 2>/dev/null)
+    if [ -n "$EXTRA_LD_PATHS" ]; then
+        export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
+    fi
+    if [ -z "${HSA_OVERRIDE_GFX_VERSION:-}" ]; then
+        if command -v rocminfo >/dev/null 2>&1; then
+            ARCH=$(rocminfo 2>/dev/null | grep -o "gfx90[0-9a-f]\+" | head -n 1)
+            if [ "$ARCH" = "gfx906" ]; then
+                export HSA_OVERRIDE_GFX_VERSION=9.0.6
+            else
+                export HSA_OVERRIDE_GFX_VERSION=9.0.0
+            fi
+        else
+            export HSA_OVERRIDE_GFX_VERSION=9.0.0
+        fi
+        echo "[INFO] AMD GPU用環境変数を自動設定しました: HSA_OVERRIDE_GFX_VERSION=$HSA_OVERRIDE_GFX_VERSION"
+    fi
+    export HSA_ENABLE_SDMA=0
+    echo "[INFO] AMD iGPU/APU コアダンプ回避設定を適用しました: HSA_ENABLE_SDMA=0"
 fi
 
 echo "[INFO] Pythonスクリプトを実行 ($BACKEND_MODE)..."

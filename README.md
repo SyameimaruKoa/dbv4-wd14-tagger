@@ -186,6 +186,17 @@ newgrp render
 ./run_tagger.sh -g -p /path/to/images
 ```
 
+### 4. AMD GPU (ROCm) 有効化・動作仕様
+Linux 上で AMD GPU を使用する場合、`run_tagger.sh` は `onnxruntime-rocm` パッケージを自動インストールし、`/usr/lib/x86_64-linux-gnu` 等のシステムライブラリ（`librocm_smi64.so` や `libroctracer64.so` 等）に対する動的 SONAME 互換エイリアス（`venv_amd/lib/rocm_compat/`）を自動構築するぞ。
+
+`-g`（または `--force-amd`）を付けて実行できるのじゃ：
+```bash
+./run_tagger.sh -g -p /path/to/images
+```
+
+> **AMD 内蔵 GPU (Ryzen APU / gfx90c) に関する注意事項:**  
+> Ryzen APU 等の AMD 内蔵 GPU（`gfx90c`）は、AMD ROCm 公式スタックにおいて HIP カーネルコード実行が非サポート（dGPU 専用）となっているのじゃ。内蔵 GPU 環境で GPU モードを強制使用するとドライバ層でコアダンプが発生するため、`run_tagger.sh` は `gfx90c` を自動検知して安全・高速な CPU マルチスレッド推論モードへ自動退避する設計になっているぞ。
+
 ## 処理速度・統計表示について
 
 進捗バー（tqdm）および処理完了時のサマリーログでは、以下の **2通りの速度・処理件数** が個別に分離して表示されるぞ。
