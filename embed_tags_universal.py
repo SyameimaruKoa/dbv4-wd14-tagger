@@ -374,6 +374,10 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
             p_name = p[0] if isinstance(p, tuple) else p
             if p_name in available_providers:
                 providers.append(p)
+        if not providers:
+            print(f"[WARN] --gpu が指定されましたが、利用可能な GPU プロバイダ (CUDA / TensorRT 等) が見つかりませんでした。")
+            if platform.machine() in ["aarch64", "arm64"]:
+                print(f"[INFO] ARM64 (Tegra / Switch) では PyPI に公式の CUDA 対応 onnxruntime-gpu wheel が提供されていないため、CPU (ARM NEON) で実行します。")
     providers.append("CPUExecutionProvider")
     sess_options = ort.SessionOptions()
     sess_options.log_severity_level = 3
