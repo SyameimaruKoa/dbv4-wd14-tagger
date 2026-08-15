@@ -53,8 +53,17 @@ show_help() {
 
 # --- GPU検出関数 ---
 detect_gpu_vendor() {
-    # lspciの結果からVGA/3Dコントローラを探す
-    local lspci_out=$(lspci | grep -E "VGA|3D|Display" | tr '[:upper:]' '[:lower:]')
+    # 1. Tegra SoC (Nintendo Switch / Jetson 等) の検出
+    if [ -e "/dev/nvhost-gpu" ] || [ -e "/dev/nvhost-ctrl-gpu" ] || [ -e "/etc/nv_tegra_release" ] || [ -d "/usr/lib/aarch64-linux-gnu/tegra" ]; then
+        echo "nvidia"
+        return
+    fi
+
+    # 2. lspciの結果からVGA/3Dコントローラを探す
+    local lspci_out=""
+    if command -v lspci >/dev/null 2>&1; then
+        lspci_out=$(lspci | grep -E "VGA|3D|Display" | tr '[:upper:]' '[:lower:]')
+    fi
     
     if [[ "$lspci_out" == *"nvidia"* ]]; then
         echo "nvidia"
@@ -87,6 +96,19 @@ detect_cuda_major() {
         local real_path=$(readlink -f /usr/local/cuda 2>/dev/null)
         if [[ "$real_path" =~ cuda-([0-9]+)\. ]]; then
             cuda_major="${BASH_REMATCH[1]}"
+        fi
+    elif [ -e "/usr/lib/aarch64-linux-gnu/tegra/libcuda.so" ] || [ -e "/usr/lib/aarch64-linux-gnu/tegra/libcuda.so.1" ]; then
+        if [ -e "/etc/nv_tegra_release" ]; then
+            local tegra_rel=$(cat /etc/nv_tegra_release 2>/dev/null)
+            if [[ "$tegra_rel" =~ R32 ]]; then
+                cuda_major="10"
+            elif [[ "$tegra_rel" =~ R35 ]]; then
+                cuda_major="11"
+            elif [[ "$tegra_rel" =~ R36 ]]; then
+                cuda_major="12"
+            fi
+        else
+            cuda_major="10"
         fi
     fi
     echo "$cuda_major"
@@ -188,17 +210,24 @@ setup_env() {
     if [ "$backend" = "client" ]; then
         $PIP_CMD install -r "$REQ_FILE" || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "nvidia" ]; then
-        local cuda_ver=$(detect_cuda_major)
-        local ort_pkg="onnxruntime-gpu"
-        local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt<11 tensorrt-cu12<11"
-        if [ "$cuda_ver" -ge 13 ]; then
-            ort_pkg="onnxruntime-gpu"
-        elif [ "$cuda_ver" -eq 12 ]; then
-            ort_pkg="onnxruntime-gpu<1.27.0"
+        local arch_name=$(uname -m)
+        if [ "$arch_name" = "aarch64" ] || [ "$arch_name" = "arm64" ]; then
+            echo "[INFO] ARM64 (Tegra / Jetson / Switch) 環境を検出しました。"
+            $PIP_CMD install -r "$REQ_FILE" onnxruntime-gpu 2>/dev/null || \
+            $PIP_CMD install -r "$REQ_FILE" onnxruntime || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
         else
-            ort_pkg="onnxruntime-gpu<1.17.0"
+            local cuda_ver=$(detect_cuda_major)
+            local ort_pkg="onnxruntime-gpu"
+            local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt<11 tensorrt-cu12<11"
+            if [ "$cuda_ver" -ge 13 ]; then
+                ort_pkg="onnxruntime-gpu"
+            elif [ "$cuda_ver" -eq 12 ]; then
+                ort_pkg="onnxruntime-gpu<1.27.0"
+            else
+                ort_pkg="onnxruntime-gpu<1.17.0"
+            fi
+            $PIP_CMD install -r "$REQ_FILE" "$ort_pkg" $nvidia_pkgs || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
         fi
-        $PIP_CMD install -r "$REQ_FILE" "$ort_pkg" $nvidia_pkgs || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "intel" ]; then
         $PIP_CMD install -r "$REQ_FILE" onnxruntime-openvino || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "amd" ]; then
@@ -324,7 +353,7 @@ fi
 setup_env "$BACKEND_MODE" "$IS_CLIENT"
 
 if [ "$BACKEND_MODE" = "nvidia" ]; then
-    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("nvidia" in root or "tensorrt" in root) and any(f.endswith(".so") or ".so." in f for f in files)]; print(":".join(list(dict.fromkeys(paths))))' 2>/dev/null)
+    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64", "/usr/lib/aarch64-linux-gnu/tegra"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("nvidia" in root or "tensorrt" in root) and any(f.endswith(".so") or ".so." in f for f in files)]; print(":".join(list(dict.fromkeys([p for p in paths if os.path.exists(p)]))))' 2>/dev/null)
     if [ -n "$EXTRA_LD_PATHS" ]; then
         export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
     fi

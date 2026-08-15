@@ -1,6 +1,14 @@
 
 # 実装履歴
 
+## 2026-08-15
+
+- Nintendo Switch (Tegra X1 / Switchroot L4T) および ARM64 環境への対応
+  - `run_tagger.sh`: Tegra SoC (`/dev/nvhost-gpu`, `/etc/nv_tegra_release`, `/usr/lib/aarch64-linux-gnu/tegra` 等) の自動検出を追加し、Nintendo Switch や Jetson 等の統合 GPU 環境で NVIDIA GPU を正しく認識するように改善。
+  - `run_tagger.sh`: Tegra L4T ドライバからの CUDA バージョン判定ロジックを追加。
+  - `run_tagger.sh`: ARM64 (aarch64) 環境下での依存ライブラリインストール処理を最適化し、x86_64 専用パッケージによるエラーを防止。
+  - `run_tagger.sh`: Tegra ドライバ格納パス (`/usr/lib/aarch64-linux-gnu/tegra`) を `LD_LIBRARY_PATH` に自動追加。
+
 ## 2026-08-01
 
 - NVIDIA GPU (CUDA / TensorRT) 高速化機能の追加および動作の最適化
