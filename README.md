@@ -194,8 +194,26 @@ Linux 上で AMD GPU を使用する場合、`run_tagger.sh` は `onnxruntime-ro
 ./run_tagger.sh -g -p /path/to/images
 ```
 
-> **AMD 内蔵 GPU (Ryzen APU / gfx90c) に関する注意事項:**  
-> Ryzen APU 等の AMD 内蔵 GPU（`gfx90c`）は、AMD ROCm 公式スタックにおいて HIP カーネルコード実行が非サポート（dGPU 専用）となっているのじゃ。内蔵 GPU 環境で GPU モードを強制使用するとドライバ層でコアダンプが発生するため、`run_tagger.sh` は `gfx90c` を自動検知して安全・高速な CPU マルチスレッド推論モードへ自動退避する設計になっているぞ。
+### 5. Nintendo Switch (Switchroot L4T / Tegra X1) 動作仕様と注意事項
+
+Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合の動作仕様および制限事項は以下の通りじゃ。
+
+> **Switchroot Ubuntu 24.04 の既知の仕様・制限事項:**
+> * **No CUDA compiler support (CUDA runtime 10.0 is preinstalled and functions)**:
+>   CUDA ランタイム 10.0 (`/usr/lib/aarch64-linux-gnu/tegra/libcuda.so.1`) は組み込まれており機能するが、CUDA コンパイラ (`nvcc`) および cuDNN / TensorRT 開発パッケージは含まれておらぬ。
+> * **PyPI の ARM64 パッケージ制限**:
+>   PyPI には ARM64 (aarch64) 向けの `onnxruntime-gpu` が存在せず、また ONNX Runtime は 1.8 以降 CUDA 10.x をサポートしておらぬ（Python 3.12 対応版は CUDA 11.8/12 専用）。
+> * **スタンドアロン動作**:
+>   そのため Switch 単体では、`run_tagger.sh` が自動的に ARM64 (aarch64) を判別し、クラッシュすることなく **CPU (ARM NEON SIMD 最適化マルチスレッド)** で安全・確実に推論を行う設計になっておるぞ。
+> * **GPU 推論の推奨構成 (クライアント / サーバー)**:
+>   Switch 上の画像を GPU で超高速に処理したい場合は、GPU 搭載 PC でサーバーを起動し、Switch 側から `--client` で接続するのが最もおすすめじゃ！
+>   ```bash
+>   # 【メイン PC (GPU 搭載)】推論サーバー起動
+>   python embed_tags_universal.py --mode server --port 5000 --gpu
+>
+>   # 【Nintendo Switch】PC の GPU を使って Switch 内の画像を処理
+>   ./run_tagger.sh --client -H <PCのIPアドレス> -P 5000 -p /path/to/images -o
+>   ```
 
 ## 処理速度・統計表示について
 

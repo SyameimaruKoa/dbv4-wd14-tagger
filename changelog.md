@@ -8,6 +8,8 @@
   - `run_tagger.sh`: Tegra L4T ドライバからの CUDA バージョン判定ロジックを追加。
   - `run_tagger.sh`: ARM64 (aarch64) 環境下での依存ライブラリインストール処理を最適化し、x86_64 専用パッケージによるエラーを防止。
   - `run_tagger.sh`: Tegra ドライバ格納パス (`/usr/lib/aarch64-linux-gnu/tegra`) を `LD_LIBRARY_PATH` に自動追加。
+  - `embed_tags_universal.py`: ARM64 / Tegra 等で利用可能な GPU プロバイダが存在しない場合に、分かりやすい案内を出力して CPU (ARM NEON) モードへフォールバックする機能を追加。
+  - `README.md`: Switchroot Ubuntu 24.04 の仕様・制限事項（CUDA 10.0 ランタイムあり、CUDA コンパイラ・cuDNN なし）と、メイン PC と連携した高速 GPU クライアント/サーバー利用方法をドキュメント化。
 
 ## 2026-08-01
 
