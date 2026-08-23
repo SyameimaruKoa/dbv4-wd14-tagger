@@ -1,6 +1,15 @@
 
 # 実装履歴
 
+## 2026-08-23
+
+- Google Colab サーバーでの Google ドライブ Tailscale 接続情報永続化 & シークレット不要再接続モードの実装
+  - `run_colab_server.ipynb`: Tailscale の接続・認証状態（`tailscaled.state`）を Google ドライブ（`MyDrive/wd14-tagger/`）に自動保存・復元する機能を追加。
+  - 初期 TailNode 名（ホスト名）を `google-colab` に変更し、フォームパラメータから簡単に変更できるよう設定。
+  - 初回起動時のみ認証（シークレット、手動入力、またはブラウザURL認証）を行えば、2回目以降は Colab Secrets 登録やキーの手動入力が一切不要で、ワンクリックで同じ Tailscale IP・ホスト名に自動再接続可能に改善。
+  - サーバー終了時の処理を見直し、Google ドライブ保存モード時は認証セッションを破棄（logout）せず最新の state をバックアップした上で切断（down）するよう最適化。
+  - `embed_tags_universal.py` / `README.md`: デフォルト接続先およびドキュメントの MagicDNS ホスト名を `google-colab` に更新。
+
 ## 2026-08-15
 
 - Nintendo Switch (Tegra X1 / Switchroot L4T) および ARM64 環境への対応

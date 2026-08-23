@@ -116,30 +116,33 @@ GPUを使う場合は `-Gpu` をつける（推奨）。
 
 #### 接続手順
 
-1. **Tailscale の準備**:
-   - Tailscale の管理画面の [Settings > Keys](https://login.tailscale.com/admin/settings/keys) から **Ephemeral（一時的）** かつ **Reusable（再利用可能）** な認証キーを作成するのじゃ。
-   - その際、タグとして **`tag:Guest`** を割り当てるのじゃ（事前に Tailscale の ACL 設定で `tag:Guest` を登録しておく必要があるぞ）。
-   - ※**Ephemeral** に設定しておくことで、Google Colab のインスタンスがシャットダウンしてオフラインになった際、ノードリストから自動的に切断・削除されるようになるぞ。
+1. **Tailscale 認証キーの準備**:
+   - Tailscale の管理画面の [Settings > Keys](https://login.tailscale.com/admin/settings/keys) から認証キー（Auth Key）を作成するのじゃ。
+   - **【Google ドライブ保存モード（推奨）】**:
+     - **Reusable: ON**, **Ephemeral: OFF（チェックを外す）**, **Tags: `tag:Guest`**
+     - ★ Google ドライブに認証状態が保存されるため、初回に1度認証すれば、次回以降はシークレット登録もキー入力も不要でワンクリック起動できるようになるぞ！
+   - **【一時利用（使い捨て）モード】**:
+     - **Reusable: ON**, **Ephemeral: ON**, **Tags: `tag:Guest`**
 2. **Colab Secrets (シークレット) の登録 (任意)**:
-   - Google Colab の左メニューにある鍵マーク（Secrets）を開き、名前 `TAILSCALE_AUTHKEY`、値にコピーした認証キーを登録し、ノートブックへのアクセス権をONにするのじゃ。
-   - ※登録していない（または登録したくない）場合、セル実行時にキー（またはデバイス追加用コマンド）の入力を求めるプロンプトが表示されるので、そこで貼り付ければよいぞ。
+   - Google Colab の左メニューにある鍵マーク（Secrets）に名前 `TAILSCALE_AUTHKEY`、値にコピーした認証キーを登録しておくと、初回起動時も入力プロンプトなしで自動認証されるぞ。
+   - ※未登録の場合でも、初回実行時に入力プロンプト（またはブラウザ認証リンク）が表示されるので安心じゃ。
 3. **サーバーの起動**:
    - 上記の「Open In Colab」バッジからノートブックを開き、上から順番にセルを実行するのじゃ。
-   - シークレットが未登録の場合は、Tailscale 管理画面で表示されたキー（または「Add device」から取得できる `curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up --auth-key=tskey-auth-...` のようなコマンド全体）をプロンプトに入力（貼り付け）するのじゃ。入力された文字列から認証トークンが自動抽出されて接続されるぞ。
+   - `USE_GOOGLE_DRIVE = True` の場合、初回認証後に Google ドライブへ Tailscale の認証情報が自動保存されるぞ。次回以降はシークレットやキー入力なしで即座に自動再接続されるのじゃ！
    - 正常に起動すると、Tailscale の IP アドレスと、ローカル側で実行するためのコマンドの例が表示されるぞ。
 4. **ローカルからの接続実行**:
-   - Tailscale の MagicDNS を利用するため、ホスト名に **`wd14-tagger-colab`** を指定してクライアントモードを実行するのじゃ。これにより、毎回変わる IP アドレスを入力する手間を省けるぞ！
+   - Tailscale の MagicDNS を利用するため、ホスト名に **`google-colab`** を指定してクライアントモードを実行するのじゃ。これにより、毎回変わる IP アドレスを入力する手間を省けるぞ！
      ```
-     .\run_tagger.ps1 -Client -HostIP "wd14-tagger-colab" -Path "C:\Images" -Organize
+     .\run_tagger.ps1 -Client -HostIP "google-colab" -Path "C:\Images" -Organize
      ```
-   - ※MagicDNS名 `wd14-tagger-colab` は、あらかじめ設定ファイル `config.json` の接続先リスト（`server_hosts`）にも追加されているため、単に `-HostIP` を省略して実行し、接続先選択メニューから選ぶこともできるぞ。
+   - ※MagicDNS名 `google-colab` は、あらかじめ設定ファイル `config.json` の接続先リスト（`server_hosts`）にも追加されているため、単に `-HostIP` を省略して実行し、接続先選択メニューから選ぶこともできるぞ。
      ```
      .\run_tagger.ps1 -Client -Path "C:\Images" -Organize
      ```
 5. **終了手順**:
    - 推論サーバーを停止するには、Google Colab の起動セルの左側にある **停止（セル実行の中断）** ボタンをクリックするのじゃ。
-   - セッションを完全に終了し、Tailscale からデバイスを切断するには、ノートブックの最後にある `## 4. 終了処理（Tailscaleの切断）` セル（`!tailscale logout`）を実行するのじゃ。
-   - ※認証キー作成時に **Ephemeral** を有効にしているため、ログアウト処理を実行し忘れて Colab のタブを閉じた場合でも、しばらくすると自動的に Tailscale のデバイスリストから削除されるぞ。
+   - Google ドライブ保存モード時は、次回再接続のために認証情報を保持したまま安全に停止されるぞ。
+   - （完全に Tailscale からデバイスを削除・ログアウトしたい場合のみ、ノートブック最後の `!tailscale logout` を実行するのじゃ）
 
 ## 使い方 (Linux / Bash)
 
