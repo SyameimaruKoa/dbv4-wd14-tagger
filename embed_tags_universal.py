@@ -1,8 +1,9 @@
-import argparse, csv, os, sys, subprocess, glob, uuid, shutil, platform, json, io, socket, warnings, urllib.request, urllib.error, time
+import argparse, csv, os, sys, subprocess, glob, uuid, shutil, platform, json, io, socket, warnings, urllib.request, urllib.error, time, re
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import onnxruntime as ort
 from PIL import Image
+
 try:
     import pillow_avif
 except ImportError:
@@ -43,10 +44,15 @@ def safe_write(msg, end="\n"):
         tqdm.write(msg, end=end)
     except Exception:
         try:
-            sys.stdout.write((msg + end).encode("utf-8", errors="replace").decode(sys.stdout.encoding or "ascii", errors="replace"))
+            sys.stdout.write(
+                (msg + end)
+                .encode("utf-8", errors="replace")
+                .decode(sys.stdout.encoding or "ascii", errors="replace")
+            )
             sys.stdout.flush()
         except Exception:
             pass
+
 
 EXIFTOOL_CMD = "exiftool"
 VALID_EXTS = (".webp", ".jpg", ".jpeg", ".png", ".bmp", ".avif")
@@ -55,6 +61,12 @@ RATING_TAGS = [
     "sensitive",
     "sensitive_mild",
     "sensitive_high",
+    "sensitive_lvl1",
+    "sensitive_lvl2",
+    "sensitive_lvl3",
+    "sensitive_lvl4",
+    "sensitive_lvl5",
+    "sensitive_lvl6",
     "questionable",
     "explicit",
 ]
@@ -70,12 +82,25 @@ DEFAULT_CONFIG = {
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
     "client_timeout": 15,
+    "sensitive_split_mode": 2,
     "sensitive_split_threshold": 0.50,
+    "sensitive_split_thresholds_4way": [0.25, 0.50, 0.75],
+    "sensitive_split_thresholds_6way": [0.15, 0.30, 0.50, 0.70, 0.85],
     "general_threshold": 0.40,
+    "record_rating_percentages": True,
+    "record_raw_score": True,
+    "raw_score_format": "sensitive_score:{raw_score:.4f}",
+    "percentage_format": "sensitive:{percentage}%",
     "folder_names": {
         "general": "R-00",
         "sensitive_mild": "R-15_0",
         "sensitive_high": "R-15_5",
+        "sensitive_lvl1": "R-15_0",
+        "sensitive_lvl2": "R-15_1",
+        "sensitive_lvl3": "R-15_3",
+        "sensitive_lvl4": "R-15_5",
+        "sensitive_lvl5": "R-15_7",
+        "sensitive_lvl6": "R-15_9",
         "questionable": "R-17",
         "explicit": "R-18",
     },
@@ -194,7 +219,7 @@ class ExifToolWrapper:
                     "-charset",
                     "filename=utf8",
                     "-lang",
-                    "en"  # メッセージを英語に固定し、判定ミスを防ぐ
+                    "en",  # メッセージを英語に固定し、判定ミスを防ぐ
                 ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -342,7 +367,9 @@ def load_tags_from_path(tags_path):
         return [row[1] for row in reader]
 
 
-def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_file=None):
+def load_model_and_tags(
+    use_gpu=False, model_repo=None, model_file=None, tags_file=None
+):
     global MODEL_BATCH_LIMIT
     repo_id = model_repo or DEFAULT_CONFIG.get("model_repo")
     model_file = model_file or DEFAULT_CONFIG.get("model_file")
@@ -359,7 +386,13 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
         available_providers = ort.get_available_providers()
         desired_providers = []
         if IS_WINDOWS:
-            desired_providers.extend(["DmlExecutionProvider", "TensorrtExecutionProvider", "CUDAExecutionProvider"])
+            desired_providers.extend(
+                [
+                    "DmlExecutionProvider",
+                    "TensorrtExecutionProvider",
+                    "CUDAExecutionProvider",
+                ]
+            )
         elif IS_LINUX:
             desired_providers.extend(
                 [
@@ -375,9 +408,13 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
             if p_name in available_providers:
                 providers.append(p)
         if not providers:
-            print(f"[WARN] --gpu が指定されましたが、利用可能な GPU プロバイダ (CUDA / TensorRT 等) が見つかりませんでした。")
+            print(
+                f"[WARN] --gpu が指定されましたが、利用可能な GPU プロバイダ (CUDA / TensorRT 等) が見つかりませんでした。"
+            )
             if platform.machine() in ["aarch64", "arm64"]:
-                print(f"[INFO] ARM64 (Tegra / Switch) では PyPI に公式の CUDA 対応 onnxruntime-gpu wheel が提供されていないため、CPU (ARM NEON) で実行します。")
+                print(
+                    f"[INFO] ARM64 (Tegra / Switch) では PyPI に公式の CUDA 対応 onnxruntime-gpu wheel が提供されていないため、CPU (ARM NEON) で実行します。"
+                )
     providers.append("CPUExecutionProvider")
     sess_options = ort.SessionOptions()
     sess_options.log_severity_level = 3
@@ -388,12 +425,23 @@ def load_model_and_tags(use_gpu=False, model_repo=None, model_file=None, tags_fi
         )
         active_p = sess.get_providers()
         print(f"[INFO] アクティブプロバイダ: {active_p}")
-        compiling_providers = {"TensorrtExecutionProvider", "OpenVINOExecutionProvider", "MIGraphXExecutionProvider", "DmlExecutionProvider"}
-        active_compiling = [p for p in active_p if (p[0] if isinstance(p, tuple) else p) in compiling_providers]
+        compiling_providers = {
+            "TensorrtExecutionProvider",
+            "OpenVINOExecutionProvider",
+            "MIGraphXExecutionProvider",
+            "DmlExecutionProvider",
+        }
+        active_compiling = [
+            p
+            for p in active_p
+            if (p[0] if isinstance(p, tuple) else p) in compiling_providers
+        ]
         if active_compiling:
             comp_str = ", ".join(active_compiling)
             print(f"[INFO] 注意: コンパイルを伴うプロバイダ ({comp_str}) が有効です。")
-            print(f"[INFO]        初回推論（モデル構築）時にはエンジンのコンパイルが発生するため、最初の処理に時間がかかる場合があります。")
+            print(
+                f"[INFO]        初回推論（モデル構築）時にはエンジンのコンパイルが発生するため、最初の処理に時間がかかる場合があります。"
+            )
         if "OpenVINOExecutionProvider" in active_p:
             ov_opts = sess.get_provider_options().get("OpenVINOExecutionProvider", {})
             ov_dev = ov_opts.get("device_type", "CPU")
@@ -440,17 +488,32 @@ def organize_file(file_path, rating, is_pixiv=False, base_dirs=None):
     folder_mapping = APP_CONFIG.get("folder_names", {})
     folder_name = folder_mapping.get(rating)
     if folder_name is None:
-        base = rating.split("_")[0] if isinstance(rating, str) and "_" in rating else rating
+        base = (
+            rating.split("_")[0]
+            if isinstance(rating, str) and "_" in rating
+            else rating
+        )
         folder_name = folder_mapping.get(base, rating)
-        
+
     if is_pixiv:
-        if rating in ["general", "sensitive", "sensitive_mild", "sensitive_high"]:
+        if rating in [
+            "general",
+            "sensitive",
+            "sensitive_mild",
+            "sensitive_high",
+            "sensitive_lvl1",
+            "sensitive_lvl2",
+            "sensitive_lvl3",
+            "sensitive_lvl4",
+            "sensitive_lvl5",
+            "sensitive_lvl6",
+        ]:
             return False, file_path
-            
+
     try:
         abs_path = os.path.abspath(file_path)
         dir_name, file_name = os.path.dirname(abs_path), os.path.basename(abs_path)
-        
+
         target_dir = None
         if is_pixiv and base_dirs:
             best_base = None
@@ -463,14 +526,14 @@ def organize_file(file_path, rating, is_pixiv=False, base_dirs=None):
                 rel_path = os.path.relpath(abs_path, best_base)
                 target_path = os.path.join(parent_of_base, folder_name, rel_path)
                 target_dir = os.path.dirname(target_path)
-                
+
         if target_dir is None:
             target_dir = os.path.join(dir_name, folder_name)
             target_path = os.path.join(target_dir, file_name)
-            
+
         if os.path.abspath(dir_name) == os.path.abspath(target_dir):
             return False, abs_path
-            
+
         os.makedirs(target_dir, exist_ok=True)
         if os.path.exists(target_path):
             base_name, ext = os.path.splitext(file_name)
@@ -513,6 +576,66 @@ def collect_images(path_args, recursive=True):
     return sorted(list(set(collected)))
 
 
+def format_score_tags(sen_prob, config=None):
+    if config is None:
+        config = APP_CONFIG
+    tags = []
+    if config.get("record_raw_score", True):
+        fmt = config.get("raw_score_format", "sensitive_score:{raw_score:.4f}")
+        try:
+            tags.append(fmt.format(raw_score=float(sen_prob)))
+        except Exception:
+            tags.append(f"sensitive_score:{float(sen_prob):.4f}")
+    if config.get("record_rating_percentages", True):
+        fmt_pct = config.get("percentage_format", "sensitive:{percentage}%")
+        pct_val = f"{float(sen_prob) * 100:.1f}"
+        try:
+            tags.append(fmt_pct.format(percentage=pct_val))
+        except Exception:
+            tags.append(f"sensitive:{pct_val}%")
+    return tags
+
+
+def determine_sensitive_level(
+    sen_prob, split_mode=2, split_thresh=0.50, thresh_4way=None, thresh_6way=None
+):
+    if thresh_4way is None:
+        thresh_4way = APP_CONFIG.get(
+            "sensitive_split_thresholds_4way", [0.25, 0.50, 0.75]
+        )
+    if thresh_6way is None:
+        thresh_6way = APP_CONFIG.get(
+            "sensitive_split_thresholds_6way", [0.15, 0.30, 0.50, 0.70, 0.85]
+        )
+
+    if split_mode == 6:
+        t1, t2, t3, t4, t5 = thresh_6way
+        if sen_prob < t1:
+            return "sensitive_lvl1"
+        elif sen_prob < t2:
+            return "sensitive_lvl2"
+        elif sen_prob < t3:
+            return "sensitive_lvl3"
+        elif sen_prob < t4:
+            return "sensitive_lvl4"
+        elif sen_prob < t5:
+            return "sensitive_lvl5"
+        else:
+            return "sensitive_lvl6"
+    elif split_mode == 4:
+        t1, t2, t3 = thresh_4way
+        if sen_prob < t1:
+            return "sensitive_lvl1"
+        elif sen_prob < t2:
+            return "sensitive_lvl2"
+        elif sen_prob < t3:
+            return "sensitive_lvl3"
+        else:
+            return "sensitive_lvl4"
+    else:
+        return "sensitive_mild" if sen_prob < split_thresh else "sensitive_high"
+
+
 def calculate_rating(
     probs,
     tags,
@@ -521,6 +644,9 @@ def calculate_rating(
     ignore_sensitive,
     gen_thresh,
     fname_disp="",
+    split_mode=2,
+    thresh_4way=None,
+    thresh_6way=None,
 ):
     rating_probs = probs[:4]
     if rating_probs[0] >= gen_thresh:
@@ -536,10 +662,14 @@ def calculate_rating(
             rating_idx = np.argmax(rating_probs)
     rating = tags[rating_idx]
     if rating == "sensitive":
-        rating = (
-            "sensitive_mild" if rating_probs[1] < split_thresh else "sensitive_high"
+        rating = determine_sensitive_level(
+            rating_probs[1],
+            split_mode=split_mode,
+            split_thresh=split_thresh,
+            thresh_4way=thresh_4way,
+            thresh_6way=thresh_6way,
         )
-    if rating in ["sensitive", "sensitive_mild", "sensitive_high"] and ignore_sensitive:
+    if ("sensitive" in rating) and ignore_sensitive:
         rating = "general"
 
     if fname_disp:
@@ -604,18 +734,32 @@ def run_server(port, use_gpu, model_repo, model_file, tags_file):
 
 def process_images(args):
     host, port, is_client = args.host, args.port, args.mode == "client"
-    split_thresh, gen_thresh, client_timeout = (
-        APP_CONFIG.get("sensitive_split_threshold", 0.50),
-        APP_CONFIG.get("general_threshold", 0.40),
-        APP_CONFIG.get("client_timeout", 15),
+    split_mode = (
+        args.sensitive_split_mode
+        if args.sensitive_split_mode is not None
+        else APP_CONFIG.get("sensitive_split_mode", 2)
     )
+    split_thresh = APP_CONFIG.get("sensitive_split_threshold", 0.50)
+    thresh_4way = APP_CONFIG.get("sensitive_split_thresholds_4way", [0.25, 0.50, 0.75])
+    thresh_6way = APP_CONFIG.get(
+        "sensitive_split_thresholds_6way", [0.15, 0.30, 0.50, 0.70, 0.85]
+    )
+    gen_thresh = APP_CONFIG.get("general_threshold", 0.40)
+    client_timeout = APP_CONFIG.get("client_timeout", 15)
+
+    runtime_config = dict(APP_CONFIG)
+    if args.record_ratio is not None:
+        runtime_config["record_raw_score"] = args.record_ratio
+        runtime_config["record_rating_percentages"] = args.record_ratio
+
     if not is_client:
         print("[INFO] モデルをロード中...")
         init_global_model(args.gpu, args.model_repo, args.model_file, args.tags_file)
     server_url = f"http://{host}:{port}"
     if is_client:
         print(f"[INFO] サーバーに接続: {server_url} (Timeout: {client_timeout}s)")
-    if not args.no_tag:
+    need_et = (not args.no_tag) or args.organize
+    if need_et:
         et_wrapper.start()
     tags = tags_global
     if is_client:
@@ -623,16 +767,16 @@ def process_images(args):
             tags_path = resolve_hf_or_local(args.model_repo, args.tags_file, "タグCSV")
         except Exception as e:
             print(f"[ERROR] タグCSVの読み込みに失敗しました: {e}")
-            if not args.no_tag:
+            if need_et:
                 et_wrapper.stop()
             return
         tags = load_tags_from_path(tags_path)
     use_recursive = args.recursive if args.recursive is not None else not args.organize
     target_files = collect_images(args.images, recursive=use_recursive)
-    
+
     base_dirs = []
     for p in args.images:
-        base = p.split('*')[0].split('?')[0]
+        base = p.split("*")[0].split("?")[0]
         abs_base = os.path.abspath(base)
         if not os.path.isdir(abs_base):
             abs_base = os.path.dirname(abs_base)
@@ -640,7 +784,7 @@ def process_images(args):
 
     if not target_files:
         print("[WARN] 対象ファイルが見つかりません。")
-        if not args.no_tag:
+        if need_et:
             et_wrapper.stop()
         return
     batch_size = args.batch_size if args.batch_size > 0 else 1
@@ -671,20 +815,37 @@ def process_images(args):
     if sess_global is not None:
         try:
             active_p = sess_global.get_providers()
-            compiling_providers = {"TensorrtExecutionProvider", "OpenVINOExecutionProvider", "MIGraphXExecutionProvider", "DmlExecutionProvider"}
-            active_compiling = [p for p in active_p if (p[0] if isinstance(p, tuple) else p) in compiling_providers]
+            compiling_providers = {
+                "TensorrtExecutionProvider",
+                "OpenVINOExecutionProvider",
+                "MIGraphXExecutionProvider",
+                "DmlExecutionProvider",
+            }
+            active_compiling = [
+                p
+                for p in active_p
+                if (p[0] if isinstance(p, tuple) else p) in compiling_providers
+            ]
             if active_compiling:
-                print(f"[INFO] ウォームアップ推論（バッチサイズ: {batch_size}）を実行中...")
+                print(
+                    f"[INFO] ウォームアップ推論（バッチサイズ: {batch_size}）を実行中..."
+                )
                 t_wu_start = time.time()
                 dummy_shape_full = (batch_size, 448, 448, 3)
                 dummy_input_full = np.zeros(dummy_shape_full, dtype=np.float32)
-                sess_global.run([label_name_cache], {input_name_cache: dummy_input_full})
+                sess_global.run(
+                    [label_name_cache], {input_name_cache: dummy_input_full}
+                )
                 if batch_size > 1:
                     dummy_shape_single = (1, 448, 448, 3)
                     dummy_input_single = np.zeros(dummy_shape_single, dtype=np.float32)
-                    sess_global.run([label_name_cache], {input_name_cache: dummy_input_single})
+                    sess_global.run(
+                        [label_name_cache], {input_name_cache: dummy_input_single}
+                    )
                 warmup_time = time.time() - t_wu_start
-                print(f"[INFO] ウォームアップ完了 (所要時間: {warmup_time:.2f}秒)。エンジンの準備が整いました。")
+                print(
+                    f"[INFO] ウォームアップ完了 (所要時間: {warmup_time:.2f}秒)。エンジンの準備が整いました。"
+                )
         except Exception as e:
             print(f"[WARN] ウォームアップ推論スキップ: {e}")
 
@@ -696,9 +857,17 @@ def process_images(args):
     pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
 
     def update_pbar_postfix():
-        inf_sp = f"{inferred_count / inferred_time:.1f}/s" if inferred_time > 0 else "0.0/s"
-        skip_sp = f"{skipped_tag_count / skipped_tag_time:.1f}/s" if skipped_tag_time > 0 else "0.0/s"
-        pbar.set_postfix_str(f"推論:{inferred_count}枚({inf_sp}) Skip:{skipped_tag_count}枚({skip_sp})")
+        inf_sp = (
+            f"{inferred_count / inferred_time:.1f}/s" if inferred_time > 0 else "0.0/s"
+        )
+        skip_sp = (
+            f"{skipped_tag_count / skipped_tag_time:.1f}/s"
+            if skipped_tag_time > 0
+            else "0.0/s"
+        )
+        pbar.set_postfix_str(
+            f"推論:{inferred_count}枚({inf_sp}) Skip:{skipped_tag_count}枚({skip_sp})"
+        )
 
     executor = (
         ThreadPoolExecutor(max_workers=io_workers)
@@ -719,7 +888,9 @@ def process_images(args):
         else:
             skipped_count += 1
         if args.organize and rating:
-            moved, new_path = organize_file(img_path, rating, getattr(args, 'pixiv', False), base_dirs)
+            moved, new_path = organize_file(
+                img_path, rating, getattr(args, "pixiv", False), base_dirs
+            )
             if moved:
                 organized_count += 1
                 final_path = new_path
@@ -744,12 +915,23 @@ def process_images(args):
             args.ignore_sensitive,
             gen_thresh,
             fname_disp,
+            split_mode=split_mode,
+            thresh_4way=thresh_4way,
+            thresh_6way=thresh_6way,
         )
         detected_tags = []
+        if rating:
+            detected_tags.append(rating)
+        score_tags = format_score_tags(probs[1], runtime_config)
+        detected_tags.extend(score_tags)
         for i, p in enumerate(probs):
             if p > args.thresh:
-                detected_tags.append(tags[i])
-        finalize_result(item["path"], item["existing_tags"], detected_tags, rating, probs)
+                tag_name = tags[i]
+                if tag_name not in detected_tags:
+                    detected_tags.append(tag_name)
+        finalize_result(
+            item["path"], item["existing_tags"], detected_tags, rating, probs
+        )
 
     def run_batch(batch_items):
         nonlocal inferred_count, inferred_time
@@ -803,7 +985,9 @@ def process_images(args):
 
         if len(valid_items) == 1:
             probs_list = (
-                [batch_probs[0]] if getattr(batch_probs, "ndim", 1) > 1 else [batch_probs]
+                [batch_probs[0]]
+                if getattr(batch_probs, "ndim", 1) > 1
+                else [batch_probs]
             )
         else:
             probs_list = batch_probs
@@ -817,9 +1001,8 @@ def process_images(args):
             t_file_start = time.time()
             try:
                 rating, existing_tags, need_inference = None, [], True
-                if not args.no_tag or args.organize:
-                    if et_wrapper.running:
-                        existing_tags = et_wrapper.get_tags(img_path)
+                if need_et and et_wrapper.running:
+                    existing_tags = et_wrapper.get_tags(img_path)
                 if args.force:
                     need_inference = True
                 elif existing_tags:
@@ -827,11 +1010,37 @@ def process_images(args):
                         need_inference = True
                     else:
                         if args.organize:
-                            found_ratings = [t for t in existing_tags if t in RATING_TAGS]
-                            if found_ratings:
-                                rating, need_inference = found_ratings[0], False
+                            raw_score = None
+                            for t in existing_tags:
+                                m = re.match(r"^sensitive_score:([0-9\.]+)$", t.strip())
+                                if m:
+                                    try:
+                                        raw_score = float(m.group(1))
+                                        break
+                                    except ValueError:
+                                        pass
+                            if raw_score is not None:
+                                rating = determine_sensitive_level(
+                                    raw_score,
+                                    split_mode=split_mode,
+                                    split_thresh=split_thresh,
+                                    thresh_4way=thresh_4way,
+                                    thresh_6way=thresh_6way,
+                                )
+                                if args.ignore_sensitive:
+                                    rating = "general"
+                                need_inference = False
                             else:
-                                need_inference = True
+                                non_sen = [
+                                    t
+                                    for t in existing_tags
+                                    if t in ["general", "questionable", "explicit"]
+                                ]
+                                if non_sen:
+                                    rating = non_sen[0]
+                                    need_inference = False
+                                else:
+                                    need_inference = True
                         else:
                             need_inference = False
                 if need_inference:
@@ -857,7 +1066,9 @@ def process_images(args):
                             {"path": img_path, "existing_tags": existing_tags}, probs
                         )
                     else:
-                        pending.append({"path": img_path, "existing_tags": existing_tags})
+                        pending.append(
+                            {"path": img_path, "existing_tags": existing_tags}
+                        )
                         if len(pending) >= batch_size:
                             run_batch(pending[:batch_size])
                             pending = pending[batch_size:]
@@ -887,7 +1098,7 @@ def process_images(args):
     finally:
         if executor:
             executor.shutdown(wait=True)
-        if not args.no_tag:
+        if need_et:
             et_wrapper.stop()
         pbar.close()
 
@@ -903,35 +1114,57 @@ def process_images(args):
             first_b_count = batch_history[0]["count"]
             first_b_time = batch_history[0]["time"]
             t1_per_img = first_b_time / first_b_count
-            
+
             rest_count = sum(b["count"] for b in batch_history[1:])
             rest_time = sum(b["time"] for b in batch_history[1:])
             t_rest_per_img = rest_time / rest_count if rest_count > 0 else 0
-            
-            if rest_count > 0 and (first_b_time > 1.0) and (t1_per_img > 2.0 * t_rest_per_img):
+
+            if (
+                rest_count > 0
+                and (first_b_time > 1.0)
+                and (t1_per_img > 2.0 * t_rest_per_img)
+            ):
                 outlier_detected = True
                 main_count, main_time = rest_count, rest_time
 
         inf_fps = main_count / main_time if main_time > 0 else 0
         inf_ms = (main_time / main_count) * 1000 if main_count > 0 else 0
-        print(f"  ・推論実行ファイル (AI演算あり) : {inferred_count} 枚 | 速度: {inf_fps:.2f} img/s ({inf_ms:.1f} ms/img)")
+        print(
+            f"  ・推論実行ファイル (AI演算あり) : {inferred_count} 枚 | 速度: {inf_fps:.2f} img/s ({inf_ms:.1f} ms/img)"
+        )
         if outlier_detected:
             all_fps = inferred_count / inferred_time if inferred_time > 0 else 0
-            t1_per_img_ms = (first_b_time / first_b_count) * 1000 if first_b_count > 0 else 0
-            print(f"       ├─ 1枚目(初回バッチ)処理時間: {first_b_time:.2f} 秒 ({t1_per_img_ms:.1f} ms/img)")
-            print(f"       ├─ 1枚目を含む全推論速度: {all_fps:.2f} img/s (合計処理時間: {inferred_time:.2f} 秒)")
-            print(f"       └─ ※初回バッチの遅延 ({first_b_time:.2f}秒) をコンパイル外れ値としてメイン速度から自動除外しました。")
+            t1_per_img_ms = (
+                (first_b_time / first_b_count) * 1000 if first_b_count > 0 else 0
+            )
+            print(
+                f"       ├─ 1枚目(初回バッチ)処理時間: {first_b_time:.2f} 秒 ({t1_per_img_ms:.1f} ms/img)"
+            )
+            print(
+                f"       ├─ 1枚目を含む全推論速度: {all_fps:.2f} img/s (合計処理時間: {inferred_time:.2f} 秒)"
+            )
+            print(
+                f"       └─ ※初回バッチの遅延 ({first_b_time:.2f}秒) をコンパイル外れ値としてメイン速度から自動除外しました。"
+            )
     else:
         print("  ・推論実行ファイル (AI演算あり) : 0 枚")
 
     if skipped_tag_count > 0:
         skip_fps = skipped_tag_count / skipped_tag_time if skipped_tag_time > 0 else 0
-        skip_ms = (skipped_tag_time / skipped_tag_count) * 1000 if skipped_tag_count > 0 else 0
-        print(f"  ・演算スキップファイル (既存タグ) : {skipped_tag_count} 枚 | 速度: {skip_fps:.2f} img/s ({skip_ms:.1f} ms/img)")
+        skip_ms = (
+            (skipped_tag_time / skipped_tag_count) * 1000
+            if skipped_tag_count > 0
+            else 0
+        )
+        print(
+            f"  ・演算スキップファイル (既存タグ) : {skipped_tag_count} 枚 | 速度: {skip_fps:.2f} img/s ({skip_ms:.1f} ms/img)"
+        )
     else:
         print("  ・演算スキップファイル (既存タグ) : 0 枚")
 
-    print(f"  ・詳細: タグ書き込み: {processed_count} 枚, 整理移動: {organized_count} 枚")
+    print(
+        f"  ・詳細: タグ書き込み: {processed_count} 枚, 整理移動: {organized_count} 枚"
+    )
     if not args.no_report:
         if REPORT_DATA:
             with open(REPORT_LOG_FILE, "w", encoding="utf-8") as f:
@@ -1023,6 +1256,25 @@ def main():
     net_group = parser.add_argument_group("ネットワーク設定")
     net_group.add_argument("--host", default=None, help="サーバーIPアドレス")
     net_group.add_argument("--port", type=int, default=None, help="ポート番号")
+    conf_group.add_argument(
+        "--sensitive-split-mode",
+        type=int,
+        choices=[2, 4, 6],
+        default=None,
+        help="Sensitiveの分割モード (2, 4, 6 / 未指定時はconfig.json参照)",
+    )
+    conf_group.add_argument(
+        "--record-ratio",
+        action="store_true",
+        default=None,
+        help="メタデータにRAWスコアおよび割合スコアを書き込む",
+    )
+    conf_group.add_argument(
+        "--no-record-ratio",
+        action="store_false",
+        dest="record_ratio",
+        help="メタデータへのスコア書き込みを無効化する",
+    )
     misc_group = parser.add_argument_group("その他・旧機能")
     misc_group.add_argument("--rating-thresh", type=float, default=None)
     misc_group.add_argument("--ignore-sensitive", action="store_true")
@@ -1038,13 +1290,9 @@ def main():
         load_config()
         sys.exit(0)
     if args.model_repo is None:
-        args.model_repo = APP_CONFIG.get(
-            "model_repo", DEFAULT_CONFIG.get("model_repo")
-        )
+        args.model_repo = APP_CONFIG.get("model_repo", DEFAULT_CONFIG.get("model_repo"))
     if args.model_file is None:
-        args.model_file = APP_CONFIG.get(
-            "model_file", DEFAULT_CONFIG.get("model_file")
-        )
+        args.model_file = APP_CONFIG.get("model_file", DEFAULT_CONFIG.get("model_file"))
     if args.tags_file is None:
         args.tags_file = APP_CONFIG.get("tags_file", DEFAULT_CONFIG.get("tags_file"))
     if args.host is None:
@@ -1080,7 +1328,9 @@ def main():
     if args.port is None:
         args.port = APP_CONFIG.get("server_port", 5000)
     if args.mode == "server":
-        run_server(args.port, args.gpu, args.model_repo, args.model_file, args.tags_file)
+        run_server(
+            args.port, args.gpu, args.model_repo, args.model_file, args.tags_file
+        )
     else:
         if not args.images:
             print(

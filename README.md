@@ -4,23 +4,22 @@
 
 このツールは、AI (WD14 Tagger) を使用して画像認識を行い、タグ付け・フォルダ整理・レポート作成を行うツールじゃ。
 
-
 Windows (PowerShell) と Linux (Bash) の両方に対応しておる。
 
 ## 特徴
 
-* **3つの実行モード** : 通常実行、推論サーバー、クライアント送信モード。
-* **柔軟なアクション** : 「タグ付けだけ」「整理だけ」「レポート作成だけ」など自由に組み合わせ可能。
-* **事故防止** : 引数なしで実行しても、環境構築のみを行い、勝手にファイルを書き換えることはない。
-* **完全日本語** : ヘルプもログも日本語じゃ。
+- **3つの実行モード** : 通常実行、推論サーバー、クライアント送信モード。
+- **柔軟なアクション** : 「タグ付けだけ」「整理だけ」「レポート作成だけ」など自由に組み合わせ可能。
+- **事故防止** : 引数なしで実行しても、環境構築のみを行い、勝手にファイルを書き換えることはない。
+- **完全日本語** : ヘルプもログも日本語じゃ。
 
 ## 推奨モデル
 
 以下が現在の推奨モデルじゃ。`config.json` やコマンド引数で自由に変更できるぞ。
 
-* **デフォルト (バランス・バッチ推論対応):** `SmilingWolf/wd-swinv2-tagger-v3`
-* **最高精度 (高スペックPC向け):** `SmilingWolf/wd-eva02-large-tagger-v3` または `SmilingWolf/wd-vit-large-tagger-v3`
-* **軽量・高速:** `SmilingWolf/wd-vit-tagger-v3` または `SmilingWolf/wd-convnext-tagger-v3`
+- **デフォルト (バランス・バッチ推論対応):** `SmilingWolf/wd-swinv2-tagger-v3`
+- **最高精度 (高スペックPC向け):** `SmilingWolf/wd-eva02-large-tagger-v3` または `SmilingWolf/wd-vit-large-tagger-v3`
+- **軽量・高速:** `SmilingWolf/wd-vit-tagger-v3` または `SmilingWolf/wd-convnext-tagger-v3`
 
 ### 利用可能なモデル一覧 (SmilingWolf氏作)
 
@@ -28,21 +27,21 @@ Windows (PowerShell) と Linux (Bash) の両方に対応しておる。
 
 #### V3 (最新世代・標準サイズ)
 
-* **`SmilingWolf/wd-swinv2-tagger-v3`** : 当ツールのデフォルト。精度と速度のバランスが良く、バッチ推論にも強いため大量の画像処理に向いておる。
-* **`SmilingWolf/wd-vit-tagger-v3`** : 非常に人気のある軽量・高速モデルじゃ。
-* **`SmilingWolf/wd-convnext-tagger-v3`** : V2時代からあるCNNベースの系譜。標準的な性能じゃな。
+- **`SmilingWolf/wd-swinv2-tagger-v3`** : 当ツールのデフォルト。精度と速度のバランスが良く、バッチ推論にも強いため大量の画像処理に向いておる。
+- **`SmilingWolf/wd-vit-tagger-v3`** : 非常に人気のある軽量・高速モデルじゃ。
+- **`SmilingWolf/wd-convnext-tagger-v3`** : V2時代からあるCNNベースの系譜。標準的な性能じゃな。
 
 #### Large V3 (最新世代・大規模サイズ)
 
-* **`SmilingWolf/wd-eva02-large-tagger-v3`** : 最高クラスの精度を誇る大規模モデルじゃ。細かな装飾まで拾いやすいが、ファイルサイズが大きく推論に少し時間がかかるぞ。
-* **`SmilingWolf/wd-vit-large-tagger-v3`** : 同じく大サイズの高精度モデルじゃ。VRAM/RAMに余裕があるなら試してみるがよい。
+- **`SmilingWolf/wd-eva02-large-tagger-v3`** : 最高クラスの精度を誇る大規模モデルじゃ。細かな装飾まで拾いやすいが、ファイルサイズが大きく推論に少し時間がかかるぞ。
+- **`SmilingWolf/wd-vit-large-tagger-v3`** : 同じく大サイズの高精度モデルじゃ。VRAM/RAMに余裕があるなら試してみるがよい。
 
 #### V2 (旧世代)
 
-* **`SmilingWolf/wd-v1-4-swinv2-tagger-v2`** : 以前のデフォルトモデルじゃ。安定しておるが、タグの種類はV3に劣るのう。
-* **`SmilingWolf/wd-v1-4-moat-tagger-v2`** : V2世代での高精度モデルじゃった。
-* **`SmilingWolf/wd-v1-4-convnext-tagger-v2`** : 旧標準モデルじゃ。
-* **`SmilingWolf/wd-v1-4-vit-tagger-v2`** : 旧軽量モデルじゃな。
+- **`SmilingWolf/wd-v1-4-swinv2-tagger-v2`** : 以前のデフォルトモデルじゃ。安定しておるが、タグの種類はV3に劣るのう。
+- **`SmilingWolf/wd-v1-4-moat-tagger-v2`** : V2世代での高精度モデルじゃった。
+- **`SmilingWolf/wd-v1-4-convnext-tagger-v2`** : 旧標準モデルじゃ。
+- **`SmilingWolf/wd-v1-4-vit-tagger-v2`** : 旧軽量モデルじゃな。
 
 他のモデルを使う場合は `config.json` の `model_repo` やコマンド引数 `-ModelRepo` などで指定するのじゃ。
 
@@ -149,7 +148,9 @@ GPUを使う場合は `-Gpu` をつける（推奨）。
 基本的には `run_tagger.sh` を使用する。
 
 ### 1. 初回セットアップ
+
 引数なしで実行すると必要な仮想環境が自動構築される。
+
 ```bash
 ./run_tagger.sh
 ```
@@ -158,19 +159,22 @@ GPUを使う場合は `-Gpu` をつける（推奨）。
 > `onnxruntime` などの各種ライブラリは、現在 Python 3.14 用の公式バイナリ(wheel)がPyPIに存在しない。システム全体の標準 `python3` が 3.14 の場合、`run_tagger.sh` は自動的にシステム内の Python 3.13 以下の互換バージョン（`python3.13` など）を検出して仮想環境を作成するぞ。
 
 ### 2. NVIDIA GPU (CUDA / TensorRT) 有効化セットアップ
+
 Linux 環境において NVIDIA GPU (`CUDAExecutionProvider` / `TensorrtExecutionProvider`) を使用して推論を最高速化する場合、`run_tagger.sh` が必要な runtime ライブラリ（`nvidia-cuda-runtime`, `nvidia-cublas`, `nvidia-cudnn`, `tensorrt` 10.x 等）を仮想環境へ自動的に組み込み、ライブラリパスを自動構成するぞ。
 
 `-g`（または `--gpu` / `--force-nvidia`）を付けて実行するのじゃ：
+
 ```bash
 ./run_tagger.sh -g -p /path/to/images
 ```
 
-* **TensorRT ウォームアップ処理**:  
+- **TensorRT ウォームアップ処理**:  
   TensorRT 等のコンパイルを伴うプロバイダが有効な場合、初回起動時やバッチサイズ変更時にエンジンの自動事前構築（ウォームアップ推論）が行われるぞ。初回のみ準備に時間がかかるが、ウォームアップ完了後は非常に高速に推論が行われるのじゃ。
-* **外れ値判定サマリー**:  
+- **外れ値判定サマリー**:  
   推論処理完了時のサマリーログでは、ウォームアップ所要時間や、万が一発生したコンパイル遅延（外れ値）の自動除外・初回処理時間などの詳細データが分かりやすく報告されるぞ。
 
 ### 3. Intel GPU (OpenVINO) 有効化セットアップ
+
 Linux 上で Intel GPU（HD Graphics / Iris Xe / Arc）を使用して推論を高速化する場合、OpenCL ドライバーとデバイスアクセス権限が必要じゃ。初回のみ以下のコマンドを実行しておくのじゃ。
 
 ```bash
@@ -185,14 +189,17 @@ newgrp render
 ```
 
 設定後、`-g`（または `--gpu`）を付けて実行すると Intel GPU (OpenVINO) で高速動作するぞ！
+
 ```bash
 ./run_tagger.sh -g -p /path/to/images
 ```
 
 ### 4. AMD GPU (ROCm) 有効化・動作仕様
+
 Linux 上で AMD GPU を使用する場合、`run_tagger.sh` は `onnxruntime-rocm` パッケージを自動インストールし、`/usr/lib/x86_64-linux-gnu` 等のシステムライブラリ（`librocm_smi64.so` や `libroctracer64.so` 等）に対する動的 SONAME 互換エイリアス（`venv_amd/lib/rocm_compat/`）を自動構築するぞ。
 
 `-g`（または `--force-amd`）を付けて実行できるのじゃ：
+
 ```bash
 ./run_tagger.sh -g -p /path/to/images
 ```
@@ -202,14 +209,16 @@ Linux 上で AMD GPU を使用する場合、`run_tagger.sh` は `onnxruntime-ro
 Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合の動作仕様および制限事項は以下の通りじゃ。
 
 > **Switchroot Ubuntu 24.04 の既知の仕様・制限事項:**
-> * **No CUDA compiler support (CUDA runtime 10.0 is preinstalled and functions)**:
+>
+> - **No CUDA compiler support (CUDA runtime 10.0 is preinstalled and functions)**:
 >   CUDA ランタイム 10.0 (`/usr/lib/aarch64-linux-gnu/tegra/libcuda.so.1`) は組み込まれており機能するが、CUDA コンパイラ (`nvcc`) および cuDNN / TensorRT 開発パッケージは含まれておらぬ。
-> * **PyPI の ARM64 パッケージ制限**:
+> - **PyPI の ARM64 パッケージ制限**:
 >   PyPI には ARM64 (aarch64) 向けの `onnxruntime-gpu` が存在せず、また ONNX Runtime は 1.8 以降 CUDA 10.x をサポートしておらぬ（Python 3.12 対応版は CUDA 11.8/12 専用）。
-> * **スタンドアロン動作**:
+> - **スタンドアロン動作**:
 >   そのため Switch 単体では、`run_tagger.sh` が自動的に ARM64 (aarch64) を判別し、クラッシュすることなく **CPU (ARM NEON SIMD 最適化マルチスレッド)** で安全・確実に推論を行う設計になっておるぞ。
-> * **GPU 推論の推奨構成 (クライアント / サーバー)**:
+> - **GPU 推論の推奨構成 (クライアント / サーバー)**:
 >   Switch 上の画像を GPU で超高速に処理したい場合は、GPU 搭載 PC でサーバーを起動し、Switch 側から `--client` で接続するのが最もおすすめじゃ！
+>
 >   ```bash
 >   # 【メイン PC (GPU 搭載)】推論サーバー起動
 >   python embed_tags_universal.py --mode server --port 5000 --gpu
@@ -226,7 +235,6 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
    実際に AI モデルに画像を入力し、メタデータ解析・タグ推論計算を行ったファイルとその平均処理速度 (`img/s`, `ms/img`)。
 2. **演算スキップファイル (既存タグ)**:  
    既に画像メタデータ (XMP) にタグが存在し、AI 推論計算をスキップして既存タグで高速判定・整理を行ったファイルとその処理速度。
-
 
 ## オプション一覧
 
@@ -258,16 +266,21 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
 
 ### 設定項目一覧
 
-| **項目名 (key)**            | **デフォルト値**                    | **説明**                                                                                                                                                                                                      |
-| --------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `model_repo`                | `"SmilingWolf/wd-swinv2-tagger-v3"` | 使用するモデル/タグのリポジトリID。                                                                                                                                                                           |
-| `model_file`                | `"model.onnx"`                      | 使用するモデルファイル名（またはローカルパス）。                                                                                                                                                              |
-| `tags_file`                 | `"selected_tags.csv"`               | 使用するタグCSVファイル名（またはローカルパス）。                                                                                                                                                             |
-| `general_threshold`         | `0.40`                              | **General（全年齢）判定の安全弁**。`AIが「Generalである確率」がこの値以上なら、たとえ他のR指定スコアが高くても強制的に「General」として扱う。`誤爆（安全な画像をR指定にしてしまうこと）を防ぐための設定じゃ。 |
-| `sensitive_split_threshold` | `0.50`                              | **Sensitive（軽度の性的表現）の強度分け**。``Sensitiveタグが付いた画像のうち、スコアがこの値未満なら「mild（R-15程度）」、以上なら「high（R-15強）」としてフォルダを分けることができる。                      |
-| `server_host`               | `"localhost"`                       | サーバーモードやクライアントモードで使うデフォルトのIPアドレス。                                                                                                                                              |
-| `server_port`               | `5000`                              | 通信に使用するポート番号。                                                                                                                                                                                    |
-| `folder_names`              | (下記参照)                          | 整理モード (`--organize`) で振り分けられるフォルダ名の設定。                                                                                                                                                  |
+| **項目名 (key)**                  | **デフォルト値**                    | **説明**                                                                                                                                                                                                      |
+| --------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model_repo`                      | `"SmilingWolf/wd-swinv2-tagger-v3"` | 使用するモデル/タグのリポジトリID。                                                                                                                                                                           |
+| `model_file`                      | `"model.onnx"`                      | 使用するモデルファイル名（またはローカルパス）。                                                                                                                                                              |
+| `tags_file`                       | `"selected_tags.csv"`               | 使用するタグCSVファイル名（またはローカルパス）。                                                                                                                                                             |
+| `general_threshold`               | `0.40`                              | **General（全年齢）判定の安全弁**。`AIが「Generalである確率」がこの値以上なら、たとえ他のR指定スコアが高くても強制的に「General」として扱う。`誤爆（安全な画像をR指定にしてしまうこと）を防ぐための設定じゃ。 |
+| `sensitive_split_threshold`       | `0.50`                              | **Sensitive（軽度の性的表現）の強度分け**。``Sensitiveタグが付いた画像のうち、スコアがこの値未満なら「mild（R-15程度）」、以上なら「high（R-15強）」としてフォルダを分けることができる。                      |
+| `sensitive_split_mode`            | `2`                                 | **Sensitive の分割数**。`2`=mild/high の2分割（デフォルト）、`4`=lvl1〜lvl4 の4分割、`6`=lvl1〜lvl6 の6分割。CLI の `--sensitive-split-mode` で上書き可。                                                     |
+| `sensitive_split_thresholds_4way` | `[0.25, 0.50, 0.75]`                | 4分割モード時の境界スコア（3つの閾値で4段階）。                                                                                                                                                               |
+| `sensitive_split_thresholds_6way` | `[0.15, 0.30, 0.50, 0.70, 0.85]`    | 6分割モード時の境界スコア（5つの閾値で6段階）。                                                                                                                                                               |
+| `record_rating_percentages`       | `true`                              | `sensitive:XX.X%` 形式の割合タグを XMP に記録するか否か。CLI の `--record-ratio` / `--no-record-ratio` で上書き可。                                                                                           |
+| `record_raw_score`                | `true`                              | `sensitive_score:0.XXXX` 形式の RAW スコアタグを XMP に記録するか否か。`--organize` 時の再整理に使用される。                                                                                                  |
+| `server_host`                     | `"localhost"`                       | サーバーモードやクライアントモードで使うデフォルトのIPアドレス。                                                                                                                                              |
+| `server_port`                     | `5000`                              | 通信に使用するポート番号。                                                                                                                                                                                    |
+| `folder_names`                    | (下記参照)                          | 整理モード (`--organize`) で振り分けられるフォルダ名の設定。                                                                                                                                                  |
 
 ### folder_names (フォルダ名設定)
 
@@ -275,12 +288,18 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
 
 例えば R-18 を Adult に変えたりできるぞ。
 
-| **キー**         | **デフォルトフォルダ名** | **対応するレーティング**           |
-| ---------------- | ------------------------ | ---------------------------------- |
-| `general`        | `"R-00"`                 | 全年齢 (Safe)                      |
-| `sensitive_mild` | `"R-15_0"`               | 軽度の際どい画像                   |
-| `sensitive_high` | `"R-15_5"`               | 強めの際どい画像                   |
-| `questionable`   | `"R-17"`                 | 露出が多い、または判断が難しい画像 |
-| `explicit`       | `"R-18"`                 | 成人向け (Explicit)                |
+| **キー**         | **デフォルトフォルダ名** | **対応するレーティング**                      |
+| ---------------- | ------------------------ | --------------------------------------------- |
+| `general`        | `"R-00"`                 | 全年齢 (Safe)                                 |
+| `sensitive_mild` | `"R-15_0"`               | 軽度の際どい画像（2分割モード: lowスコア側）  |
+| `sensitive_high` | `"R-15_5"`               | 強めの際どい画像（2分割モード: highスコア側） |
+| `sensitive_lvl1` | `"R-15_1"`               | Sensitive 4/6分割モード: 最も軽度             |
+| `sensitive_lvl2` | `"R-15_2"`               | Sensitive 4/6分割モード: やや軽度             |
+| `sensitive_lvl3` | `"R-15_3"`               | Sensitive 4/6分割モード: 中程度               |
+| `sensitive_lvl4` | `"R-15_4"`               | Sensitive 4/6分割モード: やや強め             |
+| `sensitive_lvl5` | `"R-15_5a"`              | Sensitive 6分割モード: 強め                   |
+| `sensitive_lvl6` | `"R-15_6"`               | Sensitive 6分割モード: 最も強め               |
+| `questionable`   | `"R-17"`                 | 露出が多い、または判断が難しい画像            |
+| `explicit`       | `"R-18"`                 | 成人向け (Explicit)                           |
 
 作成: わっち (Gemini)

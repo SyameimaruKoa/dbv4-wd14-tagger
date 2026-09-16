@@ -1,7 +1,17 @@
-
 # 実装履歴
 
-## 2026-08-23
+## 2026-09-15
+
+- Sensitive 2/4/6分割モードおよびRAWスコア記録機能の実装
+  - `embed_tags_universal.py`: `determine_sensitive_level()` 関数を追加し、`sensitive_split_mode` 設定 (2/4/6) に応じて Sensitive 強度を `sensitive_mild`/`sensitive_high` (2分割) または `sensitive_lvl1`〜`lvl4` (4分割) または `sensitive_lvl1`〜`lvl6` (6分割) へ振り分けるロジックを実装。
+  - `embed_tags_universal.py`: `format_score_tags()` 関数を追加。`sensitive_score:0.XXXX` 形式の RAW スコアタグと `sensitive:XX.X%` 形式の割合タグを XMP に記録する。
+  - `embed_tags_universal.py`: `--organize` 時の再整理ロジックを改修。`sensitive_score:` タグが存在する場合は RAW スコアから再計算してスキップ（AI再推論なし）。旧形式タグ (`sensitive_lvlX`, `sensitive_mild`, `sensitive_high`) のみの場合は AI 推論を再実行（4分類への縮退を防止）。
+  - `embed_tags_universal.py`: CLI 引数 `--sensitive-split-mode <2|4|6>`、`--record-ratio`、`--no-record-ratio` を追加。
+  - `embed_tags_universal.py`: `RATING_TAGS` に `sensitive_lvl1`〜`lvl6` を追加。`DEFAULT_CONFIG` に `sensitive_split_mode`、`sensitive_split_thresholds_4way`、`sensitive_split_thresholds_6way`、`record_rating_percentages`、`record_raw_score` を追加。
+  - `make_report.py`: Sensitive 分割レベル (lvl1〜lvl6, mild, high) に対応したバッジスタイルを追加。カードにスコア情報 (`sensitive:XX.X%`) を表示。
+  - `run_tagger.ps1`: `SensitiveSplitMode`、`RecordRatio`、`NoRecordRatio` パラメータを追加し、PyArgs へのパススルーを実装。
+  - `run_tagger.sh`: `--sensitive-split-mode`、`--record-ratio`、`--no-record-ratio` オプションを追加。
+  - `README.md`: 新設定項目 (`sensitive_split_mode` 等) と `folder_names` の `sensitive_lvl1`〜`lvl6` を追記。
 
 - Google Colab サーバーでの Google ドライブ Tailscale 接続情報永続化 & シークレット不要再接続モードの実装
   - `run_colab_server.ipynb`: 「すべてのセルを実行 (Run All)」による全自動起動に対応。

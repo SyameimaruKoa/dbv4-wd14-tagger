@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     WD14 Tagger Universal Wrapper (日本語版)
 
@@ -88,6 +88,19 @@
     【ポート】 (数値)
     ポート番号。
 
+.PARAMETER SensitiveSplitMode
+    【Sensitive分割モード】 (数値: 2, 4, 6)
+    Sensitiveの分割モード（2分割: mild/high, 4分割: lvl1-4, 6分割: lvl1-6）。
+    未指定時はconfig.jsonの設定を使用。
+
+.PARAMETER RecordRatio
+    【スコア記録】 (スイッチ)
+    メタデータにRAWスコアおよび割合スコアを記録する。
+
+.PARAMETER NoRecordRatio
+    【スコア記録無効化】 (スイッチ)
+    メタデータへのスコア記録を無効化する。
+
 .PARAMETER RatingThresh
     【R指定閾値】 (数値)
     [旧機能] R指定タグ合計値による閾値判定。
@@ -115,6 +128,12 @@
 
     # 全部入り (タグ付け＋整理＋レポート)
     .\run_tagger.ps1 -Path "C:\Images" -Tag -Organize -Gpu
+
+    # 6分割モード指定＋RAWスコア記録有効
+    .\run_tagger.ps1 -Path "C:\Images" -Gpu -SensitiveSplitMode 6 -RecordRatio
+
+    # 推論スキップ高速再整理（RAWスコアを利用して6分割フォルダへ再振り分け）
+    .\run_tagger.ps1 -Path "C:\Images" -Organize -SensitiveSplitMode 6
 #>
 
 [CmdletBinding()]
@@ -138,6 +157,11 @@ param (
     [string]$HostIP,
     [int]$Port,
     [switch]$Pixiv,
+
+    [ValidateSet(2, 4, 6)]
+    [int]$SensitiveSplitMode,
+    [switch]$RecordRatio,
+    [switch]$NoRecordRatio,
     
     # Old params
     [float]$RatingThresh,
@@ -178,6 +202,9 @@ function Show-Help {
     Write-Host "    -Client               クライアントモード"
     Write-Host "    -HostIP <ip>          サーバーのIPアドレス"
     Write-Host "    -Port <port>          ポート番号"
+    Write-Host "    -SensitiveSplitMode <2|4|6> Sensitiveの分割モード (2, 4, 6)"
+    Write-Host "    -RecordRatio          メタデータにRAWスコア・割合スコアを記録"
+    Write-Host "    -NoRecordRatio        メタデータへのスコア記録を無効化"
     Write-Host "    -Help (-h, --help)    このヘルプを表示"
     Write-Host ""
     Write-Host "実行例:" -ForegroundColor Yellow
@@ -192,6 +219,12 @@ function Show-Help {
     Write-Host ""
     Write-Host "    # 全部入り（タグ付け＋整理＋レポート＋GPU）"
     Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -Tag -Gpu"
+    Write-Host ""
+    Write-Host "    # 6分割モード指定＋RAWスコア記録有効"
+    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu -SensitiveSplitMode 6 -RecordRatio"
+    Write-Host ""
+    Write-Host "    # 推論スキップ高速再整理（RAWスコアを利用して6分割フォルダへ再振り分け）"
+    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -SensitiveSplitMode 6"
     Write-Host ""
 }
 
@@ -226,7 +259,8 @@ function Prepare-Environment {
             $TargetVenv = Join-Path $ScriptDir "venv_client"
             $OnnxPackage = ""
         }
-    } else {
+    }
+    else {
         if ($IsWindowsOS -and $UseGpu) {
             $EnvName = "GPU (DirectML)"
             $TargetVenv = Join-Path $ScriptDir "venv_gpu"
@@ -253,7 +287,8 @@ function Prepare-Environment {
                 Write-Host "  -> 既存環境が PyPI非対応の Python 3.$verMinor です。再作成します..." -ForegroundColor Yellow
                 Remove-Item -Recurse -Force $TargetVenv
             }
-        } catch {}
+        }
+        catch {}
     }
     if (-not (Test-Path $TargetVenv)) {
         Write-Host "  -> 仮想環境を作成中..." -ForegroundColor Yellow
@@ -268,7 +303,8 @@ function Prepare-Environment {
                     }
                 }
             }
-        } catch {}
+        }
+        catch {}
         & $PyCmd -m venv $TargetVenv
     }
     
@@ -287,7 +323,8 @@ function Prepare-Environment {
     $ReqFile = Join-Path $ScriptDir "requirements.txt"
     if ($OnnxPackage) {
         & $PipEx install -r $ReqFile $OnnxPackage -q | Out-Null
-    } else {
+    }
+    else {
         & $PipEx install -r $ReqFile -q | Out-Null
     }
     
@@ -353,6 +390,9 @@ if ($PSBoundParameters.ContainsKey('ModelRepo')) { $PyArgs += ("--model-repo", $
 if ($PSBoundParameters.ContainsKey('ModelFile')) { $PyArgs += ("--model-file", $ModelFile) }
 if ($PSBoundParameters.ContainsKey('TagsFile')) { $PyArgs += ("--tags-file", $TagsFile) }
 if ($Force) { $PyArgs += "--force" }
+if ($PSBoundParameters.ContainsKey('SensitiveSplitMode')) { $PyArgs += ("--sensitive-split-mode", $SensitiveSplitMode) }
+if ($RecordRatio) { $PyArgs += "--record-ratio" }
+if ($NoRecordRatio) { $PyArgs += "--no-record-ratio" }
 
 if ($HostIP) { $PyArgs += ("--host", $HostIP) }
 if ($Port) { $PyArgs += ("--port", $Port) }

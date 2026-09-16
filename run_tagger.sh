@@ -43,6 +43,10 @@ show_help() {
     echo "    --model-file <file> モデルファイル名またはパス"
     echo "    --tags-file <file>  タグCSVファイル名またはパス"
     echo "    -f, --force         既存タグがあっても強制的に再解析・上書きする"
+    echo "    --sensitive-split-mode <2|4|6>"
+    echo "                        Sensitive分割数 (2=2分割/4=4分割/6=6分割, デフォルト: config準拠)"
+    echo "    --record-ratio      スコア割合タグ (sensitive:XX.X%) を記録する"
+    echo "    --no-record-ratio   スコア割合タグを記録しない"
     echo "    --server            サーバーモード"
     echo "    --client            クライアントモード"
     echo "    -H, --host <ip>     サーバーのIPアドレス"
@@ -289,6 +293,9 @@ while [[ $# -gt 0 ]]; do
         --force-nvidia) USE_GPU=1; FORCE_TYPE="nvidia"; shift ;;
         --force-amd) USE_GPU=1; FORCE_TYPE="amd"; shift ;;
         -f|--force) PY_ARGS+=("--force"); shift ;;
+        --sensitive-split-mode) PY_ARGS+=("--sensitive-split-mode" "$2"); shift 2 ;;
+        --record-ratio) PY_ARGS+=("--record-ratio"); shift ;;
+        --no-record-ratio) PY_ARGS+=("--no-record-ratio"); shift ;;
         -p|--path) PY_ARGS+=("$2"); shift 2 ;;
         -H|--host) PY_ARGS+=("--host" "$2"); shift 2 ;;
         -P|--port) PY_ARGS+=("--port" "$2"); shift 2 ;;
