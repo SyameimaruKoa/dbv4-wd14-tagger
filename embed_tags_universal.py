@@ -82,7 +82,7 @@ DEFAULT_CONFIG = {
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
     "client_timeout": 15,
-    "sensitive_split_mode": 2,
+    "sensitive_split_mode": 6,
     "sensitive_split_threshold": 0.50,
     "sensitive_split_thresholds_4way": [0.25, 0.50, 0.75],
     "sensitive_split_thresholds_6way": [0.15, 0.30, 0.50, 0.70, 0.85],
@@ -597,7 +597,7 @@ def format_score_tags(sen_prob, config=None):
 
 
 def determine_sensitive_level(
-    sen_prob, split_mode=2, split_thresh=0.50, thresh_4way=None, thresh_6way=None
+    sen_prob, split_mode=6, split_thresh=0.50, thresh_4way=None, thresh_6way=None
 ):
     if thresh_4way is None:
         thresh_4way = APP_CONFIG.get(
@@ -644,7 +644,7 @@ def calculate_rating(
     ignore_sensitive,
     gen_thresh,
     fname_disp="",
-    split_mode=2,
+    split_mode=6,
     thresh_4way=None,
     thresh_6way=None,
 ):
@@ -737,7 +737,7 @@ def process_images(args):
     split_mode = (
         args.sensitive_split_mode
         if args.sensitive_split_mode is not None
-        else APP_CONFIG.get("sensitive_split_mode", 2)
+        else APP_CONFIG.get("sensitive_split_mode", 6)
     )
     split_thresh = APP_CONFIG.get("sensitive_split_threshold", 0.50)
     thresh_4way = APP_CONFIG.get("sensitive_split_thresholds_4way", [0.25, 0.50, 0.75])
@@ -878,12 +878,10 @@ def process_images(args):
     def finalize_result(img_path, existing_tags, detected_tags, rating, probs):
         nonlocal processed_count, skipped_count, organized_count
         final_path = img_path
-        if not args.no_tag:
-            should_write = True if args.force or not existing_tags else False
-            if should_write and detected_tags:
-                if et_wrapper.write_tags(img_path, detected_tags):
-                    processed_count += 1
-            elif not should_write:
+        if detected_tags and (not args.no_tag or args.organize):
+            if et_wrapper.write_tags(img_path, detected_tags):
+                processed_count += 1
+            else:
                 skipped_count += 1
         else:
             skipped_count += 1
@@ -929,6 +927,16 @@ def process_images(args):
                 tag_name = tags[i]
                 if tag_name not in detected_tags:
                     detected_tags.append(tag_name)
+        for ext in item.get("existing_tags", []):
+            ext_clean = ext.strip()
+            if ext_clean in RATING_TAGS:
+                continue
+            if re.match(r"^sensitive_score:([0-9\.]+)$", ext_clean):
+                continue
+            if re.match(r"^sensitive:([0-9\.]+)%$", ext_clean):
+                continue
+            if ext_clean not in detected_tags:
+                detected_tags.append(ext_clean)
         finalize_result(
             item["path"], item["existing_tags"], detected_tags, rating, probs
         )
@@ -1009,40 +1017,28 @@ def process_images(args):
                     if args.rating_thresh is not None:
                         need_inference = True
                     else:
-                        if args.organize:
-                            raw_score = None
-                            for t in existing_tags:
-                                m = re.match(r"^sensitive_score:([0-9\.]+)$", t.strip())
-                                if m:
-                                    try:
-                                        raw_score = float(m.group(1))
-                                        break
-                                    except ValueError:
-                                        pass
-                            if raw_score is not None:
-                                rating = determine_sensitive_level(
-                                    raw_score,
-                                    split_mode=split_mode,
-                                    split_thresh=split_thresh,
-                                    thresh_4way=thresh_4way,
-                                    thresh_6way=thresh_6way,
-                                )
-                                if args.ignore_sensitive:
-                                    rating = "general"
-                                need_inference = False
-                            else:
-                                non_sen = [
-                                    t
-                                    for t in existing_tags
-                                    if t in ["general", "questionable", "explicit"]
-                                ]
-                                if non_sen:
-                                    rating = non_sen[0]
-                                    need_inference = False
-                                else:
-                                    need_inference = True
-                        else:
+                        raw_score = None
+                        for t in existing_tags:
+                            m = re.match(r"^sensitive_score:([0-9\.]+)$", t.strip())
+                            if m:
+                                try:
+                                    raw_score = float(m.group(1))
+                                    break
+                                except ValueError:
+                                    pass
+                        if raw_score is not None:
+                            rating = determine_sensitive_level(
+                                raw_score,
+                                split_mode=split_mode,
+                                split_thresh=split_thresh,
+                                thresh_4way=thresh_4way,
+                                thresh_6way=thresh_6way,
+                            )
+                            if args.ignore_sensitive:
+                                rating = "general"
                             need_inference = False
+                        else:
+                            need_inference = True
                 if need_inference:
                     if is_client:
                         t_client_start = time.time()
