@@ -89,8 +89,8 @@ DEFAULT_CONFIG = {
     "general_threshold": 0.40,
     "record_rating_percentages": True,
     "record_raw_score": True,
-    "raw_score_format": "sensitive_score:{raw_score:.4f}",
-    "percentage_format": "sensitive:{percentage}%",
+    "raw_score_format": "{rating}_score:{raw_score:.4f}",
+    "percentage_format": "{rating}:{percentage}%",
     "folder_names": {
         "general": "R-00",
         "sensitive_mild": "R-15_0",
@@ -576,23 +576,58 @@ def collect_images(path_args, recursive=True):
     return sorted(list(set(collected)))
 
 
-def format_score_tags(sen_prob, config=None):
+def format_score_tags(rating_probs, config=None):
     if config is None:
         config = APP_CONFIG
     tags = []
-    if config.get("record_raw_score", True):
-        fmt = config.get("raw_score_format", "sensitive_score:{raw_score:.4f}")
-        try:
-            tags.append(fmt.format(raw_score=float(sen_prob)))
-        except Exception:
-            tags.append(f"sensitive_score:{float(sen_prob):.4f}")
-    if config.get("record_rating_percentages", True):
-        fmt_pct = config.get("percentage_format", "sensitive:{percentage}%")
-        pct_val = f"{float(sen_prob) * 100:.1f}"
-        try:
-            tags.append(fmt_pct.format(percentage=pct_val))
-        except Exception:
-            tags.append(f"sensitive:{pct_val}%")
+    if isinstance(rating_probs, (float, int, np.floating)):
+        rating_probs = [0.0, float(rating_probs), 0.0, 0.0]
+
+    categories = ["general", "sensitive", "questionable", "explicit"]
+    record_raw = config.get("record_raw_score", True)
+    record_pct = config.get("record_rating_percentages", True)
+
+    raw_fmt_tmpl = config.get("raw_score_format", "{rating}_score:{raw_score:.4f}")
+    pct_fmt_tmpl = config.get("percentage_format", "{rating}:{percentage}%")
+
+    for i, cat in enumerate(categories):
+        if i < len(rating_probs):
+            prob = float(rating_probs[i])
+            pct_str = f"{prob * 100:.1f}"
+            if record_raw:
+                if "{rating}" in raw_fmt_tmpl or "{cat}" in raw_fmt_tmpl:
+                    try:
+                        tags.append(
+                            raw_fmt_tmpl.format(
+                                rating=cat, cat=cat, raw_score=prob
+                            )
+                        )
+                    except Exception:
+                        tags.append(f"{cat}_score:{prob:.4f}")
+                elif cat == "sensitive":
+                    try:
+                        tags.append(raw_fmt_tmpl.format(raw_score=prob))
+                    except Exception:
+                        tags.append(f"sensitive_score:{prob:.4f}")
+                else:
+                    tags.append(f"{cat}_score:{prob:.4f}")
+            if record_pct:
+                if "{rating}" in pct_fmt_tmpl or "{cat}" in pct_fmt_tmpl:
+                    try:
+                        tags.append(
+                            pct_fmt_tmpl.format(
+                                rating=cat, cat=cat, percentage=pct_str
+                            )
+                        )
+                    except Exception:
+                        tags.append(f"{cat}:{pct_str}%")
+                elif cat == "sensitive":
+                    try:
+                        tags.append(pct_fmt_tmpl.format(percentage=pct_str))
+                    except Exception:
+                        tags.append(f"sensitive:{pct_str}%")
+                else:
+                    tags.append(f"{cat}:{pct_str}%")
     return tags
 
 
@@ -920,7 +955,7 @@ def process_images(args):
         detected_tags = []
         if rating:
             detected_tags.append(rating)
-        score_tags = format_score_tags(probs[1], runtime_config)
+        score_tags = format_score_tags(probs[:4], runtime_config)
         detected_tags.extend(score_tags)
         for i, p in enumerate(probs):
             if p > args.thresh:
@@ -931,9 +966,15 @@ def process_images(args):
             ext_clean = ext.strip()
             if ext_clean in RATING_TAGS:
                 continue
-            if re.match(r"^sensitive_score:([0-9\.]+)$", ext_clean):
+            if re.match(
+                r"^(general|sensitive|questionable|explicit)_score:([0-9\.]+)$",
+                ext_clean,
+            ):
                 continue
-            if re.match(r"^sensitive:([0-9\.]+)%$", ext_clean):
+            if re.match(
+                r"^(general|sensitive|questionable|explicit):([0-9\.]+)%$",
+                ext_clean,
+            ):
                 continue
             if ext_clean not in detected_tags:
                 detected_tags.append(ext_clean)
@@ -1017,25 +1058,36 @@ def process_images(args):
                     if args.rating_thresh is not None:
                         need_inference = True
                     else:
-                        raw_score = None
+                        raw_scores = {}
                         for t in existing_tags:
-                            m = re.match(r"^sensitive_score:([0-9\.]+)$", t.strip())
+                            m = re.match(
+                                r"^(general|sensitive|questionable|explicit)_score:([0-9\.]+)$",
+                                t.strip(),
+                            )
                             if m:
                                 try:
-                                    raw_score = float(m.group(1))
-                                    break
+                                    raw_scores[m.group(1)] = float(m.group(2))
                                 except ValueError:
                                     pass
-                        if raw_score is not None:
-                            rating = determine_sensitive_level(
-                                raw_score,
+                        if len(raw_scores) == 4:
+                            p_list = [
+                                raw_scores["general"],
+                                raw_scores["sensitive"],
+                                raw_scores["questionable"],
+                                raw_scores["explicit"],
+                            ]
+                            rating = calculate_rating(
+                                p_list,
+                                ["general", "sensitive", "questionable", "explicit"],
+                                args.rating_thresh,
+                                split_thresh,
+                                args.ignore_sensitive,
+                                gen_thresh,
+                                fname_disp="",
                                 split_mode=split_mode,
-                                split_thresh=split_thresh,
                                 thresh_4way=thresh_4way,
                                 thresh_6way=thresh_6way,
                             )
-                            if args.ignore_sensitive:
-                                rating = "general"
                             need_inference = False
                         else:
                             need_inference = True
