@@ -112,7 +112,8 @@ DEFAULT_CONFIG = {
         0.70,
         0.80,
         0.90,
-    ],
+    ],    "rating_severity_sensitive_upper_reference": 25.0,
+    "rating_severity_questionable_upper_reference": 40.0,
     "general_threshold": 0.40,
     "record_rating_percentages": True,
     "record_raw_score": True,
@@ -663,35 +664,74 @@ def calculate_rating_severity(rating_probs, rating_idx):
     WD14 の4 rating scoreから、選択されたrating帯内部の位置を
     0.0〜1.0として算出し、それを4帯をまたぐ連続severityへ変換する。
 
-    Gen / Sen / Que / Exp は4択確率ではないため合算・正規化せず、
-    各scoreをlogitへ変換してGeneralとの差を取り、ratingの順序に
-    応じて重み付けする。
+    Gen / Sen / Que / Exp は4択確率として合算・正規化しない。
+    ratingの順序に従い、現在の帯と隣接する上下のrating情報を使う。
 
-    Sensitive < Questionable < Explicit の順序を保つため、
-    上位ratingほど強い重みを与える:
-        Sensitive    = 1
-        Questionable = 2
-        Explicit     = 3
+    Sensitive帯:
+        下側: Sen が Gen よりどれだけ優勢か
+        上側: Que の絶対スコアを対数スケールで評価
+
+    Questionable帯:
+        下側: Que が Sen よりどれだけ優勢か
+        上側: Exp の絶対スコアを対数スケールで評価
+
+    これにより、
+        Que ↑ → Sensitive帯のseverity ↑
+        Exp ↑ → Questionable帯のseverity ↑
+    を単調に保ちつつ、Gen が極端に低いだけでSensitive帯が
+    一気に最上位へ飛ぶことを防ぐ。
 
     R-00 / R-18 の基本判定条件はここでは変更しない。
-    このseverityはSensitive / Questionable帯の内部細分化にのみ使用する。
     """
     probs = np.asarray(rating_probs[:4], dtype=np.float64)
     if probs.shape[0] != 4:
         raise ValueError("rating_probs must contain exactly 4 rating scores")
 
-    probs = np.clip(probs, 1e-6, 1.0 - 1e-6)
-    logits = np.log(probs / (1.0 - probs))
-    general_logit, sensitive_logit, questionable_logit, explicit_logit = logits
+    gen_prob, sen_prob, que_prob, exp_prob = np.clip(
+        probs, 1e-6, 1.0 - 1e-6
+    )
 
-    weighted_delta = (
-        (sensitive_logit - general_logit)
-        + 2.0 * (questionable_logit - general_logit)
-        + 3.0 * (explicit_logit - general_logit)
-    ) / 6.0
+    def pairwise_position(upper_prob, lower_prob):
+        upper_logit = np.log(upper_prob / (1.0 - upper_prob))
+        lower_logit = np.log(lower_prob / (1.0 - lower_prob))
+        return float(
+            1.0 / (1.0 + np.exp(-(upper_logit - lower_logit)))
+        )
 
-    local_position = 1.0 / (1.0 + np.exp(-weighted_delta))
-    band_position = (float(rating_idx) + float(local_position)) / 4.0
+    def score_position(score, reference_percent):
+        score_percent = float(score * 100.0)
+        reference_percent = float(reference_percent)
+        return float(
+            np.clip(
+                np.log1p(score_percent) / np.log1p(reference_percent),
+                0.0,
+                1.0,
+            )
+        )
+
+    if rating_idx == 1:
+        lower_position = pairwise_position(sen_prob, gen_prob)
+        upper_position = score_position(
+            que_prob,
+            APP_CONFIG.get(
+                "rating_severity_sensitive_upper_reference",
+                25.0,
+            ),
+        )
+    elif rating_idx == 2:
+        lower_position = pairwise_position(que_prob, sen_prob)
+        upper_position = score_position(
+            exp_prob,
+            APP_CONFIG.get(
+                "rating_severity_questionable_upper_reference",
+                40.0,
+            ),
+        )
+    else:
+        return 0.0 if rating_idx <= 0 else 1.0
+
+    local_position = np.sqrt(lower_position * upper_position)
+    band_position = (float(rating_idx) + local_position) / 4.0
     return float(np.clip(band_position, 0.0, 1.0))
 
 
