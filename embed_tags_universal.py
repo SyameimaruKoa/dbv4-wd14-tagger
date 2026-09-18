@@ -631,8 +631,56 @@ def format_score_tags(rating_probs, config=None):
     return tags
 
 
+def calculate_sensitive_split_score(rating_probs):
+    """
+    Sensitive として選ばれた画像を R-15 内で細分化するための派生スコアを計算する。
+
+    WD14 の rating 出力は各クラス独立の sigmoid スコアであり、
+    4つの rating は単純加算して正規化するものではない。公式実装では
+    4 rating の argmax で基本 rating を決定する。
+
+    R-15 の細分化は WD14 本体には存在しないため、ここでは
+    「Sensitive の絶対的な強さ」を中心に、
+      - General からの下側マージン
+      - Questionable / Explicit からの上側圧力
+    を別々に考慮する。
+
+    Que / Exp を Sensitive に加算することはせず、上位 rating が強いほど
+    Sensitive の細分化スコアに上限をかける構造にする。
+    """
+    probs = np.asarray(rating_probs[:4], dtype=np.float64)
+    if probs.shape[0] != 4:
+        raise ValueError("rating_probs must contain at least 4 rating scores")
+
+    probs = np.clip(probs, 1e-6, 1.0 - 1e-6)
+
+    def logit(prob):
+        return np.log(prob / (1.0 - prob))
+
+    def sigmoid(value):
+        return 1.0 / (1.0 + np.exp(-value))
+
+    gen_prob, sen_prob, que_prob, exp_prob = probs
+
+    sen_logit = logit(sen_prob)
+    gen_logit = logit(gen_prob)
+    que_logit = logit(que_prob)
+    exp_logit = logit(exp_prob)
+
+    lower_margin = sigmoid(sen_logit - gen_logit)
+
+    upper_rating_logit = max(que_logit, exp_logit)
+    upper_margin = sigmoid(sen_logit - upper_rating_logit)
+
+    return float(sen_prob * lower_margin * upper_margin)
+
+
 def determine_sensitive_level(
-    sen_prob, split_mode=6, split_thresh=0.50, thresh_4way=None, thresh_6way=None
+    sensitive_score,
+    split_mode=6,
+    split_thresh=0.50,
+    thresh_4way=None,
+    thresh_6way=None,
 ):
     if thresh_4way is None:
         thresh_4way = APP_CONFIG.get(
@@ -645,30 +693,34 @@ def determine_sensitive_level(
 
     if split_mode == 6:
         t1, t2, t3, t4, t5 = thresh_6way
-        if sen_prob < t1:
+        if sensitive_score < t1:
             return "sensitive_lvl1"
-        elif sen_prob < t2:
+        elif sensitive_score < t2:
             return "sensitive_lvl2"
-        elif sen_prob < t3:
+        elif sensitive_score < t3:
             return "sensitive_lvl3"
-        elif sen_prob < t4:
+        elif sensitive_score < t4:
             return "sensitive_lvl4"
-        elif sen_prob < t5:
+        elif sensitive_score < t5:
             return "sensitive_lvl5"
         else:
             return "sensitive_lvl6"
     elif split_mode == 4:
         t1, t2, t3 = thresh_4way
-        if sen_prob < t1:
+        if sensitive_score < t1:
             return "sensitive_lvl1"
-        elif sen_prob < t2:
+        elif sensitive_score < t2:
             return "sensitive_lvl2"
-        elif sen_prob < t3:
+        elif sensitive_score < t3:
             return "sensitive_lvl3"
         else:
             return "sensitive_lvl4"
     else:
-        return "sensitive_mild" if sen_prob < split_thresh else "sensitive_high"
+        return (
+            "sensitive_mild"
+            if sensitive_score < split_thresh
+            else "sensitive_high"
+        )
 
 
 def calculate_rating(
@@ -697,8 +749,9 @@ def calculate_rating(
             rating_idx = np.argmax(rating_probs)
     rating = tags[rating_idx]
     if rating == "sensitive":
+        sensitive_score = calculate_sensitive_split_score(rating_probs)
         rating = determine_sensitive_level(
-            rating_probs[1],
+            sensitive_score,
             split_mode=split_mode,
             split_thresh=split_thresh,
             thresh_4way=thresh_4way,
