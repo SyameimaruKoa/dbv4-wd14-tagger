@@ -256,6 +256,21 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
 | `-Server`           | サーバーモードで起動する。                                       |
 | `-Client`           | クライアントモードで起動する。                                   |
 
+## R-15 / R-17 の細分化について
+
+WD14 v3 の基本 rating は `General → Sensitive → Questionable → Explicit` の4分類として扱う。ここでの R-15 / R-17 は WD14 公式の区分ではなく、このプロジェクト独自の派生尺度である。
+
+基本 rating の判定は従来どおり行い、R-00 の既存General安全弁と R-18 の既存Explicit側判定は変更しない。
+
+Sensitive または Questionable と判定された画像についてのみ、4つの rating score から連続した severity を算出する。4 rating は4択確率として合計せず、Sensitive帯では Gen↔Sen の相対位置と Que の上昇度を、Questionable帯では Sen↔Que の相対位置と Exp の上昇度を使う。上位側のscoreは対数スケールで圧縮するため、Genが極端に低いだけでseverityが最上位へ飛ぶのを防ぎながら、Que / Exp が高くなるほど上位へ連続的に寄せる。
+
+得られた severity は同一の0〜9分割基準で細分化する。
+
+- Sensitive → `R-15_0` 〜 `R-15_9`
+- Questionable → `R-17_0` 〜 `R-17_9`
+
+Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置されるため、命名上も `R-15_9 → R-17_0` と連続する。Questionable を単独の `R-17` フォルダにはしない。
+
 ## 設定ファイル (config.json)
 
 初回実行時に config.json が生成される。
@@ -272,10 +287,9 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
 | `model_file`                      | `"model.onnx"`                      | 使用するモデルファイル名（またはローカルパス）。                                                                                                                                                              |
 | `tags_file`                       | `"selected_tags.csv"`               | 使用するタグCSVファイル名（またはローカルパス）。                                                                                                                                                             |
 | `general_threshold`               | `0.40`                              | **General（全年齢）判定の安全弁**。`AIが「Generalである確率」がこの値以上なら、たとえ他のR指定スコアが高くても強制的に「General」として扱う。`誤爆（安全な画像をR指定にしてしまうこと）を防ぐための設定じゃ。 |
-| `sensitive_split_threshold`       | `0.50`                              | **Sensitive（軽度の性的表現）の強度分け**。``Sensitiveタグが付いた画像のうち、スコアがこの値未満なら「mild（R-15程度）」、以上なら「high（R-15強）」としてフォルダを分けることができる。                      |
-| `sensitive_split_mode`            | `6`                                 | **Sensitive の分割数**。`2`=mild/high の2分割、`4`=lvl1〜lvl4 の4分割、`6`=lvl1〜lvl6 の6分割（デフォルト）。CLI の `--sensitive-split-mode` で上書き可。                                                     |
-| `sensitive_split_thresholds_4way` | `[0.25, 0.50, 0.75]`                | 4分割モード時の境界スコア（3つの閾値で4段階）。                                                                                                                                                               |
-| `sensitive_split_thresholds_6way` | `[0.15, 0.30, 0.50, 0.70, 0.85]`    | 6分割モード時の境界スコア（5つの閾値で6段階）。                                                                                                                                                               |
+| `rating_sublevel_thresholds_5way` | `[0.20, 0.40, 0.60, 0.80]` | Sensitive / Questionable の各帯を共通の0〜4 suffixへ分割する境界。WD14公式基準ではなく、このプロジェクト独自のseverity尺度。 |
+| `rating_severity_sensitive_upper_reference` | `25.0` | Sensitive帯で上側severityを測るQue scoreの参照上限（%）。WD14公式基準ではなく、実測出力を基にした初期キャリブレーション値。 |
+| `rating_severity_questionable_upper_reference` | `40.0` | Questionable帯で上側severityを測るExp scoreの参照上限（%）。同上。 |
 | `record_rating_percentages`       | `true`                              | `general:XX.X%`, `sensitive:XX.X%` 等の割合タグ（全4レーティング）を XMP に記録するか否か。CLI の `--record-ratio` / `--no-record-ratio` で上書き可。                                                         |
 | `record_raw_score`                | `true`                              | `general_score:0.XXXX`, `sensitive_score:0.XXXX` 等の RAW スコアタグ（全4レーティング）を XMP に記録するか否か。`--organize` 時の高速再判定・再整理に使用される。                                             |
 | `server_host`                     | `"localhost"`                       | サーバーモードやクライアントモードで使うデフォルトのIPアドレス。                                                                                                                                              |
@@ -286,20 +300,14 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
 
 整理モードで作成されるフォルダの名前を自由に変更できる。
 
-例えば R-18 を Adult に変えたりできるぞ。
+R-15 / R-17 は、それぞれ0〜4の同一suffix規則で管理する。severityの初期キャリブレーション値は config.json で調整できる。
 
-| **キー**         | **デフォルトフォルダ名** | **対応するレーティング**                      |
-| ---------------- | ------------------------ | --------------------------------------------- |
-| `general`        | `"R-00"`                 | 全年齢 (Safe)                                 |
-| `sensitive_mild` | `"R-15_0"`               | 軽度の際どい画像（2分割モード: lowスコア側）  |
-| `sensitive_high` | `"R-15_5"`               | 強めの際どい画像（2分割モード: highスコア側） |
-| `sensitive_lvl1` | `"R-15_1"`               | Sensitive 4/6分割モード: 最も軽度             |
-| `sensitive_lvl2` | `"R-15_2"`               | Sensitive 4/6分割モード: やや軽度             |
-| `sensitive_lvl3` | `"R-15_3"`               | Sensitive 4/6分割モード: 中程度               |
-| `sensitive_lvl4` | `"R-15_4"`               | Sensitive 4/6分割モード: やや強め             |
-| `sensitive_lvl5` | `"R-15_5a"`              | Sensitive 6分割モード: 強め                   |
-| `sensitive_lvl6` | `"R-15_6"`               | Sensitive 6分割モード: 最も強め               |
-| `questionable`   | `"R-17"`                 | 露出が多い、または判断が難しい画像            |
-| `explicit`       | `"R-18"`                 | 成人向け (Explicit)                           |
+| **キー** | **デフォルトフォルダ名** | **対応するレーティング** |
+| --- | --- | --- |
+| `general` | `"R-00"` | 全年齢 (Safe) |
+| `sensitive_0` ～ `sensitive_9` | `"R-15_0"` ～ `"R-15_9"` | Sensitive帯のseverity 5段階 |
+| `questionable_0` ～ `questionable_9` | `"R-17_0"` ～ `"R-17_9"` | Questionable帯のseverity 5段階 |
+| `explicit` | `"R-18"` | Explicit |
 
-作成: わっち (Gemini)
+`sensitive_mild` / `sensitive_high` / `sensitive_lvl1` ～ `sensitive_lvl6` は旧バージョンのタグを再整理時に除去できるよう、内部的には引き続き認識されるが、新規の判定結果としては使用しない。
+

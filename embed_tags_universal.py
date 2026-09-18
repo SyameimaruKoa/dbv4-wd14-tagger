@@ -59,6 +59,28 @@ VALID_EXTS = (".webp", ".jpg", ".jpeg", ".png", ".bmp", ".avif")
 RATING_TAGS = [
     "general",
     "sensitive",
+    "questionable",
+    "explicit",
+    "sensitive_0",
+    "sensitive_1",
+    "sensitive_2",
+    "sensitive_3",
+    "sensitive_4",
+    "sensitive_5",
+    "sensitive_6",
+    "sensitive_7",
+    "sensitive_8",
+    "sensitive_9",
+    "questionable_0",
+    "questionable_1",
+    "questionable_2",
+    "questionable_3",
+    "questionable_4",
+    "questionable_5",
+    "questionable_6",
+    "questionable_7",
+    "questionable_8",
+    "questionable_9",
     "sensitive_mild",
     "sensitive_high",
     "sensitive_lvl1",
@@ -67,8 +89,6 @@ RATING_TAGS = [
     "sensitive_lvl4",
     "sensitive_lvl5",
     "sensitive_lvl6",
-    "questionable",
-    "explicit",
 ]
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(SCRIPT_DIR, "config.json")
@@ -82,10 +102,13 @@ DEFAULT_CONFIG = {
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
     "client_timeout": 15,
-    "sensitive_split_mode": 6,
-    "sensitive_split_threshold": 0.50,
-    "sensitive_split_thresholds_4way": [0.25, 0.50, 0.75],
-    "sensitive_split_thresholds_6way": [0.15, 0.30, 0.50, 0.70, 0.85],
+    "rating_sublevel_thresholds_5way": [
+        0.20,
+        0.40,
+        0.60,
+        0.80,
+    ],    "rating_severity_sensitive_upper_reference": 25.0,
+    "rating_severity_questionable_upper_reference": 40.0,
     "general_threshold": 0.40,
     "record_rating_percentages": True,
     "record_raw_score": True,
@@ -93,15 +116,16 @@ DEFAULT_CONFIG = {
     "percentage_format": "{rating}:{percentage}%",
     "folder_names": {
         "general": "R-00",
-        "sensitive_mild": "R-15_0",
-        "sensitive_high": "R-15_5",
-        "sensitive_lvl1": "R-15_0",
-        "sensitive_lvl2": "R-15_1",
-        "sensitive_lvl3": "R-15_3",
-        "sensitive_lvl4": "R-15_5",
-        "sensitive_lvl5": "R-15_7",
-        "sensitive_lvl6": "R-15_9",
-        "questionable": "R-17",
+        "sensitive_0": "R-15_0",
+        "sensitive_1": "R-15_1",
+        "sensitive_2": "R-15_2",
+        "sensitive_3": "R-15_3",
+        "sensitive_4": "R-15_4",
+        "questionable_0": "R-17_0",
+        "questionable_1": "R-17_1",
+        "questionable_2": "R-17_2",
+        "questionable_3": "R-17_3",
+        "questionable_4": "R-17_4",
         "explicit": "R-18",
     },
 }
@@ -496,18 +520,7 @@ def organize_file(file_path, rating, is_pixiv=False, base_dirs=None):
         folder_name = folder_mapping.get(base, rating)
 
     if is_pixiv:
-        if rating in [
-            "general",
-            "sensitive",
-            "sensitive_mild",
-            "sensitive_high",
-            "sensitive_lvl1",
-            "sensitive_lvl2",
-            "sensitive_lvl3",
-            "sensitive_lvl4",
-            "sensitive_lvl5",
-            "sensitive_lvl6",
-        ]:
+        if rating == "general" or rating.startswith("sensitive_"):
             return False, file_path
 
     try:
@@ -631,57 +644,136 @@ def format_score_tags(rating_probs, config=None):
     return tags
 
 
-def determine_sensitive_level(
-    sen_prob, split_mode=6, split_thresh=0.50, thresh_4way=None, thresh_6way=None
-):
-    if thresh_4way is None:
-        thresh_4way = APP_CONFIG.get(
-            "sensitive_split_thresholds_4way", [0.25, 0.50, 0.75]
-        )
-    if thresh_6way is None:
-        thresh_6way = APP_CONFIG.get(
-            "sensitive_split_thresholds_6way", [0.15, 0.30, 0.50, 0.70, 0.85]
+def calculate_rating_severity(rating_probs, rating_idx):
+    """
+    WD14 の4 rating scoreから、選択されたrating帯内部の位置を
+    0.0〜1.0として算出し、それを4帯をまたぐ連続severityへ変換する。
+
+    Gen / Sen / Que / Exp は4択確率として合算・正規化しない。
+    ratingの順序に従い、現在の帯と隣接する上下のrating情報を使う。
+
+    Sensitive帯:
+        下側: Sen が Gen よりどれだけ優勢か
+        上側: Que の絶対スコアを対数スケールで評価
+
+    Questionable帯:
+        下側: Que が Sen よりどれだけ優勢か
+        上側: Exp の絶対スコアを対数スケールで評価
+
+    これにより、
+        Que ↑ → Sensitive帯のseverity ↑
+        Exp ↑ → Questionable帯のseverity ↑
+    を単調に保ちつつ、Gen が極端に低いだけでSensitive帯が
+    一気に最上位へ飛ぶことを防ぐ。
+
+    R-00 / R-18 の基本判定条件はここでは変更しない。
+    """
+    probs = np.asarray(rating_probs[:4], dtype=np.float64)
+    if probs.shape[0] != 4:
+        raise ValueError("rating_probs must contain exactly 4 rating scores")
+
+    gen_prob, sen_prob, que_prob, exp_prob = np.clip(
+        probs, 1e-6, 1.0 - 1e-6
+    )
+
+    def pairwise_position(upper_prob, lower_prob):
+        upper_logit = np.log(upper_prob / (1.0 - upper_prob))
+        lower_logit = np.log(lower_prob / (1.0 - lower_prob))
+        return float(
+            1.0 / (1.0 + np.exp(-(upper_logit - lower_logit)))
         )
 
-    if split_mode == 6:
-        t1, t2, t3, t4, t5 = thresh_6way
-        if sen_prob < t1:
-            return "sensitive_lvl1"
-        elif sen_prob < t2:
-            return "sensitive_lvl2"
-        elif sen_prob < t3:
-            return "sensitive_lvl3"
-        elif sen_prob < t4:
-            return "sensitive_lvl4"
-        elif sen_prob < t5:
-            return "sensitive_lvl5"
-        else:
-            return "sensitive_lvl6"
-    elif split_mode == 4:
-        t1, t2, t3 = thresh_4way
-        if sen_prob < t1:
-            return "sensitive_lvl1"
-        elif sen_prob < t2:
-            return "sensitive_lvl2"
-        elif sen_prob < t3:
-            return "sensitive_lvl3"
-        else:
-            return "sensitive_lvl4"
+    def score_position(score, reference_percent):
+        score_percent = float(score * 100.0)
+        reference_percent = float(reference_percent)
+        return float(
+            np.clip(
+                np.log1p(score_percent) / np.log1p(reference_percent),
+                0.0,
+                1.0,
+            )
+        )
+
+    if rating_idx == 1:
+        lower_position = pairwise_position(sen_prob, gen_prob)
+        upper_position = score_position(
+            que_prob,
+            APP_CONFIG.get(
+                "rating_severity_sensitive_upper_reference",
+                25.0,
+            ),
+        )
+    elif rating_idx == 2:
+        lower_position = pairwise_position(que_prob, sen_prob)
+        upper_position = score_position(
+            exp_prob,
+            APP_CONFIG.get(
+                "rating_severity_questionable_upper_reference",
+                40.0,
+            ),
+        )
     else:
-        return "sensitive_mild" if sen_prob < split_thresh else "sensitive_high"
+        return 0.0 if rating_idx <= 0 else 1.0
+
+    local_position = np.sqrt(lower_position * upper_position)
+    band_position = (float(rating_idx) + local_position) / 4.0
+    return float(np.clip(band_position, 0.0, 1.0))
+
+
+def determine_rating_sublevel(
+    base_rating,
+    rating_severity,
+    thresholds=None,
+):
+    """
+    Sensitive / Questionable の連続severityを、共通の0〜9 suffixへ変換する。
+
+    rating_severity:
+        General = 0.0〜0.25
+        Sensitive = 0.25〜0.50
+        Questionable = 0.50〜0.75
+        Explicit = 0.75〜1.00
+
+    Sensitive と Questionable は同じ0〜9分割基準を使うため、
+    R-15_9 → R-17_0 がseverity軸上で隣接する。
+    """
+    if thresholds is None:
+        thresholds = APP_CONFIG.get(
+            "rating_sublevel_thresholds_5way",
+            [0.20, 0.40, 0.60, 0.80],
+        )
+
+    if len(thresholds) != 9:
+        raise ValueError(
+            "rating_sublevel_thresholds_5way must contain exactly 4 thresholds"
+        )
+
+    if base_rating not in ("sensitive", "questionable"):
+        return base_rating
+
+    band_index = 1 if base_rating == "sensitive" else 2
+    local_position = np.clip(
+        float(rating_severity) * 4.0 - band_index,
+        0.0,
+        np.nextafter(1.0, 0.0),
+    )
+
+    sublevel = 4
+    for i, threshold in enumerate(thresholds):
+        if local_position < float(threshold):
+            sublevel = i
+            break
+
+    return f"{base_rating}_{sublevel}"
 
 
 def calculate_rating(
     probs,
     tags,
     rating_thresh,
-    split_thresh,
     ignore_sensitive,
     gen_thresh,
     fname_disp="",
-    split_mode=6,
-    thresh_4way=None,
-    thresh_6way=None,
 ):
     rating_probs = probs[:4]
     if rating_probs[0] >= gen_thresh:
@@ -696,15 +788,15 @@ def calculate_rating(
         else:
             rating_idx = np.argmax(rating_probs)
     rating = tags[rating_idx]
-    if rating == "sensitive":
-        rating = determine_sensitive_level(
-            rating_probs[1],
-            split_mode=split_mode,
-            split_thresh=split_thresh,
-            thresh_4way=thresh_4way,
-            thresh_6way=thresh_6way,
+
+    if rating in ("sensitive", "questionable"):
+        rating_severity = calculate_rating_severity(rating_probs, rating_idx)
+        rating = determine_rating_sublevel(
+            rating,
+            rating_severity,
         )
-    if ("sensitive" in rating) and ignore_sensitive:
+
+    if rating.startswith("sensitive_") and ignore_sensitive:
         rating = "general"
 
     if fname_disp:
@@ -769,16 +861,6 @@ def run_server(port, use_gpu, model_repo, model_file, tags_file):
 
 def process_images(args):
     host, port, is_client = args.host, args.port, args.mode == "client"
-    split_mode = (
-        args.sensitive_split_mode
-        if args.sensitive_split_mode is not None
-        else APP_CONFIG.get("sensitive_split_mode", 6)
-    )
-    split_thresh = APP_CONFIG.get("sensitive_split_threshold", 0.50)
-    thresh_4way = APP_CONFIG.get("sensitive_split_thresholds_4way", [0.25, 0.50, 0.75])
-    thresh_6way = APP_CONFIG.get(
-        "sensitive_split_thresholds_6way", [0.15, 0.30, 0.50, 0.70, 0.85]
-    )
     gen_thresh = APP_CONFIG.get("general_threshold", 0.40)
     client_timeout = APP_CONFIG.get("client_timeout", 15)
 
@@ -944,13 +1026,9 @@ def process_images(args):
             probs,
             tags,
             args.rating_thresh,
-            split_thresh,
             args.ignore_sensitive,
             gen_thresh,
             fname_disp,
-            split_mode=split_mode,
-            thresh_4way=thresh_4way,
-            thresh_6way=thresh_6way,
         )
         detected_tags = []
         if rating:
@@ -1080,13 +1158,9 @@ def process_images(args):
                                 p_list,
                                 ["general", "sensitive", "questionable", "explicit"],
                                 args.rating_thresh,
-                                split_thresh,
                                 args.ignore_sensitive,
                                 gen_thresh,
                                 fname_disp="",
-                                split_mode=split_mode,
-                                thresh_4way=thresh_4way,
-                                thresh_6way=thresh_6way,
                             )
                             need_inference = False
                         else:
