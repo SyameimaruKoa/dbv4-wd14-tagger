@@ -287,7 +287,7 @@ Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置される
 | `model_file`                      | `"model.onnx"`                      | 使用するモデルファイル名（またはローカルパス）。                                                                                                                                                              |
 | `tags_file`                       | `"selected_tags.csv"`               | 使用するタグCSVファイル名（またはローカルパス）。                                                                                                                                                             |
 | `general_threshold`               | `0.40`                              | **General（全年齢）判定の安全弁**。`AIが「Generalである確率」がこの値以上なら、たとえ他のR指定スコアが高くても強制的に「General」として扱う。`誤爆（安全な画像をR指定にしてしまうこと）を防ぐための設定じゃ。 |
-| `rating_sublevel_thresholds_10way` | `[0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]` | Sensitive / Questionable の各帯を共通の0〜9 suffixへ分割する境界。WD14公式基準ではなく、このプロジェクト独自のseverity尺度。 |
+| `rating_sublevel_thresholds_5way` | `[0.20, 0.40, 0.60, 0.80]` | Sensitive / Questionable の各帯を共通の0〜4 suffixへ分割する境界。WD14公式基準ではなく、このプロジェクト独自のseverity尺度。 |
 | `rating_severity_sensitive_upper_reference` | `25.0` | Sensitive帯で上側severityを測るQue scoreの参照上限（%）。WD14公式基準ではなく、実測出力を基にした初期キャリブレーション値。 |
 | `rating_severity_questionable_upper_reference` | `40.0` | Questionable帯で上側severityを測るExp scoreの参照上限（%）。同上。 |
 | `record_rating_percentages`       | `true`                              | `general:XX.X%`, `sensitive:XX.X%` 等の割合タグ（全4レーティング）を XMP に記録するか否か。CLI の `--record-ratio` / `--no-record-ratio` で上書き可。                                                         |
@@ -300,13 +300,13 @@ Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置される
 
 整理モードで作成されるフォルダの名前を自由に変更できる。
 
-R-15 / R-17 は、それぞれ0〜9の同一suffix規則で管理する。severityの初期キャリブレーション値は config.json で調整できる。
+R-15 / R-17 は、それぞれ0〜4の同一suffix規則で管理する。severityの初期キャリブレーション値は config.json で調整できる。
 
 | **キー** | **デフォルトフォルダ名** | **対応するレーティング** |
 | --- | --- | --- |
 | `general` | `"R-00"` | 全年齢 (Safe) |
-| `sensitive_0` ～ `sensitive_9` | `"R-15_0"` ～ `"R-15_9"` | Sensitive帯のseverity 10段階 |
-| `questionable_0` ～ `questionable_9` | `"R-17_0"` ～ `"R-17_9"` | Questionable帯のseverity 10段階 |
+| `sensitive_0` ～ `sensitive_9` | `"R-15_0"` ～ `"R-15_9"` | Sensitive帯のseverity 5段階 |
+| `questionable_0` ～ `questionable_9` | `"R-17_0"` ～ `"R-17_9"` | Questionable帯のseverity 5段階 |
 | `explicit` | `"R-18"` | Explicit |
 
 `sensitive_mild` / `sensitive_high` / `sensitive_lvl1` ～ `sensitive_lvl6` は旧バージョンのタグを再整理時に除去できるよう、内部的には引き続き認識されるが、新規の判定結果としては使用しない。
