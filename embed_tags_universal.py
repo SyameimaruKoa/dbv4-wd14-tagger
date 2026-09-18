@@ -102,16 +102,11 @@ DEFAULT_CONFIG = {
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
     "client_timeout": 15,
-    "rating_sublevel_thresholds_10way": [
-        0.10,
+    "rating_sublevel_thresholds_5way": [
         0.20,
-        0.30,
         0.40,
-        0.50,
         0.60,
-        0.70,
         0.80,
-        0.90,
     ],    "rating_severity_sensitive_upper_reference": 25.0,
     "rating_severity_questionable_upper_reference": 40.0,
     "general_threshold": 0.40,
@@ -126,21 +121,11 @@ DEFAULT_CONFIG = {
         "sensitive_2": "R-15_2",
         "sensitive_3": "R-15_3",
         "sensitive_4": "R-15_4",
-        "sensitive_5": "R-15_5",
-        "sensitive_6": "R-15_6",
-        "sensitive_7": "R-15_7",
-        "sensitive_8": "R-15_8",
-        "sensitive_9": "R-15_9",
         "questionable_0": "R-17_0",
         "questionable_1": "R-17_1",
         "questionable_2": "R-17_2",
         "questionable_3": "R-17_3",
         "questionable_4": "R-17_4",
-        "questionable_5": "R-17_5",
-        "questionable_6": "R-17_6",
-        "questionable_7": "R-17_7",
-        "questionable_8": "R-17_8",
-        "questionable_9": "R-17_9",
         "explicit": "R-18",
     },
 }
@@ -754,13 +739,13 @@ def determine_rating_sublevel(
     """
     if thresholds is None:
         thresholds = APP_CONFIG.get(
-            "rating_sublevel_thresholds_10way",
-            [0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90],
+            "rating_sublevel_thresholds_5way",
+            [0.20, 0.40, 0.60, 0.80],
         )
 
     if len(thresholds) != 9:
         raise ValueError(
-            "rating_sublevel_thresholds_10way must contain exactly 9 thresholds"
+            "rating_sublevel_thresholds_5way must contain exactly 4 thresholds"
         )
 
     if base_rating not in ("sensitive", "questionable"):
@@ -773,7 +758,7 @@ def determine_rating_sublevel(
         np.nextafter(1.0, 0.0),
     )
 
-    sublevel = 9
+    sublevel = 4
     for i, threshold in enumerate(thresholds):
         if local_position < float(threshold):
             sublevel = i
