@@ -298,20 +298,14 @@ Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置される
 
 整理モードで作成されるフォルダの名前を自由に変更できる。
 
-例えば R-18 を Adult に変えたりできるぞ。
+R-15 / R-17 は、それぞれ0〜9の同一suffix規則で管理する。
 
-| **キー**         | **デフォルトフォルダ名** | **対応するレーティング**                      |
-| ---------------- | ------------------------ | --------------------------------------------- |
-| `general`        | `"R-00"`                 | 全年齢 (Safe)                                 |
-| `sensitive_mild` | `"R-15_0"`               | 軽度の際どい画像（2分割モード: lowスコア側）  |
-| `sensitive_high` | `"R-15_5"`               | 強めの際どい画像（2分割モード: highスコア側） |
-| `sensitive_lvl1` | `"R-15_1"`               | Sensitive 4/6分割モード: 最も軽度             |
-| `sensitive_lvl2` | `"R-15_2"`               | Sensitive 4/6分割モード: やや軽度             |
-| `sensitive_lvl3` | `"R-15_3"`               | Sensitive 4/6分割モード: 中程度               |
-| `sensitive_lvl4` | `"R-15_4"`               | Sensitive 4/6分割モード: やや強め             |
-| `sensitive_lvl5` | `"R-15_5a"`              | Sensitive 6分割モード: 強め                   |
-| `sensitive_lvl6` | `"R-15_6"`               | Sensitive 6分割モード: 最も強め               |
-| `questionable`   | `"R-17"`                 | 露出が多い、または判断が難しい画像            |
-| `explicit`       | `"R-18"`                 | 成人向け (Explicit)                           |
+| **キー** | **デフォルトフォルダ名** | **対応するレーティング** |
+| --- | --- | --- |
+| `general` | `"R-00"` | 全年齢 (Safe) |
+| `sensitive_0` ～ `sensitive_9` | `"R-15_0"` ～ `"R-15_9"` | Sensitive帯のseverity 10段階 |
+| `questionable_0` ～ `questionable_9` | `"R-17_0"` ～ `"R-17_9"` | Questionable帯のseverity 10段階 |
+| `explicit` | `"R-18"` | Explicit |
 
-作成: わっち (Gemini)
+`sensitive_mild` / `sensitive_high` / `sensitive_lvl1` ～ `sensitive_lvl6` は旧バージョンのタグを再整理時に除去できるよう、内部的には引き続き認識されるが、新規の判定結果としては使用しない。
+
