@@ -631,26 +631,66 @@ def format_score_tags(rating_probs, config=None):
     return tags
 
 
+def calculate_sensitive_position(rating_probs):
+    """
+    Sensitive に分類された画像について、Sensitive帯の内部位置を
+    0.0〜1.0 で求める。
+
+    WD14 の rating は General / Sensitive / Questionable / Explicit
+    という順序を持つため、Sensitive の内部位置は隣接する2つの境界
+    （General ↔ Sensitive、Sensitive ↔ Questionable）から求める。
+
+    - General に対する Sensitive の優位度
+    - Questionable に対する Sensitive の優位度
+
+    を独立して計算し、その幾何平均を Sensitive の位置とする。
+
+    Que / Exp を Sensitive に合算しない。Explicit は Sensitive の
+    直上の隣接ratingではないため、Sensitive 内部の位置には直接使わず、
+    基本ratingの判定時に Sen を上回った場合だけ Explicit として扱う。
+    """
+    probs = np.asarray(rating_probs[:4], dtype=np.float64)
+    if probs.shape[0] != 4:
+        raise ValueError("rating_probs must contain at least 4 rating scores")
+
+    probs = np.clip(probs, 1e-6, 1.0 - 1e-6)
+
+    def logit(prob):
+        return np.log(prob / (1.0 - prob))
+
+    def sigmoid(value):
+        return 1.0 / (1.0 + np.exp(-value))
+
+    gen_prob, sen_prob, que_prob, _ = probs
+
+    sen_logit = logit(sen_prob)
+    gen_logit = logit(gen_prob)
+    que_logit = logit(que_prob)
+
+    general_margin = sigmoid(sen_logit - gen_logit)
+    questionable_margin = sigmoid(sen_logit - que_logit)
+
+    return float(
+        np.sqrt(general_margin * questionable_margin)
+    )
+
+
 def determine_sensitive_level(
-    sen_prob,
+    sensitive_position,
     split_mode=6,
     split_thresh=0.50,
     thresh_4way=None,
     thresh_6way=None,
 ):
     """
-    WD14 で Sensitive と判定された画像を、Sensitive の生スコアだけで
-    R-15 内に細分化する。
+    Sensitive の内部位置 (0.0〜1.0) を R-15 の細分化レベルへ変換する。
 
-    WD14 の Gen / Sen / Que / Exp は別々の rating 出力なので、
-    Que / Exp を Sen に加算したり、Sen の細分化スコアを補正したりしない。
-    Que / Exp の影響は、その値が Sen を上回って基本 rating が
-    Questionable / Explicit になった時点で完結する。
-
-    R-15_x の閾値は、この関数に渡された Sensitive スコア
-    (0.0〜1.0) に対してのみ適用される。
+    既存の sensitive_split_thresholds_* は、Sensitive の生スコアではなく
+    Sensitive帯内部の相対位置に対する境界として扱う。
     """
-    sen_prob = float(np.clip(sen_prob, 0.0, 1.0))
+    sensitive_position = float(
+        np.clip(sensitive_position, 0.0, 1.0)
+    )
 
     if thresh_4way is None:
         thresh_4way = APP_CONFIG.get(
@@ -663,32 +703,36 @@ def determine_sensitive_level(
 
     if split_mode == 6:
         t1, t2, t3, t4, t5 = thresh_6way
-        if sen_prob < t1:
+        if sensitive_position < t1:
             return "sensitive_lvl1"
-        elif sen_prob < t2:
+        elif sensitive_position < t2:
             return "sensitive_lvl2"
-        elif sen_prob < t3:
+        elif sensitive_position < t3:
             return "sensitive_lvl3"
-        elif sen_prob < t4:
+        elif sensitive_position < t4:
             return "sensitive_lvl4"
-        elif sen_prob < t5:
+        elif sensitive_position < t5:
             return "sensitive_lvl5"
         else:
             return "sensitive_lvl6"
 
     elif split_mode == 4:
         t1, t2, t3 = thresh_4way
-        if sen_prob < t1:
+        if sensitive_position < t1:
             return "sensitive_lvl1"
-        elif sen_prob < t2:
+        elif sensitive_position < t2:
             return "sensitive_lvl2"
-        elif sen_prob < t3:
+        elif sensitive_position < t3:
             return "sensitive_lvl3"
         else:
             return "sensitive_lvl4"
 
     else:
-        return "sensitive_mild" if sen_prob < split_thresh else "sensitive_high"
+        return (
+            "sensitive_mild"
+            if sensitive_position < split_thresh
+            else "sensitive_high"
+        )
 
 
 def calculate_rating(
@@ -717,8 +761,9 @@ def calculate_rating(
             rating_idx = np.argmax(rating_probs)
     rating = tags[rating_idx]
     if rating == "sensitive":
+        sensitive_position = calculate_sensitive_position(rating_probs)
         rating = determine_sensitive_level(
-            rating_probs[1],
+            sensitive_position,
             split_mode=split_mode,
             split_thresh=split_thresh,
             thresh_4way=thresh_4way,
