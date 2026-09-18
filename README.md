@@ -262,7 +262,7 @@ WD14 v3 の基本 rating は `General → Sensitive → Questionable → Explici
 
 基本 rating の判定は従来どおり行い、R-00 の既存General安全弁と R-18 の既存Explicit側判定は変更しない。
 
-Sensitive または Questionable と判定された画像についてのみ、4つの rating score から連続した severity を算出する。4 rating は4択確率として合計せず、各 score を logit に変換したうえで General との差を取り、`Sensitive=1 / Questionable=2 / Explicit=3` の重みで統合する。これにより、Que や Exp が高くなるほど severity は単調に上昇する。
+Sensitive または Questionable と判定された画像についてのみ、4つの rating score から連続した severity を算出する。4 rating は4択確率として合計せず、Sensitive帯では Gen↔Sen の相対位置と Que の上昇度を、Questionable帯では Sen↔Que の相対位置と Exp の上昇度を使う。上位側のscoreは対数スケールで圧縮するため、Genが極端に低いだけでseverityが最上位へ飛ぶのを防ぎながら、Que / Exp が高くなるほど上位へ連続的に寄せる。
 
 得られた severity は同一の0〜9分割基準で細分化する。
 
@@ -288,6 +288,8 @@ Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置される
 | `tags_file`                       | `"selected_tags.csv"`               | 使用するタグCSVファイル名（またはローカルパス）。                                                                                                                                                             |
 | `general_threshold`               | `0.40`                              | **General（全年齢）判定の安全弁**。`AIが「Generalである確率」がこの値以上なら、たとえ他のR指定スコアが高くても強制的に「General」として扱う。`誤爆（安全な画像をR指定にしてしまうこと）を防ぐための設定じゃ。 |
 | `rating_sublevel_thresholds_10way` | `[0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]` | Sensitive / Questionable の各帯を共通の0〜9 suffixへ分割する境界。WD14公式基準ではなく、このプロジェクト独自のseverity尺度。 |
+| `rating_severity_sensitive_upper_reference` | `25.0` | Sensitive帯で上側severityを測るQue scoreの参照上限（%）。WD14公式基準ではなく、実測出力を基にした初期キャリブレーション値。 |
+| `rating_severity_questionable_upper_reference` | `40.0` | Questionable帯で上側severityを測るExp scoreの参照上限（%）。同上。 |
 | `record_rating_percentages`       | `true`                              | `general:XX.X%`, `sensitive:XX.X%` 等の割合タグ（全4レーティング）を XMP に記録するか否か。CLI の `--record-ratio` / `--no-record-ratio` で上書き可。                                                         |
 | `record_raw_score`                | `true`                              | `general_score:0.XXXX`, `sensitive_score:0.XXXX` 等の RAW スコアタグ（全4レーティング）を XMP に記録するか否か。`--organize` 時の高速再判定・再整理に使用される。                                             |
 | `server_host`                     | `"localhost"`                       | サーバーモードやクライアントモードで使うデフォルトのIPアドレス。                                                                                                                                              |
@@ -298,7 +300,7 @@ Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置される
 
 整理モードで作成されるフォルダの名前を自由に変更できる。
 
-R-15 / R-17 は、それぞれ0〜9の同一suffix規則で管理する。
+R-15 / R-17 は、それぞれ0〜9の同一suffix規則で管理する。severityの初期キャリブレーション値は config.json で調整できる。
 
 | **キー** | **デフォルトフォルダ名** | **対応するレーティング** |
 | --- | --- | --- |
