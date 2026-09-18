@@ -256,6 +256,12 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
 | `-Server`           | サーバーモードで起動する。                                       |
 | `-Client`           | クライアントモードで起動する。                                   |
 
+## Sensitive の細分化について
+
+WD14 の基本 rating は `General → Sensitive → Questionable → Explicit` の4分類として扱い、その基本rating自体は変更しない。Sensitive と判定された画像だけは、Sensitive の内部位置を追加で算出してR-15を細分化する。
+
+内部位置は `General ↔ Sensitive` と `Sensitive ↔ Questionable` の2つの隣接rating間の優位度をそれぞれ計算し、その幾何平均を0.0〜1.0の相対位置として使用する。これにより `Que` や `Exp` を `Sen` と同列に合算せず、SensitiveからQuestionable側へ近づくほどR-15上位側へ、SensitiveがGeneral側へ近づくほどR-15下位側へ連続的に寄せられる。
+
 ## 設定ファイル (config.json)
 
 初回実行時に config.json が生成される。
@@ -272,10 +278,10 @@ Switchroot Ubuntu 24.04 (Noble) 等の Nintendo Switch 上で実行する場合�
 | `model_file`                      | `"model.onnx"`                      | 使用するモデルファイル名（またはローカルパス）。                                                                                                                                                              |
 | `tags_file`                       | `"selected_tags.csv"`               | 使用するタグCSVファイル名（またはローカルパス）。                                                                                                                                                             |
 | `general_threshold`               | `0.40`                              | **General（全年齢）判定の安全弁**。`AIが「Generalである確率」がこの値以上なら、たとえ他のR指定スコアが高くても強制的に「General」として扱う。`誤爆（安全な画像をR指定にしてしまうこと）を防ぐための設定じゃ。 |
-| `sensitive_split_threshold`       | `0.50`                              | **Sensitive（軽度の性的表現）の強度分け**。``Sensitiveタグが付いた画像のうち、スコアがこの値未満なら「mild（R-15程度）」、以上なら「high（R-15強）」としてフォルダを分けることができる。                      |
-| `sensitive_split_mode`            | `6`                                 | **Sensitive の分割数**。`2`=mild/high の2分割、`4`=lvl1〜lvl4 の4分割、`6`=lvl1〜lvl6 の6分割（デフォルト）。CLI の `--sensitive-split-mode` で上書き可。                                                     |
-| `sensitive_split_thresholds_4way` | `[0.25, 0.50, 0.75]`                | 4分割モード時の境界スコア（3つの閾値で4段階）。                                                                                                                                                               |
-| `sensitive_split_thresholds_6way` | `[0.15, 0.30, 0.50, 0.70, 0.85]`    | 6分割モード時の境界スコア（5つの閾値で6段階）。                                                                                                                                                               |
+| `sensitive_split_threshold`       | `0.50`                              | **Sensitive帯内部の相対位置の境界**。2分割モードで、位置がこの値未満なら mild、以上なら high とする。位置は General↔Sensitive と Sensitive↔Questionable の両方から算出する。 |
+| `sensitive_split_mode`            | `6`                                 | **Sensitive の分割数**。`2`=mild/high の2分割、`4`=lvl1〜lvl4 の4分割、`6`=lvl1〜lvl6 の6分割（デフォルト）。CLI の `--sensitive-split-mode` で上書き可。 |
+| `sensitive_split_thresholds_4way` | `[0.25, 0.50, 0.75]`               | Sensitive帯内部の相対位置に対する4分割の境界（0.0〜1.0）。Que/ExpをSenへ加算せず、ratingの順序を保ったまま細分化する。 |
+| `sensitive_split_thresholds_6way` | `[0.15, 0.30, 0.50, 0.70, 0.85]`   | Sensitive帯内部の相対位置に対する6分割の境界（0.0〜1.0）。R-15_0〜R-15_9の段階へ対応する。 |
 | `record_rating_percentages`       | `true`                              | `general:XX.X%`, `sensitive:XX.X%` 等の割合タグ（全4レーティング）を XMP に記録するか否か。CLI の `--record-ratio` / `--no-record-ratio` で上書き可。                                                         |
 | `record_raw_score`                | `true`                              | `general_score:0.XXXX`, `sensitive_score:0.XXXX` 等の RAW スコアタグ（全4レーティング）を XMP に記録するか否か。`--organize` 時の高速再判定・再整理に使用される。                                             |
 | `server_host`                     | `"localhost"`                       | サーバーモードやクライアントモードで使うデフォルトのIPアドレス。                                                                                                                                              |
