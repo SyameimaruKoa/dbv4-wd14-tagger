@@ -102,6 +102,7 @@ DEFAULT_CONFIG = {
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
     "client_timeout": 15,
+    "openvino_gpu_device": "GPU.0",
     "rating_sublevel_thresholds_5way": [
         0.20,
         0.40,
@@ -418,9 +419,10 @@ def load_model_and_tags(
                 ]
             )
         elif IS_LINUX:
+            openvino_gpu_device = APP_CONFIG.get("openvino_gpu_device", "GPU.0")
             desired_providers.extend(
                 [
-                    ("OpenVINOExecutionProvider", {"device_type": "GPU"}),
+                    ("OpenVINOExecutionProvider", {"device_type": openvino_gpu_device}),
                     "TensorrtExecutionProvider",
                     "CUDAExecutionProvider",
                     "ROCMExecutionProvider",
@@ -443,6 +445,18 @@ def load_model_and_tags(
     sess_options = ort.SessionOptions()
     sess_options.log_severity_level = 3
     print(f"[INFO] 試行プロバイダ: {providers}")
+
+
+    openvino_requested_device = None
+    if use_gpu and IS_LINUX and any(
+        (p[0] if isinstance(p, tuple) else p) == "OpenVINOExecutionProvider"
+        for p in providers
+    ):
+        for p in providers:
+            if isinstance(p, tuple) and p[0] == "OpenVINOExecutionProvider":
+                openvino_requested_device = p[1].get("device_type", "GPU")
+                break
+        print(f"[INFO] OpenVINO要求デバイス: {openvino_requested_device}")
     try:
         sess = ort.InferenceSession(
             model_path, sess_options=sess_options, providers=providers
@@ -467,10 +481,16 @@ def load_model_and_tags(
                 f"[INFO]        初回推論（モデル構築）時にはエンジンのコンパイルが発生するため、最初の処理に時間がかかる場合があります。"
             )
         if "OpenVINOExecutionProvider" in active_p:
-            ov_opts = sess.get_provider_options().get("OpenVINOExecutionProvider", {})
-            ov_dev = ov_opts.get("device_type", "CPU")
-            print(f"[INFO] OpenVINO 推論デバイス: {ov_dev}")
+            print("[INFO] OpenVINO Execution Provider がアクティブです。")
+            if use_gpu and openvino_requested_device:
+                print(f"[INFO] OpenVINO要求デバイス: {openvino_requested_device}")
+        elif use_gpu:
+            raise RuntimeError(
+                "OpenVINOExecutionProviderがアクティブになっていないため、GPU推論を開始できません。"
+            )
     except Exception as e:
+        if use_gpu:
+            raise RuntimeError(f"GPUプロバイダの初期化に失敗しました: {e}") from e
         print(
             f"[WARN] GPUプロバイダのロードに失敗しました: {e}\n[INFO] CPUモードに切り替えます。"
         )
@@ -726,7 +746,7 @@ def determine_rating_sublevel(
     thresholds=None,
 ):
     """
-    Sensitive / Questionable の連続severityを、共通の0〜9 suffixへ変換する。
+    Sensitive / Questionable の連続severityを、それぞれ0〜4の5段階suffixへ変換する。
 
     rating_severity:
         General = 0.0〜0.25
@@ -734,8 +754,8 @@ def determine_rating_sublevel(
         Questionable = 0.50〜0.75
         Explicit = 0.75〜1.00
 
-    Sensitive と Questionable は同じ0〜9分割基準を使うため、
-    R-15_9 → R-17_0 がseverity軸上で隣接する。
+    Sensitive と Questionable は同じ0〜4分割基準を使うため、
+    R-15_4 → R-17_0 がseverity軸上で隣接する。
     """
     if thresholds is None:
         thresholds = APP_CONFIG.get(
@@ -743,7 +763,7 @@ def determine_rating_sublevel(
             [0.20, 0.40, 0.60, 0.80],
         )
 
-    if len(thresholds) != 9:
+    if len(thresholds) != 4:
         raise ValueError(
             "rating_sublevel_thresholds_5way must contain exactly 4 thresholds"
         )
