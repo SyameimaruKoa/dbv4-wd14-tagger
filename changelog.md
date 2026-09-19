@@ -2,6 +2,10 @@
 
 ## 2026-09-19
 
+- GPU/OpenVINOの内部デバッグログを通常実行時には抑制し、`run_tagger.sh --debug` 指定時のみ有効化。
+  - `Inference successful` や `Model is fully supported on OpenVINO` などのOpenVINO内部診断をデバッグ用途として保持。
+  - 通常実行では関連するデバッグ環境変数を解除し、NVIDIA / Intel / AMD のGPUプロバイダ診断を不用意に消さない方針を維持。
+
 - R-15 / R-17 5段階分類の実行時エラーを修正。
   - `rating_sublevel_thresholds_5way` は5段階を4つの境界で分割するため、必要なthreshold数を4へ修正。
   - 10段階時代のR-15 / R-17説明を5段階（`_0`〜`_4`）へ整理。
