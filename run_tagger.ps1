@@ -56,6 +56,10 @@
     【前処理ワーカー数】 (数値)
     画像の読み込み・前処理を並列化するワーカー数（デフォルト: 自動）。
 
+.PARAMETER ModelProfile
+    【DBV4モデルプロファイル】 (文字列)
+    lightweight / balanced / high / large / ultra から選択する。
+
 .PARAMETER ModelRepo
     【モデルリポジトリ】 (文字列)
     HuggingFaceのモデル/タグのリポジトリID。
