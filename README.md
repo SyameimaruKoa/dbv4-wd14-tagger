@@ -189,7 +189,7 @@ Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openv
 
 run_colab_server.ipynb はDBV4サーバーを起動する構成へ更新されておる。
 
-<a href="https://colab.research.google.com/github/SyameimaruKoa/wd14-tagger-xmp/blob/main/run_colab_server.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/img/colab-badge.svg" alt="Open In Colab"/></a>
+<a href="https://colab.research.google.com/github/SyameimaruKoa/wd14-tagger-xmp/blob/main/run_colab_server.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 初期状態では balanced プロファイルを使用する。ローカル側は通常のClientモードで接続できるぞ。
 
