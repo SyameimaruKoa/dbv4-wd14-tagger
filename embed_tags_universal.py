@@ -407,6 +407,30 @@ def load_runtime_model(
     return RuntimeModel(metadata, preprocessor, session)
 
 
+def warmup_runtime(runtime: RuntimeModel, batch_size: int) -> float:
+    active = runtime.session.get_providers()
+    compiling = {
+        "TensorrtExecutionProvider",
+        "OpenVINOExecutionProvider",
+        "MIGraphXExecutionProvider",
+        "DmlExecutionProvider",
+    }
+    if not any(
+        (provider[0] if isinstance(provider, tuple) else provider) in compiling
+        for provider in active
+    ):
+        return 0.0
+    print(f"[INFO] コンパイル系EPのウォームアップ推論を実行します (batch={batch_size})...")
+    started = time.time()
+    image = Image.new("RGB", (512, 512), (0, 0, 0))
+    runtime.predict_images([image] * max(1, batch_size))
+    if batch_size > 1:
+        runtime.predict_images([image])
+    elapsed = time.time() - started
+    print(f"[INFO] ウォームアップ完了 (所要時間: {elapsed:.2f}秒)。エンジンの準備が整いました。")
+    return elapsed
+
+
 def calculate_rating_severity(
     scores: Dict[str, float],
     base_rating: str,
@@ -787,6 +811,13 @@ def process_images(args: argparse.Namespace) -> None:
     if runtime and batch_size > 1:
         print(f"[INFO] DBV4 batch-size={batch_size}, io-workers={io_workers}")
 
+    warmup_time = 0.0
+    if runtime:
+        try:
+            warmup_time = warmup_runtime(runtime, batch_size)
+        except Exception as exc:
+            print(f"[WARN] ウォームアップ推論をスキップしました: {exc}")
+
     processed = organized = 0
     inferred = skipped = 0
     inferred_time = skipped_time = 0.0
@@ -954,6 +985,8 @@ def process_images(args: argparse.Namespace) -> None:
     skip_speed = skipped / skipped_time if skipped_time else 0.0
     print(f"  ・推論実行ファイル (DBV4 AI演算あり): {inferred} 枚 | {infer_speed:.2f} img/s")
     print(f"  ・演算スキップファイル (DBV4 score): {skipped} 枚 | {skip_speed:.2f} img/s")
+    if warmup_time > 0:
+        print(f"  ・ウォームアップ: {warmup_time:.2f} 秒")
     print(f"  ・詳細: タグ書き込み {processed} 枚, 整理移動 {organized} 枚")
 
     if report_data and not args.no_report:
