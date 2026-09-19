@@ -17,6 +17,7 @@ DO_ORGANIZE=0
 DO_TAG=0
 DO_PIXIV=0
 IS_CLIENT=0
+DEBUG_MODE=0
 
 show_help() {
     echo "WD14 Tagger Universal (日本語ヘルプ)"
@@ -51,6 +52,7 @@ show_help() {
     echo "    --client            クライアントモード"
     echo "    -H, --host <ip>     サーバーのIPアドレス"
     echo "    -P, --port <port>   ポート番号"
+    echo "    --debug             GPU/OpenVINOの詳細デバッグログを有効化"
     echo "    -h, --help          ヘルプ表示"
     echo ""
 }
@@ -299,10 +301,25 @@ while [[ $# -gt 0 ]]; do
         -p|--path) PY_ARGS+=("$2"); shift 2 ;;
         -H|--host) PY_ARGS+=("--host" "$2"); shift 2 ;;
         -P|--port) PY_ARGS+=("--port" "$2"); shift 2 ;;
+        --debug) DEBUG_MODE=1; shift ;;
         -h|--help) show_help; exit 0 ;;
         *) PY_ARGS+=("$1"); shift ;;
     esac
 done
+
+# デバッグログ制御
+# OpenVINOの内部診断（Inference successful / Model is fully supported on OpenVINO 等）は
+# 通常実行では抑制し、--debug 指定時のみ有効にする。
+if [ "$DEBUG_MODE" -eq 1 ]; then
+    echo "[INFO] GPU/OpenVINOデバッグモードを有効化します。"
+    export ORT_OPENVINO_ENABLE_CI_LOG=1
+    export ORT_OPENVINO_ENABLE_DEBUG=1
+    export OPENVINO_LOG_LEVEL=5
+else
+    unset ORT_OPENVINO_ENABLE_CI_LOG
+    unset ORT_OPENVINO_ENABLE_DEBUG
+    unset OPENVINO_LOG_LEVEL
+fi
 
 # アクションロジック構築
 if [ $DO_ORGANIZE -eq 1 ] || [ $DO_PIXIV -eq 1 ]; then
