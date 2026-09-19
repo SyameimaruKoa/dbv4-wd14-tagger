@@ -207,6 +207,7 @@ class DBV4Metadata:
         model_repo_override: Optional[str] = None,
         model_file_override: Optional[str] = None,
         tags_file_override: Optional[str] = None,
+        load_model: bool = True,
     ) -> "DBV4Metadata":
         repo_id = model_repo_override or profile["repo_id"]
         model_path = resolve_model_artifact(
