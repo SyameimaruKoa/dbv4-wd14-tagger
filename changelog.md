@@ -1,5 +1,15 @@
 # 実装履歴
 
+## 2026-09-19
+
+- R-15 / R-17 5段階分類の実行時エラーを修正。
+  - `rating_sublevel_thresholds_5way` は5段階を4つの境界で分割するため、必要なthreshold数を4へ修正。
+  - 10段階時代のR-15 / R-17説明を5段階（`_0`〜`_4`）へ整理。
+- Linux + Intel OpenVINO GPU実行を明示化。
+  - Intel iGPU向けの既定OpenVINOデバイスを `GPU.0` に設定。
+  - OpenVINOへの要求デバイスを起動時に表示。
+  - `sess.get_provider_options()` の値を実効デバイス判定に使用しないよう修正。
+
 ## 2026-09-17
 
 - Sensitive 分割デフォルトの変更およびタグ書き込み・再推論判定の改善

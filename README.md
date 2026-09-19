@@ -264,12 +264,12 @@ WD14 v3 の基本 rating は `General → Sensitive → Questionable → Explici
 
 Sensitive または Questionable と判定された画像についてのみ、4つの rating score から連続した severity を算出する。4 rating は4択確率として合計せず、Sensitive帯では Gen↔Sen の相対位置と Que の上昇度を、Questionable帯では Sen↔Que の相対位置と Exp の上昇度を使う。上位側のscoreは対数スケールで圧縮するため、Genが極端に低いだけでseverityが最上位へ飛ぶのを防ぎながら、Que / Exp が高くなるほど上位へ連続的に寄せる。
 
-得られた severity は同一の0〜9分割基準で細分化する。
+得られた severity は同一の0〜4分割基準で細分化する。
 
-- Sensitive → `R-15_0` 〜 `R-15_9`
-- Questionable → `R-17_0` 〜 `R-17_9`
+- Sensitive → `R-15_0` 〜 `R-15_4`
+- Questionable → `R-17_0` 〜 `R-17_4`
 
-Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置されるため、命名上も `R-15_9 → R-17_0` と連続する。Questionable を単独の `R-17` フォルダにはしない。
+Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置されるため、命名上も `R-15_4 → R-17_0` と連続する。Questionable を単独の `R-17` フォルダにはしない。
 
 ## 設定ファイル (config.json)
 
@@ -287,6 +287,7 @@ Sensitive 帯と Questionable 帯は同じ連続severity軸上に配置される
 | `model_file`                      | `"model.onnx"`                      | 使用するモデルファイル名（またはローカルパス）。                                                                                                                                                              |
 | `tags_file`                       | `"selected_tags.csv"`               | 使用するタグCSVファイル名（またはローカルパス）。                                                                                                                                                             |
 | `general_threshold`               | `0.40`                              | **General（全年齢）判定の安全弁**。`AIが「Generalである確率」がこの値以上なら、たとえ他のR指定スコアが高くても強制的に「General」として扱う。`誤爆（安全な画像をR指定にしてしまうこと）を防ぐための設定じゃ。 |
+| `openvino_gpu_device`                  | `"GPU.0"`                           | Linux + OpenVINOで使用するIntel GPUデバイス。内蔵GPUは通常 `GPU.0`。 |
 | `rating_sublevel_thresholds_5way` | `[0.20, 0.40, 0.60, 0.80]` | Sensitive / Questionable の各帯を共通の0〜4 suffixへ分割する境界。WD14公式基準ではなく、このプロジェクト独自のseverity尺度。 |
 | `rating_severity_sensitive_upper_reference` | `25.0` | Sensitive帯で上側severityを測るQue scoreの参照上限（%）。WD14公式基準ではなく、実測出力を基にした初期キャリブレーション値。 |
 | `rating_severity_questionable_upper_reference` | `40.0` | Questionable帯で上側severityを測るExp scoreの参照上限（%）。同上。 |
@@ -305,8 +306,8 @@ R-15 / R-17 は、それぞれ0〜4の同一suffix規則で管理する。severi
 | **キー** | **デフォルトフォルダ名** | **対応するレーティング** |
 | --- | --- | --- |
 | `general` | `"R-00"` | 全年齢 (Safe) |
-| `sensitive_0` ～ `sensitive_9` | `"R-15_0"` ～ `"R-15_9"` | Sensitive帯のseverity 5段階 |
-| `questionable_0` ～ `questionable_9` | `"R-17_0"` ～ `"R-17_9"` | Questionable帯のseverity 5段階 |
+| `sensitive_0` ～ `sensitive_4` | `"R-15_0"` ～ `"R-15_4"` | Sensitive帯のseverity 5段階 |
+| `questionable_0` ～ `questionable_4` | `"R-17_0"` ～ `"R-17_4"` | Questionable帯のseverity 5段階 |
 | `explicit` | `"R-18"` | Explicit |
 
 `sensitive_mild` / `sensitive_high` / `sensitive_lvl1` ～ `sensitive_lvl6` は旧バージョンのタグを再整理時に除去できるよう、内部的には引き続き認識されるが、新規の判定結果としては使用しない。
