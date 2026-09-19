@@ -821,7 +821,10 @@ def process_images(args: argparse.Namespace) -> None:
                 {
                     "path": os.path.abspath(final_path),
                     "rating": rating,
-                    "probs": metadata.get_rating_scores(probabilities),
+                    "probs": [
+                        metadata.get_rating_scores(probabilities)[name]
+                        for name in DBV4_RATING_NAMES
+                    ],
                     "model_id": metadata.repo_id,
                     "metadata_version": metadata.metadata_version,
                 }
