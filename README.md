@@ -194,6 +194,12 @@ newgrp render
 ./run_tagger.sh -g -p /path/to/images
 ```
 
+
+OpenVINOの内部診断ログ（`Inference successful`、`Model is fully supported on OpenVINO` など）が必要なときだけ `--debug` を付ける。通常実行ではこれらの詳細ログは出力しない。
+
+```bash
+./run_tagger.sh -g --debug -p /path/to/images
+```
 ### 4. AMD GPU (ROCm) 有効化・動作仕様
 
 Linux 上で AMD GPU を使用する場合、`run_tagger.sh` は `onnxruntime-rocm` パッケージを自動インストールし、`/usr/lib/x86_64-linux-gnu` 等のシステムライブラリ（`librocm_smi64.so` や `libroctracer64.so` 等）に対する動的 SONAME 互換エイリアス（`venv_amd/lib/rocm_compat/`）を自動構築するぞ。
