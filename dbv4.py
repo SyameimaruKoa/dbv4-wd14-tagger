@@ -15,7 +15,7 @@ DBV4_CATEGORY_IDS = {"general": 0, "character": 4, "rating": 9}
 
 MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
     "lightweight": {
-        "repo_id": "animetimm/mobilenetv4_conv_small.dbv4-full",
+        "repo_id": "animetimm/caformer_m36.dbv4-full",
         "model_file": "model.onnx",
         "tags_file": "selected_tags.csv",
         "preprocess_file": "preprocess.json",
@@ -23,7 +23,7 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "thresholds_file": "thresholds.csv",
     },
     "balanced": {
-        "repo_id": "animetimm/convformer_s36.dbv4-full",
+        "repo_id": "animetimm/caformer_b36.dbv4-full",
         "model_file": "model.onnx",
         "tags_file": "selected_tags.csv",
         "preprocess_file": "preprocess.json",
@@ -31,14 +31,6 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "thresholds_file": "thresholds.csv",
     },
     "high": {
-        "repo_id": "animetimm/swinv2_base_window8_256.dbv4-full",
-        "model_file": "model.onnx",
-        "tags_file": "selected_tags.csv",
-        "preprocess_file": "preprocess.json",
-        "categories_file": "categories.json",
-        "thresholds_file": "thresholds.csv",
-    },
-    "large": {
         "repo_id": "animetimm/eva02_large_patch14_448.dbv4-full",
         "model_file": "model.onnx",
         "tags_file": "selected_tags.csv",
