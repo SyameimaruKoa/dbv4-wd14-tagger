@@ -34,7 +34,7 @@ show_help() {
     echo "    --force-amd         AMD GPUを強制的に使用する"
     echo "    --organize          フォルダ整理のみ行う（タグ付けOFF）"
     echo "    --tag               タグ付けも行う（--organize併用時）"
-    echo "    --pixiv             Pixiv整理モード（R17以上を親フォルダへ移動）"
+    echo "    --pixiv             Pixiv整理モード（末端フォルダ単位で判定し、対象フォルダの全画像を一括移動）"
     echo "    --no-report         レポート作成なし"
     echo "    --recursive         再帰検索ON"
     echo "    --no-recursive      再帰検索OFF"
