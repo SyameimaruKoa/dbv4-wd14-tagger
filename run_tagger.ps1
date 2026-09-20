@@ -187,7 +187,7 @@ function Show-Help {
     Write-Host "    -Gpu                  GPUを使用する（Windows: DirectML）"
     Write-Host "    -Organize             フォルダ整理のみ行う（タグ付けOFF）"
     Write-Host "    -Tag                  タグ付けも行う（-Organize併用時）"
-    Write-Host "    -Pixiv                Pixiv整理モード（R17以上を親フォルダへ移動）"
+    Write-Host "    -Pixiv                Pixiv整理モード（末端フォルダ単位で全画像を一括移動）"
     Write-Host "    -NoReport             レポート作成なし"
     Write-Host "    -Recursive            再帰検索ON"
     Write-Host "    -NoRecursive          再帰検索OFF"
