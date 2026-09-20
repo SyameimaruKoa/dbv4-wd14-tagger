@@ -149,10 +149,16 @@ def load_config() -> Dict[str, Any]:
             user_config = json.load(f)
         if not isinstance(user_config, dict):
             raise ValueError("config.json のルートがオブジェクトではありません")
-        if merge_defaults(user_config, DEFAULT_CONFIG):
+        changed = merge_defaults(user_config, DEFAULT_CONFIG)
+        profiles = user_config.get("model_profiles", {})
+        lightweight = profiles.get("lightweight", {})
+        if lightweight.get("repo_id") == "animetimm/caformer_m36.dbv4-full":
+            lightweight["repo_id"] = "animetimm/mobilenetv4_conv_aa_large.dbv4-full"
+            changed = True
+        if changed:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(user_config, f, indent=4, ensure_ascii=False)
-            print(f"[INFO] DBV4設定を追記しました: {CONFIG_FILE}")
+            print(f"[INFO] DBV4設定を更新しました: {CONFIG_FILE}")
         return user_config
     except Exception as exc:
         print(f"[WARN] config.jsonを読み込めないためデフォルト設定を使用します: {exc}")
