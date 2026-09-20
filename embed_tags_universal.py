@@ -609,6 +609,122 @@ def collect_images(path_args, recursive=True):
     return sorted(list(set(collected)))
 
 
+def collect_pixiv_image_groups(path_args):
+    """
+    Pixivモード用に、最も末端のフォルダ単位で画像を収集する。
+
+    移動処理はこの収集が完了した後に行うため、走査中にフォルダ構成が
+    変化して次の画像を見失うことを防ぐ。
+    """
+    groups = {}
+    folder_mapping = APP_CONFIG.get("folder_names", {})
+    excluded_dirs = {
+        str(folder_name)
+        for folder_name in folder_mapping.values()
+        if folder_name
+    }
+
+    def add_group(directory, files):
+        image_paths = [
+            os.path.abspath(os.path.join(directory, file_name))
+            for file_name in files
+            if file_name.lower().endswith(VALID_EXTS)
+        ]
+        if image_paths:
+            groups.setdefault(os.path.abspath(directory), set()).update(image_paths)
+
+    for path_arg in path_args:
+        candidates = (
+            glob.glob(path_arg, recursive=True)
+            if "*" in path_arg or "?" in path_arg
+            else [path_arg]
+        )
+        for candidate in candidates:
+            if os.path.isdir(candidate):
+                print(f"[INFO] Pixiv用の末端フォルダをスキャン中: {candidate}")
+                for root, dirnames, files in os.walk(candidate):
+                    current_name = os.path.basename(os.path.normpath(root))
+                    if current_name in excluded_dirs:
+                        dirnames[:] = []
+                        continue
+                    dirnames[:] = [
+                        directory
+                        for directory in dirnames
+                        if directory not in excluded_dirs
+                    ]
+                    if dirnames:
+                        continue
+                    add_group(root, files)
+            elif os.path.isfile(candidate) and candidate.lower().endswith(VALID_EXTS):
+                add_group(
+                    os.path.dirname(os.path.abspath(candidate)),
+                    [os.path.basename(candidate)],
+                )
+
+    return {
+        directory: sorted(file_paths)
+        for directory, file_paths in groups.items()
+    }
+
+
+def get_pixiv_move_rating(ratings):
+    """末端フォルダ内の画像をまとめて移動する際の代表レーティングを返す。"""
+    best_rating = None
+    best_priority = -1
+    for rating in ratings:
+        if rating == "explicit":
+            priority = 100
+        elif rating == "questionable":
+            priority = 10
+        else:
+            match = re.fullmatch(r"questionable_(\d+)", str(rating))
+            if not match:
+                continue
+            priority = 10 + int(match.group(1))
+        if priority > best_priority:
+            best_priority = priority
+            best_rating = rating
+    return best_rating
+
+
+def organize_pixiv_folder(file_paths, rating, base_dirs=None):
+    """
+    末端フォルダ内の画像を、フォルダ単位の判定結果で一括移動する。
+
+    R17以上の画像を1枚でも含む場合は、その末端フォルダ内の全画像を
+    同じR17/R18フォルダへ移動する。全画像の移動に成功して元フォルダが
+    空になった場合のみ、元フォルダ自体を削除する。
+    """
+    if not file_paths or not rating:
+        return {}, 0
+
+    source_dirs = {os.path.dirname(os.path.abspath(path)) for path in file_paths}
+    if len(source_dirs) != 1:
+        raise ValueError("Pixivフォルダ整理では1つの末端フォルダのみ指定してください。")
+
+    source_dir = next(iter(source_dirs))
+    moved_paths = {}
+    moved_count = 0
+
+    for file_path in file_paths:
+        moved, new_path = organize_file(
+            file_path, rating, is_pixiv=True, base_dirs=base_dirs
+        )
+        if moved:
+            moved_count += 1
+            moved_paths[os.path.abspath(file_path)] = os.path.abspath(new_path)
+
+    if moved_count == len(file_paths) and os.path.isdir(source_dir):
+        try:
+            if not os.listdir(source_dir):
+                os.rmdir(source_dir)
+                safe_write(f"[INFO] Pixiv末端フォルダを削除: {source_dir}")
+        except OSError as e:
+            tqdm.write(f"[WARN] 空フォルダの削除に失敗しました ({source_dir}): {e}")
+
+    return moved_paths, moved_count
+
+
 def format_score_tags(rating_probs, config=None):
     if config is None:
         config = APP_CONFIG
@@ -908,8 +1024,18 @@ def process_images(args):
                 et_wrapper.stop()
             return
         tags = load_tags_from_path(tags_path)
+    is_pixiv = getattr(args, "pixiv", False)
     use_recursive = args.recursive if args.recursive is not None else not args.organize
-    target_files = collect_images(args.images, recursive=use_recursive)
+    if is_pixiv:
+        pixiv_groups = collect_pixiv_image_groups(args.images)
+        target_files = sorted(
+            file_path
+            for group_files in pixiv_groups.values()
+            for file_path in group_files
+        )
+    else:
+        pixiv_groups = {}
+        target_files = collect_images(args.images, recursive=use_recursive)
 
     base_dirs = []
     for p in args.images:
@@ -990,6 +1116,8 @@ def process_images(args):
     inferred_count, inferred_time = 0, 0.0
     skipped_tag_count, skipped_tag_time = 0, 0.0
     batch_history = []
+    pixiv_rating_by_path = {}
+    pixiv_moved_paths = {}
 
     pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
 
@@ -1022,13 +1150,16 @@ def process_images(args):
                 skipped_count += 1
         else:
             skipped_count += 1
-        if args.organize and rating:
-            moved, new_path = organize_file(
-                img_path, rating, getattr(args, "pixiv", False), base_dirs
-            )
+
+        if is_pixiv:
+            if rating:
+                pixiv_rating_by_path[os.path.abspath(img_path)] = rating
+        elif args.organize and rating:
+            moved, new_path = organize_file(img_path, rating, False, base_dirs)
             if moved:
                 organized_count += 1
                 final_path = new_path
+
         if not args.no_report and probs is not None:
             REPORT_DATA.append(
                 {
@@ -1038,6 +1169,7 @@ def process_images(args):
                 }
             )
         pbar.update(1)
+
 
     def handle_inference_result(item, probs):
         fname_disp = os.path.basename(item["path"])
@@ -1244,6 +1376,33 @@ def process_images(args):
             et_wrapper.stop()
         pbar.close()
 
+    if is_pixiv:
+        for source_dir, group_files in pixiv_groups.items():
+            absolute_files = [os.path.abspath(path) for path in group_files]
+            if not all(path in pixiv_rating_by_path for path in absolute_files):
+                tqdm.write(
+                    f"[WARN] Pixiv末端フォルダは全画像のスキャンが完了していないため移動をスキップ: {source_dir}"
+                )
+                continue
+
+            target_rating = get_pixiv_move_rating(
+                [pixiv_rating_by_path[path] for path in absolute_files]
+            )
+            if target_rating is None:
+                continue
+
+            moved_paths, moved_count = organize_pixiv_folder(
+                absolute_files, target_rating, base_dirs
+            )
+            organized_count += moved_count
+            pixiv_moved_paths.update(moved_paths)
+
+        if pixiv_moved_paths and REPORT_DATA:
+            for report in REPORT_DATA:
+                original_path = os.path.abspath(report["path"])
+                if original_path in pixiv_moved_paths:
+                    report["path"] = pixiv_moved_paths[original_path]
+
     print(f"\n[完了] 処理結果サマリー:")
     if warmup_time > 0:
         print(f"  ・ウォームアップ時間 (エンジン事前構築) : {warmup_time:.2f} 秒")
@@ -1346,7 +1505,7 @@ def main():
     action_group.add_argument(
         "--pixiv",
         action="store_true",
-        help="Pixiv整理モード（R17以上を親フォルダに移動、R15.5以下は移動しない。再帰・整理を強制）",
+        help="Pixiv整理モード（末端フォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
     )
     action_group.add_argument(
         "--no-report", action="store_true", help="HTMLレポートを作成しない"
