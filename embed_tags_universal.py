@@ -713,7 +713,7 @@ def collect_pixiv_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
         candidates = glob.glob(raw_path, recursive=True) if "*" in raw_path or "?" in raw_path else [raw_path]
         for candidate in candidates:
             if os.path.isdir(candidate):
-                print(f"[INFO] Pixiv用の末端フォルダをスキャン中: {candidate}")
+                print(f"[INFO] Pixiv用の画像フォルダをスキャン中: {candidate}")
                 for root, dirnames, files in os.walk(candidate):
                     current_name = os.path.basename(os.path.normpath(root))
                     if current_name in excluded_dirs:
@@ -724,8 +724,6 @@ def collect_pixiv_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
                         for directory in dirnames
                         if directory not in excluded_dirs
                     ]
-                    if dirnames:
-                        continue
                     add_group(root, files)
             elif os.path.isfile(candidate) and candidate.lower().endswith(VALID_EXTS):
                 add_group(os.path.dirname(os.path.abspath(candidate)), [os.path.basename(candidate)])
@@ -742,7 +740,7 @@ def get_pixiv_move_rating(ratings: Sequence[str]) -> Optional[str]:
         elif rating == "questionable":
             priority = 10
         else:
-            match = re.fullmatch(r"questionable_(\\d+)", str(rating))
+            match = re.fullmatch(r"questionable_(\d+)", str(rating))
             if not match:
                 continue
             priority = 10 + int(match.group(1))
@@ -761,7 +759,7 @@ def organize_pixiv_folder(
         return {}, 0
     source_dirs = {os.path.dirname(os.path.abspath(path)) for path in file_paths}
     if len(source_dirs) != 1:
-        raise ValueError("Pixivフォルダ整理では1つの末端フォルダのみ指定してください。")
+        raise ValueError("Pixivフォルダ整理では1つの画像フォルダのみ指定してください。")
     source_dir = next(iter(source_dirs))
     moved_paths: Dict[str, str] = {}
     moved_count = 0
@@ -774,7 +772,7 @@ def organize_pixiv_folder(
         try:
             if not os.listdir(source_dir):
                 os.rmdir(source_dir)
-                safe_write(f"[INFO] Pixiv末端フォルダを削除: {source_dir}")
+                safe_write(f"[INFO] Pixiv画像フォルダを削除: {source_dir}")
         except OSError as exc:
             safe_write(f"[WARN] 空フォルダの削除に失敗しました ({source_dir}): {exc}")
     return moved_paths, moved_count
@@ -910,6 +908,10 @@ def process_images(args: argparse.Namespace) -> None:
             for group_files in pixiv_groups.values()
             for file_path in group_files
         )
+        print(
+            f"[INFO] Pixiv画像グループ: {len(pixiv_groups)}フォルダ / "
+            f"{len(target_files)}枚"
+        )
     else:
         pixiv_groups = {}
         target_files = collect_images(args.images, recursive)
@@ -946,6 +948,8 @@ def process_images(args: argparse.Namespace) -> None:
     processed = organized = 0
     pixiv_rating_by_path: Dict[str, str] = {}
     pixiv_moved_paths: Dict[str, str] = {}
+    pixiv_target_groups = 0
+    pixiv_moved_groups = 0
     inferred = skipped = 0
     inferred_time = skipped_time = 0.0
     executor = (
@@ -956,6 +960,14 @@ def process_images(args: argparse.Namespace) -> None:
     pending: List[Dict[str, Any]] = []
     report_data: List[Dict[str, Any]] = []
     progress = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
+
+    def update_progress_postfix() -> None:
+        infer_speed = inferred / inferred_time if inferred_time else 0.0
+        skip_speed = skipped / skipped_time if skipped_time else 0.0
+        progress.set_postfix_str(
+            f"推論:{inferred}枚({infer_speed:.1f}/s) "
+            f"Skip:{skipped}枚({skip_speed:.1f}/s)"
+        )
 
     def finalize(
         path: str,
@@ -1044,6 +1056,7 @@ def process_images(args: argparse.Namespace) -> None:
             elapsed = time.time() - started
             inferred += len(valid_items)
             inferred_time += elapsed
+            update_progress_postfix()
             for item, prediction in zip(valid_items, predictions):
                 decode_and_finalize(item, prediction)
         except Exception as exc:
@@ -1054,6 +1067,7 @@ def process_images(args: argparse.Namespace) -> None:
                     prediction = runtime.predict_images([image])[0]
                     inferred += 1
                     inferred_time += time.time() - single_started
+                    update_progress_postfix()
                     decode_and_finalize(item, prediction)
                 except Exception as single_exc:
                     safe_write(f"エラー {os.path.basename(item['path'])}: {single_exc}")
@@ -1078,6 +1092,7 @@ def process_images(args: argparse.Namespace) -> None:
                 )
                 skipped += 1
                 skipped_time += time.time() - started
+                update_progress_postfix()
                 finalize(image_path, existing_tags, [], rating, None)
                 continue
 
@@ -1092,6 +1107,7 @@ def process_images(args: argparse.Namespace) -> None:
                     )
                     inferred += 1
                     inferred_time += time.time() - started
+                    update_progress_postfix()
                     decode_and_finalize(item, prediction)
                 except (urllib.error.URLError, socket.timeout) as exc:
                     safe_write(f"接続エラー(タイムアウト含む): {exc}")
@@ -1115,7 +1131,7 @@ def process_images(args: argparse.Namespace) -> None:
             absolute_files = [os.path.abspath(path) for path in group_files]
             if not all(path in pixiv_rating_by_path for path in absolute_files):
                 safe_write(
-                    f"[WARN] Pixiv末端フォルダは全画像のスキャンが完了していないため移動をスキップ: {source_dir}"
+                    f"[WARN] Pixiv画像フォルダは全画像のスキャンが完了していないため移動をスキップ: {source_dir}"
                 )
                 continue
             target_rating = get_pixiv_move_rating(
@@ -1123,11 +1139,14 @@ def process_images(args: argparse.Namespace) -> None:
             )
             if target_rating is None:
                 continue
+            pixiv_target_groups += 1
             moved_paths, moved_count = organize_pixiv_folder(
                 absolute_files,
                 target_rating,
                 base_dirs,
             )
+            if moved_count:
+                pixiv_moved_groups += 1
             organized += moved_count
             pixiv_moved_paths.update(moved_paths)
 
@@ -1144,6 +1163,11 @@ def process_images(args: argparse.Namespace) -> None:
     print(f"  ・演算スキップファイル (DBV4 score): {skipped} 枚 | {skip_speed:.2f} img/s")
     if warmup_time > 0:
         print(f"  ・ウォームアップ: {warmup_time:.2f} 秒")
+    if is_pixiv:
+        print(
+            f"  ・Pixiv移動対象: {pixiv_target_groups}フォルダ / "
+            f"移動完了 {pixiv_moved_groups}フォルダ"
+        )
     print(f"  ・詳細: タグ書き込み {processed} 枚, 整理移動 {organized} 枚")
 
     if report_data and not args.no_report:
@@ -1162,7 +1186,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--pixiv",
         action="store_true",
-        help="Pixiv整理モード（末端フォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
+        help="Pixiv整理モード（画像を含むフォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
     )
     parser.add_argument("--no-report", action="store_true")
     parser.add_argument(
