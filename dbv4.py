@@ -202,12 +202,14 @@ class DBV4Metadata:
         load_model: bool = True,
     ) -> "DBV4Metadata":
         repo_id = model_repo_override or profile["repo_id"]
-        model_path = resolve_model_artifact(
-            repo_id,
-            model_file_override or profile.get("model_file", "model.onnx"),
-            base_dir,
-            True,
-        )
+        model_path = ""
+        if load_model:
+            model_path = resolve_model_artifact(
+                repo_id,
+                model_file_override or profile.get("model_file", "model.onnx"),
+                base_dir,
+                True,
+            ) or ""
         tags_path = resolve_model_artifact(
             repo_id,
             tags_file_override or profile.get("tags_file", "selected_tags.csv"),

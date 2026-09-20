@@ -55,6 +55,15 @@ warnings.filterwarnings("ignore", category=UserWarning, module="huggingface_hub.
 SYSTEM_OS = platform.system()
 IS_WINDOWS = SYSTEM_OS == "Windows"
 IS_LINUX = SYSTEM_OS == "Linux"
+
+if IS_WINDOWS:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(SCRIPT_DIR, "config.json")
 REPORT_LOG_FILE = os.path.join(os.getcwd(), "report_log.json")
@@ -138,12 +147,44 @@ def merge_defaults(target: Dict[str, Any], source: Dict[str, Any]) -> bool:
     return changed
 
 
+def migrate_legacy_config(config: Dict[str, Any]) -> bool:
+    changed = False
+    profiles = config.get("model_profiles", {})
+    if not isinstance(profiles, dict):
+        return changed
+    migrations = {
+        "lightweight": {
+            "animetimm/mobilenetv4_conv_small.dbv4-full",
+            "animetimm/caformer_m36.dbv4-full",
+        },
+        "balanced": {"animetimm/convformer_s36.dbv4-full"},
+        "high": {"animetimm/swinv2_base_window8_256.dbv4-full"},
+    }
+    for profile_name, legacy_repositories in migrations.items():
+        profile = profiles.get(profile_name, {})
+        if isinstance(profile, dict) and profile.get("repo_id") in legacy_repositories:
+            profile["repo_id"] = MODEL_PROFILES[profile_name]["repo_id"]
+            changed = True
+    legacy_large = profiles.get("large", {})
+    if (
+        config.get("model_profile") == "large"
+        and isinstance(legacy_large, dict)
+        and legacy_large.get("repo_id") == "animetimm/eva02_large_patch14_448.dbv4-full"
+    ):
+        config["model_profile"] = "high"
+        changed = True
+    return changed
+
+
 def load_config() -> Dict[str, Any]:
     config = json.loads(json.dumps(DEFAULT_CONFIG))
     if not os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
-        print(f"[INFO] DBV4用コンフィグを生成しました: {CONFIG_FILE}")
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+            print(f"[INFO] DBV4用コンフィグを生成しました: {CONFIG_FILE}")
+        except OSError as exc:
+            print(f"[WARN] config.jsonを生成できません: {exc}")
         return config
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -151,15 +192,14 @@ def load_config() -> Dict[str, Any]:
         if not isinstance(user_config, dict):
             raise ValueError("config.json のルートがオブジェクトではありません")
         changed = merge_defaults(user_config, DEFAULT_CONFIG)
-        profiles = user_config.get("model_profiles", {})
-        lightweight = profiles.get("lightweight", {})
-        if lightweight.get("repo_id") == "animetimm/caformer_m36.dbv4-full":
-            lightweight["repo_id"] = "animetimm/mobilenetv4_conv_aa_large.dbv4-full"
-            changed = True
+        changed = migrate_legacy_config(user_config) or changed
         if changed:
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(user_config, f, indent=4, ensure_ascii=False)
-            print(f"[INFO] DBV4設定を更新しました: {CONFIG_FILE}")
+            try:
+                with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                    json.dump(user_config, f, indent=4, ensure_ascii=False)
+                print(f"[INFO] DBV4設定を更新しました: {CONFIG_FILE}")
+            except OSError as exc:
+                print(f"[WARN] config.jsonの更新を保存できません: {exc}")
         return user_config
     except Exception as exc:
         print(f"[WARN] config.jsonを読み込めないためデフォルト設定を使用します: {exc}")
@@ -542,7 +582,7 @@ def calculate_rating(
             get_bar(values[2], Colors.MAGENTA),
             get_bar(values[3], Colors.RED),
         ]
-        folder = APP_CONFIG.get("folder_names", {}).get(rating, rating)
+        folder = folder_name_for_rating(rating)
         color = Colors.CYAN
         if rating == "general":
             color = Colors.GREEN
@@ -624,14 +664,21 @@ def preserve_existing_tags(tags: Sequence[str]) -> List[str]:
     ]
 
 
+def folder_name_for_rating(rating: str) -> str:
+    mapping = APP_CONFIG.get("folder_names", {})
+    folder_name = mapping.get(rating)
+    if folder_name is None and isinstance(rating, str) and "_" in rating:
+        folder_name = mapping.get(rating.split("_", 1)[0])
+    return str(folder_name if folder_name is not None else rating)
+
+
 def organize_file(
     file_path: str,
     rating: str,
     is_pixiv: bool = False,
     base_dirs: Optional[Sequence[str]] = None,
 ) -> Tuple[bool, str]:
-    mapping = APP_CONFIG.get("folder_names", {})
-    folder_name = mapping.get(rating, rating)
+    folder_name = folder_name_for_rating(rating)
     if is_pixiv and (rating == "general" or rating.startswith("sensitive_")):
         return False, file_path
     try:
@@ -670,6 +717,7 @@ def collect_images(paths: Sequence[str], recursive: bool = True) -> List[str]:
         candidates = glob.glob(raw_path, recursive=recursive) if "*" in raw_path or "?" in raw_path else [raw_path]
         for candidate in candidates:
             if os.path.isdir(candidate):
+                print(f"[INFO] ディレクトリをスキャン中 (再帰={recursive}): {candidate}")
                 if recursive:
                     for root, _, files in os.walk(candidate):
                         collected.extend(
@@ -876,6 +924,40 @@ def client_predict(
     return probabilities
 
 
+def inference_timing_summary(
+    inferred_count: int,
+    inferred_time: float,
+    batch_history: Sequence[Dict[str, Any]],
+) -> Dict[str, Any]:
+    main_count = inferred_count
+    main_time = inferred_time
+    first_count = 0
+    first_time = 0.0
+    outlier_detected = False
+    if len(batch_history) >= 2:
+        first_count = int(batch_history[0]["count"])
+        first_time = float(batch_history[0]["time"])
+        rest_count = sum(int(batch["count"]) for batch in batch_history[1:])
+        rest_time = sum(float(batch["time"]) for batch in batch_history[1:])
+        first_per_image = first_time / first_count if first_count else 0.0
+        rest_per_image = rest_time / rest_count if rest_count else 0.0
+        if rest_count and first_time > 1.0 and first_per_image > 2.0 * rest_per_image:
+            outlier_detected = True
+            main_count = rest_count
+            main_time = rest_time
+    return {
+        "count": inferred_count,
+        "time": inferred_time,
+        "main_count": main_count,
+        "main_time": main_time,
+        "fps": main_count / main_time if main_time else 0.0,
+        "ms_per_image": main_time / main_count * 1000.0 if main_count else 0.0,
+        "outlier_detected": outlier_detected,
+        "first_count": first_count,
+        "first_time": first_time,
+    }
+
+
 def process_images(args: argparse.Namespace) -> None:
     is_client = args.mode == "client"
     metadata = load_client_metadata(args) if is_client else None
@@ -928,12 +1010,26 @@ def process_images(args: argparse.Namespace) -> None:
             base = os.path.dirname(base)
         base_dirs.append(base)
 
-    batch_size = 1 if is_client else max(1, args.batch_size)
+    requested_batch_size = max(1, args.batch_size)
+    batch_size = 1 if is_client else requested_batch_size
+    if is_client and requested_batch_size > 1:
+        print("[WARN] クライアントモードではバッチ推論を使用できないため、batch-size=1で実行します。")
     if runtime and runtime.batch_limit is not None:
-        batch_size = min(batch_size, max(1, runtime.batch_limit))
+        batch_limit = max(1, runtime.batch_limit)
+        if batch_size > batch_limit:
+            if batch_limit == 1:
+                print("[WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。")
+            else:
+                print(
+                    f"[WARN] batch-sizeがモデル上限({batch_limit})を超えているため、"
+                    f"{batch_limit}に変更します。"
+                )
+            batch_size = batch_limit
     io_workers = args.io_workers
-    if io_workers < 0:
+    if io_workers == -1:
         io_workers = max(2, min(4, (os.cpu_count() or 1) // 2)) if batch_size > 1 else 0
+    elif io_workers < 0:
+        io_workers = 0
 
     if runtime and batch_size > 1:
         print(f"[INFO] DBV4 batch-size={batch_size}, io-workers={io_workers}")
@@ -952,6 +1048,7 @@ def process_images(args: argparse.Namespace) -> None:
     pixiv_moved_groups = 0
     inferred = skipped = 0
     inferred_time = skipped_time = 0.0
+    batch_history: List[Dict[str, Any]] = []
     executor = (
         ThreadPoolExecutor(max_workers=io_workers)
         if runtime and batch_size > 1 and io_workers > 0
@@ -1053,52 +1150,66 @@ def process_images(args: argparse.Namespace) -> None:
             return
         try:
             predictions = runtime.predict_images(images)
-            elapsed = time.time() - started
-            inferred += len(valid_items)
-            inferred_time += elapsed
-            update_progress_postfix()
-            for item, prediction in zip(valid_items, predictions):
-                decode_and_finalize(item, prediction)
         except Exception as exc:
             safe_write(f"[WARN] DBV4バッチ推論に失敗: {exc} -> 1枚ずつに切り替えます。")
             for item, image in zip(valid_items, images):
                 single_started = time.time()
                 try:
                     prediction = runtime.predict_images([image])[0]
+                    elapsed = time.time() - single_started
                     inferred += 1
-                    inferred_time += time.time() - single_started
+                    inferred_time += elapsed
+                    batch_history.append({"count": 1, "time": elapsed})
                     update_progress_postfix()
                     decode_and_finalize(item, prediction)
                 except Exception as single_exc:
                     safe_write(f"エラー {os.path.basename(item['path'])}: {single_exc}")
                     progress.update(1)
+            return
 
+        elapsed = time.time() - started
+        inferred += len(valid_items)
+        inferred_time += elapsed
+        batch_history.append({"count": len(valid_items), "time": elapsed})
+        update_progress_postfix()
+        for item, prediction in zip(valid_items, predictions):
+            try:
+                decode_and_finalize(item, prediction)
+            except Exception as exc:
+                safe_write(f"エラー {os.path.basename(item['path'])}: {exc}")
+                progress.update(1)
+
+    aborted = False
     try:
         for image_path in target_files:
             started = time.time()
-            existing_tags = et_wrapper.get_tags(image_path) if need_exiftool else []
-            raw_scores = extract_raw_rating_scores(metadata, existing_tags) if not args.force else None
-
-            if raw_scores is not None and args.rating_thresh is None:
-                probabilities = np.zeros(metadata.label_count, dtype=np.float32)
-                for name, score in zip(DBV4_RATING_NAMES, raw_scores):
-                    probabilities[metadata.rating_indices[name]] = score
-                rating = calculate_rating(
-                    metadata,
-                    probabilities,
-                    None,
-                    args.ignore_sensitive,
-                    float(APP_CONFIG.get("general_threshold", 0.40)),
+            try:
+                existing_tags = et_wrapper.get_tags(image_path) if need_exiftool else []
+                raw_scores = (
+                    extract_raw_rating_scores(metadata, existing_tags)
+                    if not args.force
+                    else None
                 )
-                skipped += 1
-                skipped_time += time.time() - started
-                update_progress_postfix()
-                finalize(image_path, existing_tags, [], rating, None)
-                continue
 
-            item = {"path": image_path, "existing_tags": existing_tags}
-            if is_client:
-                try:
+                if raw_scores is not None and args.rating_thresh is None:
+                    probabilities = np.zeros(metadata.label_count, dtype=np.float32)
+                    for name, score in zip(DBV4_RATING_NAMES, raw_scores):
+                        probabilities[metadata.rating_indices[name]] = score
+                    rating = calculate_rating(
+                        metadata,
+                        probabilities,
+                        None,
+                        args.ignore_sensitive,
+                        float(APP_CONFIG.get("general_threshold", 0.40)),
+                    )
+                    skipped += 1
+                    skipped_time += time.time() - started
+                    update_progress_postfix()
+                    finalize(image_path, existing_tags, [], rating, None)
+                    continue
+
+                item = {"path": image_path, "existing_tags": existing_tags}
+                if is_client:
                     prediction = client_predict(
                         f"http://{args.host}:{args.port}",
                         image_path,
@@ -1109,16 +1220,32 @@ def process_images(args: argparse.Namespace) -> None:
                     inferred_time += time.time() - started
                     update_progress_postfix()
                     decode_and_finalize(item, prediction)
-                except (urllib.error.URLError, socket.timeout) as exc:
+                else:
+                    pending.append(item)
+                    if len(pending) >= batch_size:
+                        run_batch(pending[:batch_size])
+                        pending = pending[batch_size:]
+            except urllib.error.HTTPError as exc:
+                safe_write(f"サーバー処理エラー {os.path.basename(image_path)}: {exc}")
+                progress.update(1)
+                continue
+            except (urllib.error.URLError, socket.timeout) as exc:
+                if is_client:
                     safe_write(f"接続エラー(タイムアウト含む): {exc}")
+                    aborted = True
                     break
-            else:
-                pending.append(item)
-                if len(pending) >= batch_size:
-                    run_batch(pending[:batch_size])
-                    pending = pending[batch_size:]
+                safe_write(f"エラー {os.path.basename(image_path)}: {exc}")
+                progress.update(1)
+            except KeyboardInterrupt:
+                raise
+            except Exception as exc:
+                safe_write(f"エラー {os.path.basename(image_path)}: {exc}")
+                progress.update(1)
+    except KeyboardInterrupt:
+        safe_write("\n[INFO] 中断されました。")
+        aborted = True
     finally:
-        if runtime and pending:
+        if runtime and pending and not aborted:
             run_batch(pending)
         if executor:
             executor.shutdown(wait=True)
@@ -1126,7 +1253,9 @@ def process_images(args: argparse.Namespace) -> None:
             et_wrapper.stop()
         progress.close()
 
-    if is_pixiv:
+    if is_pixiv and aborted:
+        safe_write("[WARN] 処理が中断されたため、Pixivフォルダの移動をスキップします。")
+    elif is_pixiv:
         for source_dir, group_files in pixiv_groups.items():
             absolute_files = [os.path.abspath(path) for path in group_files]
             if not all(path in pixiv_rating_by_path for path in absolute_files):
@@ -1157,12 +1286,44 @@ def process_images(args: argparse.Namespace) -> None:
                     report["path"] = pixiv_moved_paths[original_path]
 
     print("\n[完了] 処理結果サマリー:")
-    infer_speed = inferred / inferred_time if inferred_time else 0.0
-    skip_speed = skipped / skipped_time if skipped_time else 0.0
-    print(f"  ・推論実行ファイル (DBV4 AI演算あり): {inferred} 枚 | {infer_speed:.2f} img/s")
-    print(f"  ・演算スキップファイル (DBV4 score): {skipped} 枚 | {skip_speed:.2f} img/s")
     if warmup_time > 0:
-        print(f"  ・ウォームアップ: {warmup_time:.2f} 秒")
+        print(f"  ・ウォームアップ時間 (エンジン事前構築): {warmup_time:.2f} 秒")
+
+    timing = inference_timing_summary(inferred, inferred_time, batch_history)
+    if inferred:
+        print(
+            f"  ・推論実行ファイル (DBV4 AI演算あり): {inferred} 枚 | "
+            f"速度: {timing['fps']:.2f} img/s ({timing['ms_per_image']:.1f} ms/img)"
+        )
+        if timing["outlier_detected"]:
+            first_count = int(timing["first_count"])
+            first_time = float(timing["first_time"])
+            first_ms = first_time / first_count * 1000.0 if first_count else 0.0
+            all_speed = inferred / inferred_time if inferred_time else 0.0
+            print(
+                f"       ├─ 初回バッチ処理時間: {first_time:.2f} 秒 "
+                f"({first_ms:.1f} ms/img)"
+            )
+            print(
+                f"       ├─ 初回を含む全推論速度: {all_speed:.2f} img/s "
+                f"(合計処理時間: {inferred_time:.2f} 秒)"
+            )
+            print(
+                f"       └─ 初回バッチの遅延 ({first_time:.2f}秒) を"
+                "コンパイル外れ値としてメイン速度から除外しました。"
+            )
+    else:
+        print("  ・推論実行ファイル (DBV4 AI演算あり): 0 枚")
+
+    if skipped:
+        skip_speed = skipped / skipped_time if skipped_time else 0.0
+        skip_ms = skipped_time / skipped * 1000.0
+        print(
+            f"  ・演算スキップファイル (DBV4 score): {skipped} 枚 | "
+            f"速度: {skip_speed:.2f} img/s ({skip_ms:.1f} ms/img)"
+        )
+    else:
+        print("  ・演算スキップファイル (DBV4 score): 0 枚")
     if is_pixiv:
         print(
             f"  ・Pixiv移動対象: {pixiv_target_groups}フォルダ / "
@@ -1170,11 +1331,18 @@ def process_images(args: argparse.Namespace) -> None:
         )
     print(f"  ・詳細: タグ書き込み {processed} 枚, 整理移動 {organized} 枚")
 
-    if report_data and not args.no_report:
-        with open(REPORT_LOG_FILE, "w", encoding="utf-8") as f:
-            json.dump(report_data, f, ensure_ascii=False)
-        if make_report:
-            make_report.make_report()
+    if not args.no_report:
+        if report_data:
+            with open(REPORT_LOG_FILE, "w", encoding="utf-8") as f:
+                json.dump(report_data, f, ensure_ascii=False)
+            print(f"[INFO] レポート用ログを保存: {REPORT_LOG_FILE}")
+            if make_report:
+                print("[INFO] HTMLレポートを生成中...")
+                make_report.make_report()
+            else:
+                print("[WARN] make_reportモジュールがないためHTML生成をスキップします。")
+        else:
+            print("[INFO] レポート対象データがありませんでした。")
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -1188,7 +1356,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Pixiv整理モード（画像を含むフォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
     )
-    parser.add_argument("--no-report", action="store_true")
+    parser.add_argument("--no-report", action="store_true", help="HTMLレポートを作成しない")
     parser.add_argument(
         "--thresh",
         type=float,
@@ -1196,28 +1364,34 @@ def create_parser() -> argparse.ArgumentParser:
         help="DBV4のtag best_thresholdを上書きする明示的な閾値",
     )
     parser.add_argument("--gpu", action="store_true", help="GPUを使用する")
-    parser.add_argument("--batch-size", type=int, default=4)
-    parser.add_argument("--io-workers", type=int, default=-1)
-    parser.add_argument("--force", action="store_true")
-    parser.add_argument("--recursive", action="store_const", const=True, default=None)
-    parser.add_argument("--no-recursive", action="store_const", const=False, dest="recursive")
+    parser.add_argument("--batch-size", type=int, default=4, help="推論バッチサイズ")
+    parser.add_argument("--io-workers", type=int, default=-1, help="画像読込みの並列数（-1=自動）")
+    parser.add_argument("--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
+    parser.add_argument("--recursive", action="store_const", const=True, default=None, help="再帰検索ON")
+    parser.add_argument("--no-recursive", action="store_const", const=False, dest="recursive", help="再帰検索OFF")
     parser.add_argument(
         "--model-profile",
-        choices=list(MODEL_PROFILES.keys()),
         default=None,
-        help="DBV4モデルプロファイル",
+        metavar="NAME",
+        help="DBV4モデルプロファイル（configのカスタム定義も指定可）",
     )
-    parser.add_argument("--model-repo", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--model-file", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--tags-file", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--host", default=None)
-    parser.add_argument("--port", type=int, default=None)
-    parser.add_argument("--sensitive-split-mode", choices=[2, 4, 6], type=int, default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--record-ratio", action="store_true", default=None)
-    parser.add_argument("--no-record-ratio", action="store_false", dest="record_ratio")
-    parser.add_argument("--rating-thresh", type=float, default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--ignore-sensitive", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--gen-config", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--model-repo", default=None, help="DBV4モデル/metadataのHugging FaceリポジトリID")
+    parser.add_argument("--model-file", default=None, help="ONNXモデルファイル名またはパス")
+    parser.add_argument("--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
+    parser.add_argument("--host", default=None, help="Client接続先ホスト")
+    parser.add_argument("--port", type=int, default=None, help="Server/Clientポート")
+    parser.add_argument(
+        "--sensitive-split-mode",
+        choices=[2, 4, 6],
+        type=int,
+        default=None,
+        help="旧CLI互換（DBV4ではR-15/R-17の5段階固定）",
+    )
+    parser.add_argument("--record-ratio", action="store_true", default=None, help="rating scoreをXMPへ保存")
+    parser.add_argument("--no-record-ratio", action="store_false", dest="record_ratio", help="rating scoreのXMP保存を無効化")
+    parser.add_argument("--rating-thresh", type=float, default=None, help="非General rating判定閾値（旧CLI互換）")
+    parser.add_argument("--ignore-sensitive", action="store_true", help="Sensitive判定をGeneralとして扱う")
+    parser.add_argument("--gen-config", action="store_true", help="config.jsonを生成・更新")
     return parser
 
 

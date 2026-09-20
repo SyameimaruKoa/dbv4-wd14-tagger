@@ -2,6 +2,16 @@
 
 ## 2026-09-21
 
+- DBV4移行時に抜けた既存機能の互換性を復元。
+  - ClientモードはONNXモデル本体を取得せず、metadataのみを読み込むよう修正。
+  - ClientのHTTPエラーは対象画像だけをスキップし、接続断時のみ全体を中断する動作を復元。
+  - 画像単位の例外継続、Ctrl+C中断、モデルのbatch上限警告を復元。
+  - 初回バッチ外れ値の除外、img/s、ms/imgの詳細速度統計を復元。
+  - 旧configのfolder mapping fallback、config更新保存失敗時の継続、Windows UTF-8出力を復元。
+  - 既知の旧DBV4 profile定義を現行モデルへ自動移行し、configのカスタムprofile選択を復元。
+  - レポート生成状態と既存CLIオプションのヘルプ表示を復元。
+  - HTMLレポートのR-15/R-17各5段階badgeと対応rating score表示をDBV4形式へ移行。
+
 - Pixiv整理モードを画像フォルダ単位の一括処理へ改修。
   - 画像を含む各フォルダの全画像を先にスキャン・レーティング判定し、移動処理はスキャン完了後に実行。
   - R17以上を1枚でも含む画像フォルダは、そのフォルダ内の全画像を代表レーティングの移動先へまとめて移動。
@@ -14,7 +24,7 @@
 ## 2026-09-20
 
 - DBV4 fullモデルファミリーへの推論エンジン移行。
-  - DBV4用 Model Profile を追加し、lightweight / balanced / high / large / ultra を共通インターフェースで切り替え可能にした。
+  - DBV4用 Model Profile を追加し、lightweight / balanced / high / ultra を共通インターフェースで切り替え可能にした。
   - 初期デフォルトを animetimm/convformer_s36.dbv4-full の balanced に設定。
   - model.onnx / selected_tags.csv / preprocess.json / categories.json / thresholds.csv をモデルmetadataとして一体管理。
   - selected_tags.csv の tag-specific best_threshold を標準thresholdとして使用し、--thresh は明示overrideとして分離。

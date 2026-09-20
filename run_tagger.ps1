@@ -58,7 +58,7 @@
 
 .PARAMETER ModelProfile
     【DBV4モデルプロファイル】 (文字列)
-    lightweight / balanced / high / large / ultra から選択する。
+    lightweight / balanced / high / ultra から選択する。
 
 .PARAMETER ModelRepo
     【モデルリポジトリ】 (文字列)
@@ -94,7 +94,7 @@
 
 .PARAMETER SensitiveSplitMode
     【Sensitive分割モード】 (数値: 2, 4, 6)
-    Sensitiveの分割モード（2分割: mild/high, 4分割: lvl1-4, 6分割: lvl1-6）。
+    旧CLI互換用。DBV4ではR-15/R-17は5段階固定のため、指定時は非推奨警告を表示する。
     未指定時はconfig.jsonの設定を使用。
 
 .PARAMETER RecordRatio
@@ -133,11 +133,11 @@
     # 全部入り (タグ付け＋整理＋レポート)
     .\run_tagger.ps1 -Path "C:\Images" -Tag -Organize -Gpu
 
-    # 6分割モード指定＋RAWスコア記録有効
-    .\run_tagger.ps1 -Path "C:\Images" -Gpu -SensitiveSplitMode 6 -RecordRatio
+    # highプロファイル＋RAWスコア記録有効
+    .\run_tagger.ps1 -Path "C:\Images" -Gpu -ModelProfile high -RecordRatio
 
-    # 推論スキップ高速再整理（RAWスコアを利用して6分割フォルダへ再振り分け）
-    .\run_tagger.ps1 -Path "C:\Images" -Organize -SensitiveSplitMode 6
+    # 推論スキップ高速再整理（DBV4 RAWスコアを利用）
+    .\run_tagger.ps1 -Path "C:\Images" -Organize -ModelProfile balanced
 #>
 
 [CmdletBinding()]
@@ -199,7 +199,7 @@ function Show-Help {
     Write-Host "    -Thresh <0.0-1.0>     DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
     Write-Host "    -BatchSize <n>        推論バッチサイズ"
     Write-Host "    -IoWorkers <n>        前処理の並列ワーカー数"
-    Write-Host "    -ModelProfile <name>  DBV4モデルプロファイル (lightweight/balanced/high/large/ultra)"
+    Write-Host "    -ModelProfile <name>  DBV4モデルプロファイル (lightweight/balanced/high/ultra)"
     Write-Host "    -ModelRepo <repo>     DBV4モデル/タグのHFリポジトリIDを明示指定"
     Write-Host "    -ModelFile <file>     モデルファイル名またはパス"
     Write-Host "    -TagsFile <file>      タグCSVファイル名またはパス"
@@ -208,7 +208,7 @@ function Show-Help {
     Write-Host "    -Client               クライアントモード"
     Write-Host "    -HostIP <ip>          サーバーのIPアドレス"
     Write-Host "    -Port <port>          ポート番号"
-    Write-Host "    -SensitiveSplitMode <2|4|6> Sensitiveの分割モード (2, 4, 6)"
+    Write-Host "    -SensitiveSplitMode <2|4|6> 旧CLI互換（DBV4では5段階固定・非推奨）"
     Write-Host "    -RecordRatio          メタデータにRAWスコア・割合スコアを記録"
     Write-Host "    -NoRecordRatio        メタデータへのスコア記録を無効化"
     Write-Host "    -Help (-h, --help)    このヘルプを表示"
@@ -226,11 +226,11 @@ function Show-Help {
     Write-Host "    # 全部入り（タグ付け＋整理＋レポート＋GPU）"
     Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -Tag -Gpu"
     Write-Host ""
-    Write-Host "    # 6分割モード指定＋RAWスコア記録有効"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu -SensitiveSplitMode 6 -RecordRatio"
+    Write-Host "    # highプロファイル＋RAWスコア記録有効"
+    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu -ModelProfile high -RecordRatio"
     Write-Host ""
-    Write-Host "    # 推論スキップ高速再整理（RAWスコアを利用して6分割フォルダへ再振り分け）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -SensitiveSplitMode 6"
+    Write-Host "    # 推論スキップ高速再整理（DBV4 RAWスコアを利用）"
+    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -ModelProfile balanced"
     Write-Host ""
 }
 

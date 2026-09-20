@@ -71,6 +71,29 @@ class DBV4MetadataTests(unittest.TestCase):
             self.assertEqual(metadata.rating_tags_marker, "dbv4_model:")
             self.assertEqual(len(metadata.metadata_version), 16)
 
+    def test_client_metadata_does_not_require_model_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            metadata = self._make_metadata(directory)
+            os.remove(metadata.model_path)
+            profile = {
+                "profile_name": "client-test",
+                "repo_id": "",
+                "model_file": "missing-model.onnx",
+                "tags_file": "selected_tags.csv",
+                "preprocess_file": "preprocess.json",
+                "categories_file": "categories.json",
+                "thresholds_file": "thresholds.csv",
+            }
+
+            client_metadata = DBV4Metadata.load(
+                profile,
+                base_dir=directory,
+                load_model=False,
+            )
+
+            self.assertEqual(client_metadata.model_path, "")
+            self.assertEqual(client_metadata.label_count, 5)
+
     def test_preprocess_and_layout(self):
         preprocessor = DBV4Preprocessor({
             "test": [
