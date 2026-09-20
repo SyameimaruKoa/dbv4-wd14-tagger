@@ -22,13 +22,12 @@ Windows (PowerShell) と Linux (Bash) に対応しており、DBV4のモデル�
 
 | Profile | Repository | 目安 |
 | --- | --- | --- |
-| lightweight | animetimm/mobilenetv4_conv_small.dbv4-full | 軽量 |
-| balanced | animetimm/convformer_s36.dbv4-full | 初期デフォルト |
-| high | animetimm/swinv2_base_window8_256.dbv4-full | 高性能 |
-| large | animetimm/eva02_large_patch14_448.dbv4-full | 大型 |
-| ultra | animetimm/convnextv2_huge.dbv4-full | 超大型 |
+| lightweight | animetimm/caformer_m36.dbv4-full | 82.7M / 軽量 |
+| balanced | animetimm/caformer_b36.dbv4-full | 134.0M / デフォルト |
+| high | animetimm/eva02_large_patch14_448.dbv4-full | 316.8M / 高精度 |
+| ultra | animetimm/convnextv2_huge.dbv4-full | 692.6M / 精度最優先 |
 
-balanced はDBV4移行時点の初期デフォルトであり、実環境ベンチマークによる最終選定とは分離しておる。
+balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-full をデフォルトとして使用する。
 
 各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
 
@@ -221,7 +220,7 @@ Serverは次の情報をJSONで返す。
 ~~~json
 {
     "protocol": 1,
-    "model_id": "animetimm/convformer_s36.dbv4-full",
+    "model_id": "animetimm/caformer_b36.dbv4-full",
     "profile": "balanced",
     "metadata_version": "xxxxxxxxxxxxxxxx",
     "output_size": 12476,
