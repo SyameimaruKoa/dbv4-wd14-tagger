@@ -725,7 +725,7 @@ def organize_pixiv_folder(file_paths, rating, base_dirs=None):
     return moved_paths, moved_count
 
 
-def format_score_tags(rating_probs, config=None):def format_score_tags(rating_probs, config=None):
+def format_score_tags(rating_probs, config=None):
     if config is None:
         config = APP_CONFIG
     tags = []
@@ -1037,7 +1037,7 @@ def process_images(args):
         pixiv_groups = {}
         target_files = collect_images(args.images, recursive=use_recursive)
 
-    base_dirs = []    base_dirs = []
+    base_dirs = []
     for p in args.images:
         base = p.split("*")[0].split("?")[0]
         abs_base = os.path.abspath(base)
@@ -1119,7 +1119,7 @@ def process_images(args):
     pixiv_rating_by_path = {}
     pixiv_moved_paths = {}
 
-    pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)    pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
+    pbar = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
 
     def update_pbar_postfix():
         inf_sp = (
@@ -1171,7 +1171,7 @@ def process_images(args):
         pbar.update(1)
 
 
-    def handle_inference_result(item, probs):    def handle_inference_result(item, probs):
+    def handle_inference_result(item, probs):
         fname_disp = os.path.basename(item["path"])
         fname_disp = fname_disp[:17] + "..." if len(fname_disp) > 20 else fname_disp
         rating = calculate_rating(
