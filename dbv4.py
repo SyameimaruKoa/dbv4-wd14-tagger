@@ -15,7 +15,7 @@ DBV4_CATEGORY_IDS = {"general": 0, "character": 4, "rating": 9}
 
 MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
     "lightweight": {
-        "repo_id": "animetimm/caformer_m36.dbv4-full",
+        "repo_id": "animetimm/mobilenetv4_conv_aa_large.dbv4-full",
         "model_file": "model.onnx",
         "tags_file": "selected_tags.csv",
         "preprocess_file": "preprocess.json",
