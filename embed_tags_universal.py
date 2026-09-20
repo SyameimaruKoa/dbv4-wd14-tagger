@@ -47,6 +47,7 @@ from dbv4 import (
     adapt_input_layout,
     get_model_profile,
     infer_output_to_probabilities,
+    select_output_name,
 )
 
 warnings.filterwarnings("ignore", category=UserWarning, module="huggingface_hub.*")
@@ -334,7 +335,7 @@ class RuntimeModel:
         input_meta = session.get_inputs()[0]
         self.input_name = input_meta.name
         self.input_shape = input_meta.shape
-        self.output_name = session.get_outputs()[0].name
+        self.output_name = select_output_name(session.get_outputs(), metadata.label_count)
 
     @property
     def batch_limit(self) -> Optional[int]:
@@ -357,6 +358,14 @@ class RuntimeModel:
         raw = np.asarray(raw)
         if raw.ndim == 1:
             raw = raw[None, :]
+        if raw.ndim != 2:
+            raise ValueError(f"DBV4 outputは2次元を想定しています: shape={raw.shape}")
+        expected_shape = (len(images), self.metadata.label_count)
+        if raw.shape != expected_shape:
+            raise ValueError(
+                f"DBV4 output shape mismatch: model={raw.shape}, expected={expected_shape}, "
+                f"output={self.output_name}"
+            )
         return [infer_output_to_probabilities(row) for row in raw]
 
 

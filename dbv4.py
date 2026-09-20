@@ -341,8 +341,16 @@ class DBV4Preprocessor:
         if not isinstance(step, dict):
             raise ValueError(f"未知のpreprocess step形式です: {step!r}")
         name = str(step.get("name") or step.get("type") or step.get("transform") or "").lower()
-        params = step.get("params") or step.get("kwargs") or {}
-        return name, params if isinstance(params, dict) else {}
+        params = {
+            key: value
+            for key, value in step.items()
+            if key not in {"name", "type", "transform", "params", "kwargs"}
+        }
+        for container_name in ("params", "kwargs"):
+            nested_params = step.get(container_name)
+            if isinstance(nested_params, dict):
+                params.update(nested_params)
+        return name, params
 
     @staticmethod
     def _size(value: Any, params: Optional[Dict[str, Any]] = None) -> Tuple[int, int]:
@@ -428,14 +436,16 @@ class DBV4Preprocessor:
                     target = (w, h)
                 current = current.resize(target, resample)
             elif name in {"centercrop", "center_crop"}:
-                h, w = self._size(params.get("size"))
+                h, w = self._size(params.get("size"), params)
                 width, height = current.size
                 left = max(0, (width - w) // 2)
                 top = max(0, (height - h) // 2)
                 current = current.crop((left, top, left + w, top + h))
             elif name in {
                 "maybetotensor",
+                "maybe_to_tensor",
                 "totensor",
+                "to_tensor",
                 "convertimagedtype",
                 "convert_image_dtype",
                 "identity",
@@ -471,6 +481,47 @@ def infer_output_to_probabilities(raw_output: Any) -> np.ndarray:
     if float(values.min()) < 0.0 or float(values.max()) > 1.0:
         values = 1.0 / (1.0 + np.exp(-np.clip(values, -80.0, 80.0)))
     return np.clip(values, 0.0, 1.0)
+
+
+def select_output_name(outputs: Sequence[Any], label_count: int) -> str:
+    if not outputs:
+        raise ValueError("DBV4 modelに出力がありません。")
+
+    preferred_names = ("prediction", "probabilities", "probability", "probs", "logits")
+    matching: List[Any] = []
+    dynamic: List[Any] = []
+    for output in outputs:
+        shape = getattr(output, "shape", None)
+        if not isinstance(shape, (list, tuple)) or not shape:
+            dynamic.append(output)
+            continue
+        size = shape[-1]
+        if isinstance(size, (int, np.integer)):
+            if int(size) == label_count:
+                matching.append(output)
+        else:
+            dynamic.append(output)
+
+    for preferred_name in preferred_names:
+        for output in matching:
+            if str(getattr(output, "name", "")).lower() == preferred_name:
+                return str(output.name)
+    if len(matching) == 1:
+        return str(matching[0].name)
+
+    for preferred_name in preferred_names:
+        for output in dynamic:
+            if str(getattr(output, "name", "")).lower() == preferred_name:
+                return str(output.name)
+
+    details = [
+        f"{getattr(output, 'name', '<unnamed>')}:{getattr(output, 'shape', None)}"
+        for output in outputs
+    ]
+    raise ValueError(
+        f"DBV4ラベル数 {label_count} に対応する出力を特定できません: "
+        + ", ".join(details)
+    )
 
 
 def detect_input_layout(input_shape: Sequence[Any]) -> str:

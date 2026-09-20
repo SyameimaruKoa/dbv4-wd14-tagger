@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 import numpy as np
 from PIL import Image
@@ -13,6 +14,7 @@ from dbv4 import (
     adapt_input_layout,
     detect_input_layout,
     infer_output_to_probabilities,
+    select_output_name,
 )
 
 
@@ -91,9 +93,52 @@ class DBV4MetadataTests(unittest.TestCase):
         self.assertEqual(adapt_input_layout(batch, [None, 3, 8, 8]).shape, (1, 3, 8, 8))
         self.assertEqual(adapt_input_layout(batch, [None, 8, 8, 3]).shape, (1, 8, 8, 3))
 
+    def test_preprocess_with_flat_dbv4_parameters(self):
+        preprocessor = DBV4Preprocessor({
+            "test": [
+                {
+                    "type": "pad_to_size",
+                    "size": [12, 12],
+                    "background_color": "white",
+                    "interpolation": "bilinear",
+                },
+                {
+                    "type": "resize",
+                    "size": 8,
+                    "interpolation": "bicubic",
+                    "max_size": None,
+                    "antialias": True,
+                },
+                {"type": "center_crop", "height": 8, "width": 8},
+                {"type": "maybe_to_tensor"},
+                {
+                    "type": "normalize",
+                    "mean": [0.5, 0.5, 0.5],
+                    "std": [0.5, 0.5, 0.5],
+                },
+            ]
+        })
+        value = preprocessor(Image.new("RGB", (2, 4), (255, 0, 0)))
+        self.assertEqual(value.shape, (3, 8, 8))
+        self.assertTrue(np.isfinite(value).all())
+        np.testing.assert_allclose(value[:, 0, 0], [1.0, 1.0, 1.0])
+
     def test_output_probability_normalization(self):
         probabilities = infer_output_to_probabilities(np.array([0.0, 2.0, -2.0], dtype=np.float32))
         np.testing.assert_allclose(probabilities, [0.5, 0.8807971, 0.11920292], rtol=1e-6)
+
+    def test_select_output_prefers_prediction_with_matching_label_count(self):
+        outputs = [
+            SimpleNamespace(name="embedding", shape=["batch", 768]),
+            SimpleNamespace(name="logits", shape=["batch", 12476]),
+            SimpleNamespace(name="prediction", shape=["batch", 12476]),
+        ]
+        self.assertEqual(select_output_name(outputs, 12476), "prediction")
+
+    def test_select_output_rejects_incompatible_shapes(self):
+        outputs = [SimpleNamespace(name="embedding", shape=["batch", 768])]
+        with self.assertRaisesRegex(ValueError, "12476"):
+            select_output_name(outputs, 12476)
 
 
 if __name__ == "__main__":
