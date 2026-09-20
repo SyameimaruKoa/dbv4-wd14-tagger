@@ -375,6 +375,18 @@ def load_runtime_model(
     providers = build_providers(use_gpu)
     session_options = ort.SessionOptions()
     session_options.log_severity_level = 3
+    provider_names = {
+        item[0] if isinstance(item, tuple) else item
+        for item in providers
+    }
+    if "DmlExecutionProvider" in provider_names:
+        # DirectML requires sequential execution and memory patterns disabled.
+        # DBV4 CAFormer also fails during ORT's graph rewrite with the default
+        # ORT_ENABLE_ALL ("logits" output disappears), so let DirectML consume
+        # the original graph with only ORT's mandatory transformations.
+        session_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+        session_options.enable_mem_pattern = False
+        session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
     try:
         session = ort.InferenceSession(
             metadata.model_path,
