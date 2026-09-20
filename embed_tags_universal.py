@@ -665,6 +665,94 @@ def collect_images(paths: Sequence[str], recursive: bool = True) -> List[str]:
     return sorted(set(collected))
 
 
+def collect_pixiv_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
+    groups: Dict[str, set] = {}
+    excluded_dirs = {
+        str(folder_name)
+        for folder_name in APP_CONFIG.get("folder_names", {}).values()
+        if folder_name
+    }
+
+    def add_group(directory: str, files: Sequence[str]) -> None:
+        image_paths = [
+            os.path.abspath(os.path.join(directory, name))
+            for name in files
+            if name.lower().endswith(VALID_EXTS)
+        ]
+        if image_paths:
+            groups.setdefault(os.path.abspath(directory), set()).update(image_paths)
+
+    for raw_path in paths:
+        candidates = glob.glob(raw_path, recursive=True) if "*" in raw_path or "?" in raw_path else [raw_path]
+        for candidate in candidates:
+            if os.path.isdir(candidate):
+                print(f"[INFO] Pixiv用の末端フォルダをスキャン中: {candidate}")
+                for root, dirnames, files in os.walk(candidate):
+                    current_name = os.path.basename(os.path.normpath(root))
+                    if current_name in excluded_dirs:
+                        dirnames[:] = []
+                        continue
+                    dirnames[:] = [
+                        directory
+                        for directory in dirnames
+                        if directory not in excluded_dirs
+                    ]
+                    if dirnames:
+                        continue
+                    add_group(root, files)
+            elif os.path.isfile(candidate) and candidate.lower().endswith(VALID_EXTS):
+                add_group(os.path.dirname(os.path.abspath(candidate)), [os.path.basename(candidate)])
+
+    return {directory: sorted(file_paths) for directory, file_paths in groups.items()}
+
+
+def get_pixiv_move_rating(ratings: Sequence[str]) -> Optional[str]:
+    best_rating = None
+    best_priority = -1
+    for rating in ratings:
+        if rating == "explicit":
+            priority = 100
+        elif rating == "questionable":
+            priority = 10
+        else:
+            match = re.fullmatch(r"questionable_(\\d+)", str(rating))
+            if not match:
+                continue
+            priority = 10 + int(match.group(1))
+        if priority > best_priority:
+            best_priority = priority
+            best_rating = rating
+    return best_rating
+
+
+def organize_pixiv_folder(
+    file_paths: Sequence[str],
+    rating: str,
+    base_dirs: Optional[Sequence[str]] = None,
+) -> Tuple[Dict[str, str], int]:
+    if not file_paths or not rating:
+        return {}, 0
+    source_dirs = {os.path.dirname(os.path.abspath(path)) for path in file_paths}
+    if len(source_dirs) != 1:
+        raise ValueError("Pixivフォルダ整理では1つの末端フォルダのみ指定してください。")
+    source_dir = next(iter(source_dirs))
+    moved_paths: Dict[str, str] = {}
+    moved_count = 0
+    for file_path in file_paths:
+        moved, new_path = organize_file(file_path, rating, is_pixiv=True, base_dirs=base_dirs)
+        if moved:
+            moved_count += 1
+            moved_paths[os.path.abspath(file_path)] = os.path.abspath(new_path)
+    if moved_count == len(file_paths) and os.path.isdir(source_dir):
+        try:
+            if not os.listdir(source_dir):
+                os.rmdir(source_dir)
+                safe_write(f"[INFO] Pixiv末端フォルダを削除: {source_dir}")
+        except OSError as exc:
+            safe_write(f"[WARN] 空フォルダの削除に失敗しました ({source_dir}): {exc}")
+    return moved_paths, moved_count
+
+
 class TagServerHandler(BaseHTTPRequestHandler):
     runtime: Optional[RuntimeModel] = None
 
@@ -786,8 +874,18 @@ def process_images(args: argparse.Namespace) -> None:
         APP_CONFIG["record_raw_score"] = args.record_ratio
         APP_CONFIG["record_rating_percentages"] = args.record_ratio
 
+    is_pixiv = bool(args.pixiv)
     recursive = args.recursive if args.recursive is not None else not args.organize
-    target_files = collect_images(args.images, recursive)
+    if is_pixiv:
+        pixiv_groups = collect_pixiv_image_groups(args.images)
+        target_files = sorted(
+            file_path
+            for group_files in pixiv_groups.values()
+            for file_path in group_files
+        )
+    else:
+        pixiv_groups = {}
+        target_files = collect_images(args.images, recursive)
     if not target_files:
         print("[WARN] 対象ファイルが見つかりません。")
         if need_exiftool:
@@ -819,6 +917,8 @@ def process_images(args: argparse.Namespace) -> None:
             print(f"[WARN] ウォームアップ推論をスキップしました: {exc}")
 
     processed = organized = 0
+    pixiv_rating_by_path: Dict[str, str] = {}
+    pixiv_moved_paths: Dict[str, str] = {}
     inferred = skipped = 0
     inferred_time = skipped_time = 0.0
     executor = (
@@ -842,8 +942,11 @@ def process_images(args: argparse.Namespace) -> None:
         if detected_tags and (not args.no_tag or args.organize):
             if et_wrapper.write_tags(path, detected_tags):
                 processed += 1
-        if args.organize:
-            moved, new_path = organize_file(path, rating, args.pixiv, base_dirs)
+        if is_pixiv:
+            if rating:
+                pixiv_rating_by_path[os.path.abspath(path)] = rating
+        elif args.organize:
+            moved, new_path = organize_file(path, rating, False, base_dirs)
             if moved:
                 organized += 1
                 final_path = new_path
@@ -980,6 +1083,33 @@ def process_images(args: argparse.Namespace) -> None:
             et_wrapper.stop()
         progress.close()
 
+    if is_pixiv:
+        for source_dir, group_files in pixiv_groups.items():
+            absolute_files = [os.path.abspath(path) for path in group_files]
+            if not all(path in pixiv_rating_by_path for path in absolute_files):
+                safe_write(
+                    f"[WARN] Pixiv末端フォルダは全画像のスキャンが完了していないため移動をスキップ: {source_dir}"
+                )
+                continue
+            target_rating = get_pixiv_move_rating(
+                [pixiv_rating_by_path[path] for path in absolute_files]
+            )
+            if target_rating is None:
+                continue
+            moved_paths, moved_count = organize_pixiv_folder(
+                absolute_files,
+                target_rating,
+                base_dirs,
+            )
+            organized += moved_count
+            pixiv_moved_paths.update(moved_paths)
+
+        if pixiv_moved_paths and report_data:
+            for report in report_data:
+                original_path = os.path.abspath(report["path"])
+                if original_path in pixiv_moved_paths:
+                    report["path"] = pixiv_moved_paths[original_path]
+
     print("\n[完了] 処理結果サマリー:")
     infer_speed = inferred / inferred_time if inferred_time else 0.0
     skip_speed = skipped / skipped_time if skipped_time else 0.0
@@ -1002,7 +1132,11 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mode", choices=["standalone", "server", "client"], default="standalone")
     parser.add_argument("--no-tag", action="store_true", help="タグ付け処理を行わない")
     parser.add_argument("--organize", action="store_true", help="レーティングに基づきフォルダ整理を行う")
-    parser.add_argument("--pixiv", action="store_true")
+    parser.add_argument(
+        "--pixiv",
+        action="store_true",
+        help="Pixiv整理モード（末端フォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
+    )
     parser.add_argument("--no-report", action="store_true")
     parser.add_argument(
         "--thresh",
