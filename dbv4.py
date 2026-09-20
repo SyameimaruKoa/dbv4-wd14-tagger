@@ -345,13 +345,18 @@ class DBV4Preprocessor:
         return name, params if isinstance(params, dict) else {}
 
     @staticmethod
-    def _size(value: Any) -> Tuple[int, int]:
+    def _size(value: Any, params: Optional[Dict[str, Any]] = None) -> Tuple[int, int]:
         if isinstance(value, (int, float)):
             size = int(value)
             return size, size
         if isinstance(value, (list, tuple)) and len(value) == 2:
             return int(value[0]), int(value[1])
-        raise ValueError(f"画像サイズを解釈できません: {value!r}")
+        params = params or {}
+        height = params.get("height")
+        width = params.get("width")
+        if height is not None and width is not None:
+            return int(height), int(width)
+        raise ValueError(f"画像サイズを解釈できません: size={value!r}, params={params!r}")
 
     @staticmethod
     def _color(value: Any) -> Tuple[int, int, int]:
@@ -390,7 +395,7 @@ class DBV4Preprocessor:
         for raw_step in self.steps:
             name, params = self._step(raw_step)
             if name in {"padtosize", "pad_to_size"}:
-                target_h, target_w = self._size(params.get("size"))
+                target_h, target_w = self._size(params.get("size"), params)
                 width, height = current.size
                 if width < target_w or height < target_h:
                     canvas = Image.new(
@@ -419,7 +424,7 @@ class DBV4Preprocessor:
                     else:
                         target = (max(1, round(width * size / height)), size)
                 else:
-                    h, w = self._size(value)
+                    h, w = self._size(value, params)
                     target = (w, h)
                 current = current.resize(target, resample)
             elif name in {"centercrop", "center_crop"}:
