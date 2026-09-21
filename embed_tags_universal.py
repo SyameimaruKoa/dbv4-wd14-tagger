@@ -861,6 +861,8 @@ def collect_pixiv_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
                         for directory in dirnames
                         if directory not in excluded_dirs
                     ]
+                    if dirnames:
+                        continue
                     add_group(root, files)
             elif os.path.isfile(candidate) and candidate.lower().endswith(VALID_EXTS):
                 add_group(os.path.dirname(os.path.abspath(candidate)), [os.path.basename(candidate)])

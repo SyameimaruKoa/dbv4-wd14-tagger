@@ -34,7 +34,7 @@ class PixivOrganizationTests(unittest.TestCase):
         self.assertEqual(summary["main_count"], 4)
         self.assertAlmostEqual(summary["fps"], 10.0)
 
-    def test_collects_images_from_parent_and_child_directories(self):
+    def test_collects_images_from_leaf_directories_only(self):
         with tempfile.TemporaryDirectory() as directory:
             child = os.path.join(directory, "artist")
             excluded = os.path.join(
@@ -52,7 +52,7 @@ class PixivOrganizationTests(unittest.TestCase):
 
             groups = collect_pixiv_image_groups([directory])
 
-            self.assertEqual(groups[os.path.abspath(directory)], [root_image])
+            self.assertNotIn(os.path.abspath(directory), groups)
             self.assertEqual(groups[os.path.abspath(child)], [child_image])
             self.assertNotIn(os.path.abspath(excluded), groups)
 
