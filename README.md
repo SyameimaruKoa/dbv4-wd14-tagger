@@ -183,6 +183,40 @@ explicit_score:0.XXXX
 
 この4つのscoreとDBV4 model markerが揃っている場合、--organize では再推論せずratingを再計算できる。旧WD14 scoreだけが残っている場合はDBV4推論を実行するぞ。
 
+
+## Bash / Zsh のタブ補完
+
+`run_tagger.sh` のオプション、モデルプロファイル、ファイル/ディレクトリ引数をタブ補完できます。
+
+### Bash
+
+一時的に有効化する場合:
+
+```bash
+source completions/run_tagger.bash
+```
+
+常時有効化する場合は、補完ファイルをユーザー側の Bash completion ディレクトリへ配置します。
+
+```bash
+mkdir -p ~/.local/share/bash-completion/completions
+cp completions/run_tagger.bash ~/.local/share/bash-completion/completions/run_tagger.sh
+```
+
+### Zsh
+
+リポジトリ内の補完を現在のシェルで有効化する場合:
+
+```zsh
+fpath=("$PWD/completions" $fpath)
+autoload -Uz compinit
+compinit
+```
+
+常時有効化する場合は `completions/_run_tagger.sh` を `fpath` に含まれるディレクトリへ配置してください。
+
+補完では短縮形・長形式の両方を候補に表示し、`--path` / `--model-file` / `--tags-file` ではファイルパス、`--model-profile` では利用可能なプロファイル、`--sensitive-split-mode` では `2 / 4 / 6` を候補として表示します。
+
 ## CLI短縮オプション
 
 主要な実行引数には短縮形を用意している。既存の長い形式はそのまま利用できる。
