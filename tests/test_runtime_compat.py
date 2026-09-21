@@ -72,6 +72,10 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             config["model_profiles"]["ultra"]["model_external_files"],
             ["model.onnx_data"],
         )
+        self.assertIn(
+            "6.6GB",
+            config["model_profiles"]["ultra"]["vram_warning"],
+        )
 
     def test_parser_accepts_custom_model_profile(self):
         args = app.create_parser().parse_args(["--model-profile", "custom", "image.jpg"])

@@ -31,6 +31,20 @@ balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-f
 
 各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。ultraだけはONNX変換済みrepoに前処理metadataがないため、metadataを`animetimm/convnextv2_huge.dbv4-full`から取得する。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
 
+### DirectMLのVRAM目安
+
+| Profile | 入力解像度 | batch-size=4のVRAM目安 | 推奨VRAM |
+| --- | ---: | ---: | ---: |
+| lightweight | 448 × 448 | 約1～2GB（推定） | 2GB以上 |
+| balanced | 384 × 384 | 約2～3GB（推定） | 4GB以上 |
+| high | 448 × 448 | 約4～5.5GB（推定） | 6GB以上 |
+| ultra | 512 × 512 | 約6.6GB（RTX 2070での実測） | 8GB以上 |
+
+> [!WARNING]
+> VRAM使用量はGPU、DirectML／ONNX Runtimeのバージョン、ドライバー、batch-size、同時使用中のアプリによって変動する。ultraは今回のRTX 2070・batch-size=4で約6.6GBを使用したため、8GB未満のGPUでは推奨しない。メモリ不足時は`-BatchSize 1`または`-BatchSize 2`を指定する。ただしbatch-sizeを下げてもモデル重み自体の常駐分は減らない。
+
+lightweight～highの値は実機ロード値ではない。Hugging Faceで確認したFP32 ONNX容量、パラメータ数、公式入力解像度、およびultraの実測値から見積もった安全側の概算である。
+
 ## DBV4出力
 
 DBV4ではモデル出力を固定の先頭4要素として扱わず、selected_tags.csv とmetadataを基準に解釈する。

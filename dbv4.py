@@ -44,6 +44,10 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "metadata_repo_id": "animetimm/convnextv2_huge.dbv4-full",
         "model_file": "model.onnx",
         "model_external_files": ["model.onnx_data"],
+        "vram_warning": (
+            "ultraはDirectML・batch-size=4で約6.6GBのVRAM使用を確認済みです。"
+            "8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。"
+        ),
         "tags_file": "selected_tags.csv",
         "preprocess_file": "preprocess.json",
         "categories_file": "categories.json",

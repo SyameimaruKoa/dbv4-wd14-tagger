@@ -7,6 +7,7 @@
   - WindowsのHugging FaceキャッシュリンクがONNX Runtimeの外部データ検証に拒否されるため、同一ディレクトリへハードリンク（非対応時はコピー）して読み込むよう修正。
   - 既存configに誤ったultra取得元が残っている場合は自動移行。
   - 全モデルの実際のONNXファイル名と容量をHugging Face上の実ファイルから調査しREADMEへ記載。
+  - DirectML・batch-size=4のVRAM目安と、ultraで約6.6GBを使用した実測警告をREADMEおよび実行時表示へ追加。
 
 - DBV4移行時に抜けた既存機能の互換性を復元。
   - ClientモードはONNXモデル本体を取得せず、metadataのみを読み込むよう修正。

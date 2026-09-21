@@ -172,6 +172,7 @@ def migrate_legacy_config(config: Dict[str, Any]) -> bool:
                 profile["model_external_files"] = clone_profile(
                     replacement["model_external_files"]
                 )
+                profile["vram_warning"] = replacement["vram_warning"]
             changed = True
     legacy_large = profiles.get("large", {})
     if (
@@ -426,6 +427,8 @@ def load_runtime_model(
 ) -> RuntimeModel:
     profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
     profile = get_model_profile(profile_name, profiles)
+    if use_gpu and profile.get("vram_warning"):
+        print(f"[WARN] {profile['vram_warning']}")
     metadata = DBV4Metadata.load(
         profile,
         base_dir=SCRIPT_DIR,
