@@ -1,5 +1,7 @@
 import argparse
+import ctypes
 import csv
+import datetime
 import glob
 import io
 import json
@@ -10,14 +12,17 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -95,6 +100,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "model_profiles": MODEL_PROFILES,
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
+    "server_workers": 2,
     "client_timeout": 15,
     "openvino_gpu_device": "GPU.0",
     "general_threshold": 0.40,
@@ -382,6 +388,12 @@ def build_providers(use_gpu: bool) -> List[Any]:
     providers: List[Any] = []
     for candidate in candidates:
         name = candidate[0] if isinstance(candidate, tuple) else candidate
+        if name == "TensorrtExecutionProvider":
+            library_name = "nvinfer_10.dll" if IS_WINDOWS else "libnvinfer.so.10"
+            try:
+                ctypes.CDLL(library_name)
+            except OSError:
+                continue
         if name in available:
             providers.append(candidate)
     providers.append("CPUExecutionProvider")
@@ -896,11 +908,33 @@ def organize_pixiv_folder(
 class TagServerHandler(BaseHTTPRequestHandler):
     runtime: Optional[RuntimeModel] = None
 
+    def _send_json_response(self, status: int, body: bytes) -> bool:
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return True
+        except (BrokenPipeError, ConnectionResetError):
+            return False
+
     def do_POST(self) -> None:
+        started = time.time()
+        client_ip = self.client_address[0]
+        image_name = urllib.parse.unquote(self.headers.get("X-Image-Name", "画像"))
+        length = int(self.headers.get("Content-Length", "0"))
+        size_kb = length / 1024
+        size_text = f"{size_kb:.1f} KB" if size_kb <= 1024 else f"{size_kb / 1024:.2f} MB"
+        received_at = datetime.datetime.now().strftime("%H:%M:%S")
+        print(
+            f"[{received_at}] {client_ip:<15} | File: {image_name} | "
+            f"Size: {size_text} | Processing...",
+            flush=True,
+        )
         try:
             if not self.runtime:
                 raise RuntimeError("DBV4 runtimeが初期化されていません。")
-            length = int(self.headers.get("Content-Length", "0"))
             image = Image.open(io.BytesIO(self.rfile.read(length))).convert("RGB")
             probabilities = self.runtime.predict_images([image])[0]
             payload = {
@@ -908,21 +942,54 @@ class TagServerHandler(BaseHTTPRequestHandler):
                 "probabilities": probabilities.astype(float).tolist(),
             }
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            elapsed = time.time() - started
+            if self._send_json_response(200, body):
+                completed_at = datetime.datetime.now().strftime("%H:%M:%S")
+                print(
+                    f"[{completed_at}] {client_ip:<15} | File: {image_name} | "
+                    f"Processed OK ({elapsed:.2f}s)",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[WARN] {client_ip} | File: {image_name} | "
+                    "推論完了後、Client切断のため応答を送信できませんでした。",
+                    flush=True,
+                )
         except Exception as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode("utf-8")
-            self.send_response(500)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            if not self._send_json_response(500, body):
+                print(
+                    f"[WARN] {client_ip} | File: {image_name} | "
+                    "Client切断後のためエラー応答を送信できませんでした。",
+                    flush=True,
+                )
+            print(f"[ERROR] {client_ip} | File: {image_name} | {exc}", flush=True)
 
     def log_message(self, format: str, *args: Any) -> None:
         return
+
+
+class ParallelTagServer(ThreadingMixIn, HTTPServer):
+    daemon_threads = True
+
+    def __init__(self, server_address: Tuple[str, int], handler_class: Any, workers: int) -> None:
+        self._worker_slots = threading.BoundedSemaphore(workers)
+        super().__init__(server_address, handler_class)
+
+    def process_request(self, request: Any, client_address: Any) -> None:
+        self._worker_slots.acquire()
+        try:
+            super().process_request(request, client_address)
+        except Exception:
+            self._worker_slots.release()
+            raise
+
+    def process_request_thread(self, request: Any, client_address: Any) -> None:
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._worker_slots.release()
 
 
 def run_server(args: argparse.Namespace) -> None:
@@ -934,8 +1001,10 @@ def run_server(args: argparse.Namespace) -> None:
         args.tags_file,
     )
     TagServerHandler.runtime = runtime
-    server = HTTPServer(("0.0.0.0", args.port), TagServerHandler)
+    workers = max(1, int(APP_CONFIG.get("server_workers", 2)))
+    server = ParallelTagServer(("0.0.0.0", args.port), TagServerHandler, workers)
     print(f"\n[INFO] DBV4推論サーバー稼働中 Port: {args.port}")
+    print(f"[INFO] 同時処理数: {workers}")
     print(f"[INFO] model_id={runtime.metadata.repo_id}")
     print(f"[INFO] output_size={runtime.metadata.label_count}")
     print(f"[INFO] metadata_version={runtime.metadata.metadata_version}")
@@ -960,6 +1029,10 @@ def load_client_metadata(args: argparse.Namespace) -> DBV4Metadata:
     )
 
 
+class ClientCompatibilityError(RuntimeError):
+    pass
+
+
 def client_predict(
     server_url: str,
     image_path: str,
@@ -970,24 +1043,25 @@ def client_predict(
         data = f.read()
     request = urllib.request.Request(server_url, data=data, method="POST")
     request.add_header("Content-Type", "application/octet-stream")
+    request.add_header("X-Image-Name", urllib.parse.quote(os.path.basename(image_path)))
     with urllib.request.urlopen(request, timeout=timeout) as response:
         payload = json.loads(response.read().decode("utf-8"))
     if isinstance(payload, list):
         probabilities = np.asarray(payload, dtype=np.float32)
     elif isinstance(payload, dict):
         if payload.get("protocol") != 1:
-            raise RuntimeError("サーバーのDBV4 protocol versionが不一致です。")
+            raise ClientCompatibilityError("サーバーのDBV4 protocol versionが不一致です。")
         if payload.get("model_id") != metadata.repo_id:
-            raise RuntimeError("サーバーとクライアントのmodel_idが不一致です。")
+            raise ClientCompatibilityError("サーバーとクライアントのmodel_idが不一致です。")
         if int(payload.get("output_size", -1)) != metadata.label_count:
-            raise RuntimeError("サーバーとクライアントのoutput sizeが不一致です。")
+            raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
         if payload.get("metadata_version") != metadata.metadata_version:
-            raise RuntimeError("サーバーとクライアントのmetadata versionが不一致です。")
+            raise ClientCompatibilityError("サーバーとクライアントのmetadata versionが不一致です。")
         probabilities = np.asarray(payload.get("probabilities", []), dtype=np.float32)
     else:
-        raise RuntimeError("サーバー応答形式が不正です。")
+        raise ClientCompatibilityError("サーバー応答形式が不正です。")
     if probabilities.shape[0] != metadata.label_count:
-        raise RuntimeError("DBV4 output sizeがmetadataと一致しません。")
+        raise ClientCompatibilityError("DBV4 output sizeがmetadataと一致しません。")
     return probabilities
 
 
@@ -1123,6 +1197,7 @@ def process_images(args: argparse.Namespace) -> None:
     )
     pending: List[Dict[str, Any]] = []
     report_data: List[Dict[str, Any]] = []
+    fatal_client_error: Optional[ClientCompatibilityError] = None
     progress = tqdm(total=len(target_files), unit="img", dynamic_ncols=True)
 
     def update_progress_postfix() -> None:
@@ -1292,6 +1367,12 @@ def process_images(args: argparse.Namespace) -> None:
                     if len(pending) >= batch_size:
                         run_batch(pending[:batch_size])
                         pending = pending[batch_size:]
+            except ClientCompatibilityError as exc:
+                safe_write(f"互換性エラー: {exc}")
+                safe_write("[ERROR] Server/Clientの構成が一致しないため処理を停止します。")
+                fatal_client_error = exc
+                aborted = True
+                break
             except urllib.error.HTTPError as exc:
                 safe_write(f"サーバー処理エラー {os.path.basename(image_path)}: {exc}")
                 progress.update(1)
@@ -1319,6 +1400,9 @@ def process_images(args: argparse.Namespace) -> None:
         if need_exiftool:
             et_wrapper.stop()
         progress.close()
+
+    if fatal_client_error is not None:
+        raise SystemExit(1)
 
     if is_pixiv and aborted:
         safe_write("[WARN] 処理が中断されたため、Pixivフォルダの移動をスキップします。")

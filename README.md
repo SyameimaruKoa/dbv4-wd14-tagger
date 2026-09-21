@@ -235,6 +235,14 @@ explicit_score:0.XXXX
 ./run_tagger.sh
 ~~~
 
+Hugging Faceのgated modelを利用する前のログイン：
+
+~~~bash
+./run_tagger.sh --login
+~~~
+
+既存のGPU／CPU仮想環境から`hf`を利用できる環境を再利用し、環境が一つもない場合だけCPU環境を作成する。ブラウザで作成したread権限のtokenを入力すると、認証情報はHugging Face標準の保存先へ保存され、ログイン後は推論を実行せず終了する。
+
 通常実行：
 
 ~~~bash
@@ -267,6 +275,21 @@ explicit_score:0.XXXX
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
 
+### Linux実機検証
+
+Ubuntu 26.04.1 LTS、kernel 7.0.0-31-generic、Intel Core i7-8750H、GeForce RTX 2070 Mobile 8GB、NVIDIA driver 610.57.04で検証した。システムのPython 3.14.4は使用せず、wrapperがPython 3.13を検出して`venv_std`と`venv_gpu`を作成した。
+
+| Profile | Provider | batch-size | 結果 | 合成画像1枚の実測 |
+| --- | --- | ---: | --- | ---: |
+| lightweight | CPUExecutionProvider | 4 | 推論・XMP書き込み成功 | 89.8 ms/img |
+| lightweight | CUDAExecutionProvider | 4 | 推論・XMP書き込み成功 | 499.2 ms/img |
+| balanced | CPUExecutionProvider | 4 | 推論・XMP書き込み成功 | 719.9 ms/img |
+| balanced | CUDAExecutionProvider | 4 | 推論・XMP書き込み成功 | 303.9 ms/img |
+| wd14_v3 | CPUExecutionProvider | 4 | 推論・XMP書き込み成功 | 919.8 ms/img |
+| wd14_v3 | CUDAExecutionProvider | 4 | 推論・XMP書き込み成功 | 376.3 ms/img |
+
+保存済みrating scoreを使った2回目の整理は、推論0枚・skip 1枚で完了した。lightweightのlocalhost Server/Client推論と、lightweight serverへ接続したbalanced clientのmodel ID不一致による全体停止も確認した。Clientは既存仮想環境を再利用し、GPUランタイムを再導入しない。上記は起動経路確認用の4 × 4合成画像による単発値であり、モデル間性能比較やタグ品質評価には使用しない。TensorRTは検証環境の`libnvinfer`が不完全だったため候補から除外され、実測providerはCUDAまたはCPUである。
+
 ## Google Colab
 
 run_colab_server.ipynb はDBV4サーバーを起動する構成へ更新されておる。
@@ -286,6 +309,7 @@ run_colab_server.ipynb はDBV4サーバーを起動する構成へ更新され�
 | model_profile | "balanced" | 使用するDBV4プロファイル |
 | server_hosts | ["localhost", "google-colab", "100.xxx.xxx.xxx"] | Client接続先 |
 | server_port | 5000 | Server/Clientポート |
+| server_workers | 2 | Server同時推論数（GPUメモリに応じて調整） |
 | client_timeout | 15 | Client timeout秒 |
 | openvino_gpu_device | "GPU.0" | Intel OpenVINOデバイス |
 | general_threshold | 0.40 | R-00安全弁 |
@@ -318,6 +342,10 @@ Serverは次の情報をJSONで返す。
 ~~~
 
 Clientは model_id、metadata_version、output_size を検証してから結果を利用する。異なるDBV4モデルやmetadataを接続した場合はエラーとして停止するのじゃ。
+
+Serverは画像ごとに受信時刻、Client IP、ファイル名、転送サイズ、処理開始、処理時間、完了状態を表示する。推論中にClientが切断した場合もServerは停止せず、長い`BrokenPipeError` tracebackの代わりに対象リクエストの警告だけを表示して次の接続を待機する。
+
+Serverは複数Clientの要求を既定で2件まで並列処理する。`config.json`の`server_workers`で同時数を変更できる。ultraなど大きなモデルでGPUメモリ不足になる場合は`1`へ下げる。
 
 ## テスト
 

@@ -2,6 +2,17 @@
 
 ## 2026-09-21
 
+- Linux実機検証でBashセットアップ経路を修正。
+  - 引数なしのCPUセットアップが既存GPU仮想環境を再利用していたため、必ず`venv_std`を作成・使用するよう修正。
+  - x86_64 NVIDIA環境で`TensorRT`のCUDA 13版と`TensorRT-CUDA 12`版を重複導入していたため、ONNX Runtime用のCUDA 12版だけを導入するよう修正。
+  - ONNX RuntimeがTensorRT EPを列挙しても`libnvinfer`をロードできない環境では、TensorRTを候補から外してCUDAへ直接接続するよう修正。
+  - `./run_tagger.sh --login`で既存のGPU／CPU仮想環境を再利用し、Hugging Face認証だけを実行して終了するログインモードを追加。
+  - Clientモードも既存仮想環境をそのまま再利用し、不要なGPU依存関係の再導入を行わないよう修正。
+  - Server/Clientのprotocol、model ID、output size、metadata version不一致は画像単位skipではなく、以後の処理を即時停止するよう修正。
+  - Serverへ画像名・サイズ・受信時刻・処理時間・完了状態のリクエスト単位ログを復元し、推論後にClientが切断済みの場合は`BrokenPipeError` tracebackではなく簡潔な警告を表示して稼働を継続。
+  - Serverを上限付き並列リクエスト処理へ変更。既定2件、`server_workers`で同時推論数を調整可能。
+  - Ubuntu 26.04.1、Python 3.13 fallback、RTX 2070 MobileでCPU/CUDA推論、XMP書き込み、保存score再利用を確認。
+
 - DBV4移行前の既定`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`互換プロファイルとして復元。
   - 公式実装と同じ白背景square padding、448角Bicubic、BGR、0～255 float32前処理を追加。
   - READMEへ新モデルの検索語、metadata・入出力・精度・計算量・ライセンスの採用チェック項目を追加。
