@@ -81,6 +81,14 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         args = app.create_parser().parse_args(["--model-profile", "custom", "image.jpg"])
         self.assertEqual(args.model_profile, "custom")
 
+    def test_manual_approval_profiles_are_available(self):
+        compact = app.MODEL_PROFILES["compact_manual"]
+        medium = app.MODEL_PROFILES["medium_manual"]
+        self.assertEqual(compact["repo_id"], "animetimm/repvit_m2_3.dbv4-full")
+        self.assertEqual(medium["repo_id"], "animetimm/convformer_s36.dbv4-full")
+        self.assertIn("管理者", compact["access_notice"])
+        self.assertIn("管理者", medium["access_notice"])
+
     def test_client_http_error_skips_only_failed_image(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = [f"{directory}/one.jpg", f"{directory}/two.jpg"]

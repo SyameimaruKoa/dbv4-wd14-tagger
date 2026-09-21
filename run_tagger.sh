@@ -40,7 +40,7 @@ show_help() {
     echo "    --no-recursive      再帰検索OFF"
     echo "    --batch-size <n>    推論バッチサイズ（デフォルト: 4 / 非対応時は 1）"
     echo "    --io-workers <n>    前処理の並列ワーカー数（デフォルト: 自動）"
-    echo "    --model-profile <name> DBV4モデルプロファイル (lightweight/balanced/high/ultra)"
+    echo "    --model-profile <name> DBV4モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra)"
     echo "    --model-repo <repo> DBV4モデル/タグのHFリポジトリIDを明示指定"
     echo "    --model-file <file> モデルファイル名またはパス"
     echo "    --tags-file <file>  タグCSVファイル名またはパス"

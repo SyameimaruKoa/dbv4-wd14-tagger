@@ -22,7 +22,9 @@ Windows (PowerShell) と Linux (Bash) に対応しており、DBV4のモデル�
 
 | Profile | ONNX Repository | ONNX実ファイル | モデル容量 | 用途 |
 | --- | --- | --- | ---: | --- |
+| compact_manual | animetimm/repvit_m2_3.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/repvit_m2_3.dbv4-full/resolve/main/model.onnx) | 122,111,601 bytes（約116.5 MiB） | 承認制・省メモリ |
 | lightweight | animetimm/mobilenetv4_conv_aa_large.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/mobilenetv4_conv_aa_large.dbv4-full/resolve/main/model.onnx) | 189,162,894 bytes（約180.4 MiB） | 軽量 |
+| medium_manual | animetimm/convformer_s36.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/convformer_s36.dbv4-full/resolve/main/model.onnx) | 254,865,174 bytes（約243.1 MiB） | 承認制・軽量とbalancedの中間 |
 | balanced | animetimm/caformer_b36.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx) | 536,982,484 bytes（約512.1 MiB） | デフォルト |
 | high | animetimm/eva02_large_patch14_448.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/eva02_large_patch14_448.dbv4-full/resolve/main/model.onnx) | 1,268,832,518 bytes（約1.18 GiB） | 高精度 |
 | ultra | itterative/convnextv2_huge.dbv4-full-onnx | [`model.onnx`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx) + [`model.onnx_data`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx_data) | 324,944 + 2,770,470,128 bytes（合計約2.58 GiB） | 精度最優先 |
@@ -31,11 +33,20 @@ balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-f
 
 各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。ultraだけはONNX変換済みrepoに前処理metadataがないため、metadataを`animetimm/convnextv2_huge.dbv4-full`から取得する。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
 
+`compact_manual`と`medium_manual`はHugging Face管理者の承認後に利用できる。各モデルページでアクセス申請を行い、承認済みアカウントで`huggingface-cli login`または`hf auth login`を実行してから指定すること。承認待ち・未承認の場合はダウンロードできない。
+
+| Profile | Params | 入力解像度 | Macro@Best F1 | 選定理由 |
+| --- | ---: | ---: | ---: | --- |
+| compact_manual | 30.4M | 384 × 384 | 0.510 | lightweightの0.511とほぼ同等でONNXが約36%小さい |
+| medium_manual | 63.5M | 448 × 448 | 0.532 | lightweightより高精度でbalancedより小さい中間候補 |
+
 ### DirectMLのVRAM目安
 
 | Profile | 入力解像度 | batch-size=4のVRAM目安 | 推奨VRAM |
 | --- | ---: | ---: | ---: |
+| compact_manual | 384 × 384 | 約1～1.5GB（推定） | 2GB以上 |
 | lightweight | 448 × 448 | 約1～2GB（推定） | 2GB以上 |
+| medium_manual | 448 × 448 | 約1.5～2.5GB（推定） | 3GB以上 |
 | balanced | 384 × 384 | 約2～3GB（推定） | 4GB以上 |
 | high | 448 × 448 | 約4～5.5GB（推定） | 6GB以上 |
 | ultra | 512 × 512 | 約6.6GB（RTX 2070での実測） | 8GB以上 |

@@ -2,6 +2,10 @@
 
 ## 2026-09-21
 
+- 管理者承認制モデルのうち、現行プロファイルに対してサイズ・精度面の追加価値がある`compact_manual`（RepViT M2.3）と`medium_manual`（ConvFormer S36）を追加。
+  - 未承認時の実行警告、実ファイル容量、公式評価値、VRAM概算をREADMEへ記載。
+  - 現行モデルまたは追加候補より精度・サイズの両面で劣る承認制モデルはプリセット対象外とした。
+
 - ultraプロファイルのONNX取得元を`itterative/convnextv2_huge.dbv4-full-onnx`へ修正。
   - 外部重み`model.onnx_data`も取得し、metadataは元の`animetimm/convnextv2_huge.dbv4-full`から読み込む構成へ分離。
   - WindowsのHugging FaceキャッシュリンクがONNX Runtimeの外部データ検証に拒否されるため、同一ディレクトリへハードリンク（非対応時はコピー）して読み込むよう修正。

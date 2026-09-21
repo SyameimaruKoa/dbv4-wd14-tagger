@@ -15,6 +15,15 @@ DBV4_RATING_NAMES = ("general", "sensitive", "questionable", "explicit")
 DBV4_CATEGORY_IDS = {"general": 0, "character": 4, "rating": 9}
 
 MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
+    "compact_manual": {
+        "repo_id": "animetimm/repvit_m2_3.dbv4-full",
+        "model_file": "model.onnx",
+        "tags_file": "selected_tags.csv",
+        "preprocess_file": "preprocess.json",
+        "categories_file": "categories.json",
+        "thresholds_file": "thresholds.csv",
+        "access_notice": "Hugging Faceで管理者によるアクセス承認が必要です。",
+    },
     "lightweight": {
         "repo_id": "animetimm/mobilenetv4_conv_aa_large.dbv4-full",
         "model_file": "model.onnx",
@@ -22,6 +31,15 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "preprocess_file": "preprocess.json",
         "categories_file": "categories.json",
         "thresholds_file": "thresholds.csv",
+    },
+    "medium_manual": {
+        "repo_id": "animetimm/convformer_s36.dbv4-full",
+        "model_file": "model.onnx",
+        "tags_file": "selected_tags.csv",
+        "preprocess_file": "preprocess.json",
+        "categories_file": "categories.json",
+        "thresholds_file": "thresholds.csv",
+        "access_notice": "Hugging Faceで管理者によるアクセス承認が必要です。",
     },
     "balanced": {
         "repo_id": "animetimm/caformer_b36.dbv4-full",

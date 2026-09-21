@@ -427,6 +427,8 @@ def load_runtime_model(
 ) -> RuntimeModel:
     profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
     profile = get_model_profile(profile_name, profiles)
+    if profile.get("access_notice"):
+        print(f"[WARN] {profile_name}: {profile['access_notice']}")
     if use_gpu and profile.get("vram_warning"):
         print(f"[WARN] {profile['vram_warning']}")
     metadata = DBV4Metadata.load(
