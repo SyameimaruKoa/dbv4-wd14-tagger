@@ -142,34 +142,59 @@
 
 [CmdletBinding()]
 param (
+    [Alias('p')]
     [string]$Path,
+    [Alias('o')]
     [switch]$Organize,
+    [Alias('t')]
     [switch]$Tag,
+    [Alias('z')]
     [switch]$NoReport,
+    [Alias('r')]
     [switch]$Recursive,
+    [Alias('n')]
     [switch]$NoRecursive,
+    [Alias('q')]
     [Nullable[float]]$Thresh,
+    [Alias('g')]
     [switch]$Gpu,
+    [Alias('b')]
     [int]$BatchSize,
+    [Alias('w')]
     [int]$IoWorkers,
+    [Alias('m')]
     [string]$ModelProfile,
+    [Alias('e')]
     [string]$ModelRepo,
+    [Alias('l')]
     [string]$ModelFile,
+    [Alias('y')]
     [string]$TagsFile,
+    [Alias('f')]
     [switch]$Force,
+    [Alias('s')]
     [switch]$Server,
+    [Alias('c')]
     [switch]$Client,
+    [Alias('j')]
     [string]$HostIP,
+    [Alias('u')]
     [int]$Port,
+    [Alias('x')]
     [switch]$Pixiv,
 
     [ValidateSet(2, 4, 6)]
+    [Alias('v')]
     [int]$SensitiveSplitMode,
+    [Alias('a')]
     [switch]$RecordRatio,
+    [Alias('k')]
     [switch]$NoRecordRatio,
     
     # Old params
+    [Alias('d')]
     [float]$RatingThresh,
+    [Alias('i')]
     [switch]$IgnoreSensitive,
     
     [Alias('h')]
@@ -188,30 +213,32 @@ function Show-Help {
     Write-Host "  引数なしで実行すると「環境構築モード」となり、セットアップのみを行います。" -ForegroundColor Gray
     Write-Host ""
     Write-Host "主なオプション:" -ForegroundColor Yellow
-    Write-Host "    -Path <path>          処理対象ファイル/フォルダ"
-    Write-Host "    -Gpu                  GPUを使用する（Windows: DirectML）"
-    Write-Host "    -Organize             フォルダ整理のみ行う（タグ付けOFF）"
-    Write-Host "    -Tag                  タグ付けも行う（-Organize併用時）"
-    Write-Host "    -Pixiv                Pixiv整理モード（末端フォルダ単位で全画像を一括移動）"
-    Write-Host "    -NoReport             レポート作成なし"
-    Write-Host "    -Recursive            再帰検索ON"
-    Write-Host "    -NoRecursive          再帰検索OFF"
-    Write-Host "    -Thresh <0.0-1.0>     DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
-    Write-Host "    -BatchSize <n>        推論バッチサイズ"
-    Write-Host "    -IoWorkers <n>        前処理の並列ワーカー数"
-    Write-Host "    -ModelProfile <name>  モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
-    Write-Host "    -ModelRepo <repo>     DBV4モデル/タグのHFリポジトリIDを明示指定"
-    Write-Host "    -ModelFile <file>     モデルファイル名またはパス"
-    Write-Host "    -TagsFile <file>      タグCSVファイル名またはパス"
-    Write-Host "    -Force                既存タグがあっても強制的に再解析・上書き"
-    Write-Host "    -Server               サーバーモード（推論待機）"
-    Write-Host "    -Client               クライアントモード"
-    Write-Host "    -HostIP <ip>          サーバーのIPアドレス"
-    Write-Host "    -Port <port>          ポート番号"
-    Write-Host "    -SensitiveSplitMode <2|4|6> 旧CLI互換（DBV4では5段階固定・非推奨）"
-    Write-Host "    -RecordRatio          メタデータにRAWスコア・割合スコアを記録"
-    Write-Host "    -NoRecordRatio        メタデータへのスコア記録を無効化"
+    Write-Host "    -Path (-p) <path>     処理対象ファイル/フォルダ"
+    Write-Host "    -Gpu (-g)             GPUを使用する（Windows: DirectML）"
+    Write-Host "    -Organize (-o)        フォルダ整理のみ行う（タグ付けOFF）"
+    Write-Host "    -Tag (-t)             タグ付けも行う（-Organize併用時）"
+    Write-Host "    -Pixiv (-x)           Pixiv整理モード（末端フォルダ単位で全画像を一括移動）"
+    Write-Host "    -NoReport (-z)        レポート作成なし"
+    Write-Host "    -Recursive (-r)       再帰検索ON"
+    Write-Host "    -NoRecursive (-n)     再帰検索OFF"
+    Write-Host "    -Thresh (-q) <0.0-1.0> DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
+    Write-Host "    -BatchSize (-b) <n>   推論バッチサイズ"
+    Write-Host "    -IoWorkers (-w) <n>   前処理の並列ワーカー数"
+    Write-Host "    -ModelProfile (-m) <name> モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
+    Write-Host "    -ModelRepo (-e) <repo> DBV4モデル/タグのHFリポジトリIDを明示指定"
+    Write-Host "    -ModelFile (-l) <file> モデルファイル名またはパス"
+    Write-Host "    -TagsFile (-y) <file> タグCSVファイル名またはパス"
+    Write-Host "    -Force (-f)           既存タグがあっても強制的に再解析・上書き"
+    Write-Host "    -Server (-s)          サーバーモード（推論待機）"
+    Write-Host "    -Client (-c)          クライアントモード"
+    Write-Host "    -HostIP (-j) <ip>     サーバーのIPアドレス"
+    Write-Host "    -Port (-u) <port>     ポート番号"
+    Write-Host "    -SensitiveSplitMode (-v) <2|4|6> 旧CLI互換（DBV4では5段階固定・非推奨）"
+    Write-Host "    -RecordRatio (-a)     メタデータにRAWスコア・割合スコアを記録"
+    Write-Host "    -NoRecordRatio (-k)   メタデータへのスコア記録を無効化"
     Write-Host "    -Help (-h, --help)    このヘルプを表示"
+    Write-Host "    -RatingThresh (-d)    旧CLI互換: 非General rating判定閾値"
+    Write-Host "    -IgnoreSensitive (-i) 旧CLI互換: SensitiveをGeneralとして扱う"
     Write-Host ""
     Write-Host "実行例:" -ForegroundColor Yellow
     Write-Host "    # 初回セットアップ（何もしない）"
