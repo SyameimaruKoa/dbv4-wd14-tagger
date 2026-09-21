@@ -132,6 +132,11 @@ class DBV4MetadataTests(unittest.TestCase):
                 repositories_by_file["preprocess.json"],
                 "animetimm/convnextv2_huge.dbv4-full",
             )
+            self.assertNotEqual(metadata.model_path, os.path.join(directory, "model.onnx"))
+            self.assertTrue(os.path.isfile(metadata.model_path))
+            self.assertTrue(
+                os.path.isfile(os.path.join(os.path.dirname(metadata.model_path), "model.onnx_data"))
+            )
             self.assertEqual(metadata.label_count, 5)
 
     def test_preprocess_and_layout(self):

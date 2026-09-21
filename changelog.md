@@ -4,7 +4,9 @@
 
 - ultraプロファイルのONNX取得元を`itterative/convnextv2_huge.dbv4-full-onnx`へ修正。
   - 外部重み`model.onnx_data`も取得し、metadataは元の`animetimm/convnextv2_huge.dbv4-full`から読み込む構成へ分離。
+  - WindowsのHugging FaceキャッシュリンクがONNX Runtimeの外部データ検証に拒否されるため、同一ディレクトリへハードリンク（非対応時はコピー）して読み込むよう修正。
   - 既存configに誤ったultra取得元が残っている場合は自動移行。
+  - 全モデルの実際のONNXファイル名と容量をHugging Face上の実ファイルから調査しREADMEへ記載。
 
 - DBV4移行時に抜けた既存機能の互換性を復元。
   - ClientモードはONNXモデル本体を取得せず、metadataのみを読み込むよう修正。

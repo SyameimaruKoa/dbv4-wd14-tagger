@@ -20,16 +20,16 @@ Windows (PowerShell) と Linux (Bash) に対応しており、DBV4のモデル�
 
 ## DBV4モデルプロファイル
 
-| Profile | Repository | 目安 |
-| --- | --- | --- |
-| lightweight | animetimm/mobilenetv4_conv_aa_large.dbv4-full | 47.3M / 軽量 |
-| balanced | animetimm/caformer_b36.dbv4-full | 134.0M / デフォルト |
-| high | animetimm/eva02_large_patch14_448.dbv4-full | 316.8M / 高精度 |
-| ultra | itterative/convnextv2_huge.dbv4-full-onnx | 692.6M / 精度最優先 |
+| Profile | ONNX Repository | ONNX実ファイル | モデル容量 | 用途 |
+| --- | --- | --- | ---: | --- |
+| lightweight | animetimm/mobilenetv4_conv_aa_large.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/mobilenetv4_conv_aa_large.dbv4-full/resolve/main/model.onnx) | 189,162,894 bytes（約180.4 MiB） | 軽量 |
+| balanced | animetimm/caformer_b36.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx) | 536,982,484 bytes（約512.1 MiB） | デフォルト |
+| high | animetimm/eva02_large_patch14_448.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/eva02_large_patch14_448.dbv4-full/resolve/main/model.onnx) | 1,268,832,518 bytes（約1.18 GiB） | 高精度 |
+| ultra | itterative/convnextv2_huge.dbv4-full-onnx | [`model.onnx`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx) + [`model.onnx_data`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx_data) | 324,944 + 2,770,470,128 bytes（合計約2.58 GiB） | 精度最優先 |
 
 balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-full をデフォルトとして使用する。
 
-各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
+各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。ultraだけはONNX変換済みrepoに前処理metadataがないため、metadataを`animetimm/convnextv2_huge.dbv4-full`から取得する。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
 
 ## DBV4出力
 

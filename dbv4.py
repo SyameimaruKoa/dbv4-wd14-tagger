@@ -2,6 +2,7 @@ import csv
 import hashlib
 import json
 import os
+import shutil
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -98,6 +99,48 @@ def resolve_model_artifact(
         if required:
             raise
         return None
+
+
+def materialize_external_onnx_bundle(
+    model_path: str,
+    external_paths: Sequence[str],
+    repo_id: str,
+    base_dir: Optional[str],
+) -> str:
+    if not external_paths:
+        return model_path
+    cache_base = os.path.abspath(base_dir or os.getcwd())
+    snapshot_name = os.path.basename(os.path.dirname(model_path))
+    bundle_key = hashlib.sha256(
+        f"{repo_id}\0{snapshot_name}".encode("utf-8")
+    ).hexdigest()[:16]
+    bundle_dir = os.path.join(cache_base, ".dbv4_models", bundle_key)
+    os.makedirs(bundle_dir, exist_ok=True)
+
+    def materialize(source: str) -> str:
+        destination = os.path.join(bundle_dir, os.path.basename(source))
+        source_size = os.path.getsize(source)
+        if os.path.isfile(destination) and os.path.getsize(destination) == source_size:
+            return destination
+        if os.path.lexists(destination):
+            os.remove(destination)
+        try:
+            os.link(os.path.realpath(source), destination)
+        except OSError:
+            temporary = f"{destination}.{os.getpid()}.part"
+            try:
+                shutil.copy2(source, temporary)
+                os.replace(temporary, destination)
+            finally:
+                if os.path.exists(temporary):
+                    os.remove(temporary)
+        return destination
+
+    bundled_model = materialize(model_path)
+    for external_path in external_paths:
+        materialize(external_path)
+    print(f"[INFO] ONNX外部データを同一ディレクトリに配置: {bundle_dir}")
+    return bundled_model
 
 
 def _load_categories(path: Optional[str]) -> Dict[int, str]:
@@ -218,14 +261,24 @@ class DBV4Metadata:
                 base_dir,
                 True,
             ) or ""
+            external_paths = []
             if model_file_override is None:
                 for external_filename in profile.get("model_external_files", []):
-                    resolve_model_artifact(
-                        repo_id,
-                        external_filename,
-                        base_dir,
-                        True,
+                    external_paths.append(
+                        resolve_model_artifact(
+                            repo_id,
+                            external_filename,
+                            base_dir,
+                            True,
+                        ) or ""
                     )
+            if external_paths:
+                model_path = materialize_external_onnx_bundle(
+                    model_path,
+                    external_paths,
+                    repo_id,
+                    base_dir,
+                )
         tags_path = resolve_model_artifact(
             metadata_repo_id,
             tags_file_override or profile.get("tags_file", "selected_tags.csv"),
