@@ -183,6 +183,28 @@ explicit_score:0.XXXX
 
 この4つのscoreとDBV4 model markerが揃っている場合、--organize では再推論せずratingを再計算できる。旧WD14 scoreだけが残っている場合はDBV4推論を実行するぞ。
 
+## CLI短縮オプション
+
+主要な実行引数には短縮形を用意している。既存の長い形式はそのまま利用できる。
+
+| 用途 | Linux / Bash | Windows / PowerShell |
+| --- | --- | --- |
+| 対象パス | `-p` / `--path` | `-p` / `-Path` |
+| GPU | `-g` / `--gpu` | `-g` / `-Gpu` |
+| 整理 | `-o` / `--organize` | `-o` / `-Organize` |
+| タグ付け | `-t` / `--tag` | `-t` / `-Tag` |
+| Pixiv | `-x` / `--pixiv` | `-x` / `-Pixiv` |
+| 強制再推論 | `-f` / `--force` | `-f` / `-Force` |
+| 再帰検索 | `-r` / `--recursive` | `-r` / `-Recursive` |
+| 再帰検索OFF | `-n` / `--no-recursive` | `-n` / `-NoRecursive` |
+| バッチサイズ | `-b` / `--batch-size` | `-b` / `-BatchSize` |
+| モデルプロファイル | `-m` / `--model-profile` | `-m` / `-ModelProfile` |
+| Server | `-S` / `--server` | `-s` / `-Server` |
+| Client | `-K` / `--client` | `-c` / `-Client` |
+| Help | `-h` / `--help` | `-h` / `-Help` |
+
+全オプションと短縮形は `./run_tagger.sh -h` または `.\\run_tagger.ps1 -h` で確認できる。
+
 ## Windows / PowerShell
 
 初回セットアップ：
