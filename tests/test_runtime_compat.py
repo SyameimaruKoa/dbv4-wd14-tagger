@@ -74,7 +74,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             ["model.onnx_data"],
         )
         self.assertIn(
-            "6.6GB",
+            "5,743MiB",
             config["model_profiles"]["ultra"]["vram_warning"],
         )
 
@@ -89,6 +89,15 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         self.assertEqual(medium["repo_id"], "animetimm/convformer_s36.dbv4-full")
         self.assertIn("管理者", compact["access_notice"])
         self.assertIn("管理者", medium["access_notice"])
+
+    def test_future_1b_profile_is_reserved_until_onnx_is_available(self):
+        profile = app.MODEL_PROFILES["future_1b"]
+        self.assertFalse(profile["available"])
+        self.assertEqual(
+            profile["repo_id"],
+            "animetimm/vit_giantopt_patch16_siglip_384.dbv4-full",
+        )
+        self.assertIn("ONNX", profile["unavailable_reason"])
 
     def test_manual_profile_starts_browser_login_when_logged_out(self):
         profile = app.MODEL_PROFILES["compact_manual"]

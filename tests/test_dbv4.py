@@ -12,6 +12,7 @@ from PIL import Image
 from dbv4 import (
     DBV4Metadata,
     DBV4Preprocessor,
+    MODEL_PROFILES,
     adapt_input_layout,
     detect_input_layout,
     infer_output_to_probabilities,
@@ -190,6 +191,34 @@ class DBV4MetadataTests(unittest.TestCase):
         self.assertEqual(value.shape, (3, 8, 8))
         self.assertTrue(np.isfinite(value).all())
         np.testing.assert_allclose(value[:, 0, 0], [1.0, 1.0, 1.0])
+
+    def test_wd14_v3_inline_metadata_and_preprocess(self):
+        with tempfile.TemporaryDirectory() as directory:
+            tags_path = os.path.join(directory, "selected_tags.csv")
+            with open(tags_path, "w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["tag_id", "name", "category", "count"])
+                writer.writerow([0, "general", 9, 1])
+                writer.writerow([1, "sensitive", 9, 1])
+                writer.writerow([2, "questionable", 9, 1])
+                writer.writerow([3, "explicit", 9, 1])
+                writer.writerow([4, "red", 0, 1])
+            profile = dict(MODEL_PROFILES["wd14_v3"])
+            profile.update({
+                "profile_name": "wd14_v3",
+                "repo_id": "",
+                "tags_file": "selected_tags.csv",
+            })
+            metadata = DBV4Metadata.load(profile, base_dir=directory, load_model=False)
+            preprocessor = DBV4Preprocessor.from_metadata(metadata)
+            value = preprocessor(Image.new("RGB", (2, 4), (255, 0, 0)))
+
+            self.assertEqual(metadata.family, "wd14_v3")
+            self.assertEqual(metadata.rating_tags_marker, "wd14_model:")
+            self.assertEqual(metadata.threshold_for("red"), 0.35)
+            self.assertEqual(value.shape, (3, 448, 448))
+            np.testing.assert_allclose(value[:, 224, 224], [0.0, 0.0, 255.0])
+            np.testing.assert_allclose(value[:, 224, 0], [255.0, 255.0, 255.0])
 
     def test_output_probability_normalization(self):
         probabilities = infer_output_to_probabilities(np.array([0.0, 2.0, -2.0], dtype=np.float32))

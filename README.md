@@ -28,12 +28,28 @@ Windows (PowerShell) と Linux (Bash) に対応しており、DBV4のモデル�
 | balanced | animetimm/caformer_b36.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx) | 536,982,484 bytes（約512.1 MiB） | デフォルト |
 | high | animetimm/eva02_large_patch14_448.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/eva02_large_patch14_448.dbv4-full/resolve/main/model.onnx) | 1,268,832,518 bytes（約1.18 GiB） | 高精度 |
 | ultra | itterative/convnextv2_huge.dbv4-full-onnx | [`model.onnx`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx) + [`model.onnx_data`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx_data) | 324,944 + 2,770,470,128 bytes（合計約2.58 GiB） | 精度最優先 |
+| wd14_v3 | SmilingWolf/wd-swinv2-tagger-v3 | [`model.onnx`](https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/model.onnx) | 467,460,978 bytes（約445.8 MiB） | 旧WD14互換 |
+| future_1b | animetimm/vit_giantopt_patch16_siglip_384.dbv4-full | ONNX未公開（`model.safetensors`のみ） | 4,734,142,376 bytes（約4.41 GiB） | 将来対応予約・現在実行不可 |
 
 balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-full をデフォルトとして使用する。
 
 各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。ultraだけはONNX変換済みrepoに前処理metadataがないため、metadataを`animetimm/convnextv2_huge.dbv4-full`から取得する。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
 
 `compact_manual`と`medium_manual`はHugging Face管理者の承認後に利用できる。プリセット選択時に未ログインならブラウザOAuth認証を自動開始する。ログイン後にモデルファイルへのアクセス権を確認し、未承認・承認待ちの場合は対象モデルの申請・同意ページをブラウザで自動表示してから停止する。URLやCLIコマンドを手作業で探す必要はないが、申請ボタンの操作と管理者による承認待ちはHugging Face上で必要になる。
+
+### 旧WD14 V3互換
+
+DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`として保持する。公式WD Tagger実装と同じく、白背景で正方形へpaddingし、448 × 448へBicubic resize、RGBからBGRへ変換した0～255のfloat32をONNXへ入力する。ラベルは10,861個で、先頭4個のratingも`selected_tags.csv`のcategoryから特定する。
+
+~~~powershell
+.\run_tagger.ps1 -g -ModelProfile wd14_v3 .
+~~~
+
+~~~bash
+./run_tagger.sh --gpu --model-profile wd14_v3 .
+~~~
+
+これは旧結果との比較・再現用であり、通常は新しい12,476ラベルのDBV4を推奨する。WD14 V3にはタグ単位`best_threshold`がないため、明示的な`-Thresh`／`--thresh`がなければ従来値0.35を使う。
 
 | Profile | Params | 入力解像度 | Macro@Best F1 | 選定理由 |
 | --- | ---: | ---: | ---: | --- |
@@ -42,19 +58,61 @@ balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-f
 
 ### DirectMLのVRAM目安
 
-| Profile | 入力解像度 | batch-size=4のVRAM目安 | 推奨VRAM |
-| --- | ---: | ---: | ---: |
-| compact_manual | 384 × 384 | 約1～1.5GB（推定） | 2GB以上 |
-| lightweight | 448 × 448 | 約1～2GB（推定） | 2GB以上 |
-| medium_manual | 448 × 448 | 約1.5～2.5GB（推定） | 3GB以上 |
-| balanced | 384 × 384 | 約2～3GB（推定） | 4GB以上 |
-| high | 448 × 448 | 約4～5.5GB（推定） | 6GB以上 |
-| ultra | 512 × 512 | 約6.6GB（RTX 2070での実測） | 8GB以上 |
+RTX 2070 Max-Q 8GB、DirectML、batch-size=4、合成640 × 480 RGB画像、3回推論での統一実測値。`nvidia-smi`を100ms間隔で監視し、測定前との差をモデル実行による増分とした。
+
+| Profile | 入力解像度 | 測定前 | 常駐／ピーク | ピーク増分 | 推論時間 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| lightweight | 448 × 448 | 843 MiB | 1,614／1,614 MiB | 771 MiB | 120.3 ms/img |
+| balanced | 384 × 384 | 852 MiB | 2,051／2,051 MiB | 1,199 MiB | 458.8 ms/img |
+| high | 448 × 448 | 847 MiB | 3,616／3,618 MiB | 2,771 MiB | 1,273.9 ms/img |
+| ultra | 512 × 512 | 840 MiB | 6,570／6,583 MiB | 5,743 MiB | 1,735.3 ms/img |
+| wd14_v3 | 448 × 448 | 1,087 MiB | 2,970／2,973 MiB | 1,886 MiB | 442.3 ms/img |
+
+| 測定待ちProfile | 入力解像度 | 状態 | 暫定VRAM目安 |
+| --- | ---: | --- | ---: |
+| compact_manual | 384 × 384 | 管理者承認待ち | 約1～1.5GB（推定） |
+| medium_manual | 448 × 448 | 管理者承認待ち | 約1.5～2.5GB（推定） |
+| future_1b | 512 × 512 | ONNX未公開・RTX 2070では実行不可見込み | 未測定 |
 
 > [!WARNING]
-> VRAM使用量はGPU、DirectML／ONNX Runtimeのバージョン、ドライバー、batch-size、同時使用中のアプリによって変動する。ultraは今回のRTX 2070・batch-size=4で約6.6GBを使用したため、8GB未満のGPUでは推奨しない。メモリ不足時は`-BatchSize 1`または`-BatchSize 2`を指定する。ただしbatch-sizeを下げてもモデル重み自体の常駐分は減らない。
+> VRAM使用量はGPU、DirectML／ONNX Runtimeのバージョン、ドライバー、batch-size、同時使用中のアプリによって変動する。ultraのピーク増分は5,743MiBだったため、8GB未満のGPUでは推奨しない。メモリ不足時は`-BatchSize 1`または`-BatchSize 2`を指定する。ただしbatch-sizeを下げてもモデル重み自体の常駐分は減らない。
 
-lightweight～highの値は実機ロード値ではない。Hugging Faceで確認したFP32 ONNX容量、パラメータ数、公式入力解像度、およびultraの実測値から見積もった安全側の概算である。
+承認待ち2プロファイルの値は、Hugging Faceで確認したFP32 ONNX容量、パラメータ数、公式入力解像度、および実測済みモデルから見積もった概算である。承認後は`benchmark_model_vram.py compact_manual`と`benchmark_model_vram.py medium_manual`で同じ条件を測定できる。
+
+### 将来向け1B級
+
+`future_1b`には`animetimm/vit_giantopt_patch16_siglip_384.dbv4-full`を予約した。公式値は1.2B parameters、2.3 TFLOPs、512角、Macro@Best F1 0.607で、ultraの0.611に近い。ただし2026-09-21時点の公式repoには4,734,142,376 bytesの`model.safetensors`とPyTorch重みしかなく、`model.onnx`は存在しない。このプロジェクトはONNX Runtimeを使うため、現在は理由を表示して停止する。公式ONNXまたは検証済み変換版が公開された時点で取得元と外部データ構成を確定し、16GB以上のGPUで実測して有効化する。
+
+### highプロファイルの位置付け
+
+`high`のEVA02は公式Macro@Best F1が0.599で、balancedの0.581より高い一方、統一条件のDirectML実測では1,273.9 ms/imgとなり、ultraの1,735.3 ms/imgに近い。そのため新規利用には非推奨とし、既存configと比較試験の互換性のため定義だけを保持する。
+
+2026-09-21時点で公開済みDBV4を再調査したが、適切な代替はなかった。例えばConvFormer B36は181.5 GFLOPs・Macro@Best F1 0.574で、balancedの132.2 GFLOPs・0.581に両面で劣る。SwinV2 BaseもMacro@Best F1 0.575でbalanced未満、ViT GiantOptは2.3 TFLOPs・1.2B parametersでultraより重い。速度と精度の中間を埋める新モデルが公開されるまでは、`balanced`または精度最優先の`ultra`を選ぶ。
+
+## 新しいモデルの探し方
+
+Hugging Faceでは、まず次の検索語を使う。
+
+~~~text
+site:huggingface.co/animetimm ".dbv4-full" "Macro@Best"
+site:huggingface.co/animetimm ".dbv4-full" "FLOPs / MACs"
+site:huggingface.co "dbv4-full" ONNX "selected_tags.csv"
+site:huggingface.co/SmilingWolf "tagger-v3" "model.onnx"
+~~~
+
+Hugging Face内では`animetimm` organizationのModelsを更新日順で確認し、`dbv4-full`、`Image Classification`、`ONNX`を手掛かりにする。旧WD14系は`SmilingWolf/wd-*-tagger-v3`を探す。検索結果やrepo名だけでは採用せず、次をすべて確認する。
+
+1. モデルカードのdataset、ライセンス、入力解像度、Params、FLOPs、Macro@Best F1が明記されている。
+2. `model.onnx`が実在し、表示容量を確認できる。外部データ形式なら`model.onnx_data`などの全ファイル名も確認する。
+3. DBV4では`selected_tags.csv`、`preprocess.json`、`categories.json`、`thresholds.csv`の有無と取得元を確認する。WD14では公式推論コードの前処理を確認する。
+4. ONNX出力末尾の要素数とCSVの行数が一致し、ratingの4ラベルとcategory IDを特定できる。
+5. 入力layout（NCHW/NHWC）、dynamic batch、RGB/BGR、0～1/0～255、Normalize、padding方法を確認する。
+6. 出力がlogitsかsigmoid済み確率かを公式サンプルで確認する。
+7. 既存モデルに対し「同等以上の精度で軽い」または「明確に高精度」という価値がある。ParamsだけでなくFLOPs、解像度、ONNX容量も比較する。
+8. gated modelなら自動承認か管理者承認かを確認し、プリセットに`requires_manual_approval`と案内を設定する。
+9. 採用後は小さな検証画像群でCPU、対象GPU provider、batch-size 1と既定値、rating、タグ品質、VRAM、ms/imgを実測する。
+
+公式の比較起点は[AnimeTimm model zoo](https://huggingface.co/animetimm)と[DBV4 ranklist](https://huggingface.co/spaces/animetimm/dbv4-full-ranklist)、WD14互換前処理は[SmilingWolf公式WD Tagger](https://huggingface.co/spaces/SmilingWolf/wd-tagger/blob/main/app.py)とする。
 
 ## DBV4出力
 

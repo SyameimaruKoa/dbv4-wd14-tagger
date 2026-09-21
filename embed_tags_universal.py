@@ -190,6 +190,15 @@ def migrate_legacy_config(config: Dict[str, Any]) -> bool:
     ):
         config["model_profile"] = "high"
         changed = True
+    ultra_profile = profiles.get("ultra", {})
+    current_ultra = MODEL_PROFILES["ultra"]
+    if (
+        isinstance(ultra_profile, dict)
+        and ultra_profile.get("repo_id") == current_ultra["repo_id"]
+        and ultra_profile.get("vram_warning") != current_ultra["vram_warning"]
+    ):
+        ultra_profile["vram_warning"] = current_ultra["vram_warning"]
+        changed = True
     return changed
 
 
@@ -435,8 +444,12 @@ def load_runtime_model(
 ) -> RuntimeModel:
     profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
     profile = get_model_profile(profile_name, profiles)
+    if not profile.get("available", True):
+        raise RuntimeError(str(profile.get("unavailable_reason", "このprofileは現在利用できません。")))
     if profile.get("access_notice"):
         print(f"[WARN] {profile_name}: {profile['access_notice']}")
+    if profile.get("runtime_warning"):
+        print(f"[WARN] {profile['runtime_warning']}")
     ensure_profile_access(profile_name, profile)
     if use_gpu and profile.get("vram_warning"):
         print(f"[WARN] {profile['vram_warning']}")
@@ -479,7 +492,8 @@ def load_runtime_model(
             providers=["CPUExecutionProvider"],
         )
     active = session.get_providers()
-    print(f"[INFO] DBV4モデル: {metadata.repo_id} ({metadata.profile_name})")
+    family_label = "WD14 V3" if metadata.family == "wd14_v3" else "DBV4"
+    print(f"[INFO] {family_label}モデル: {metadata.repo_id} ({metadata.profile_name})")
     print(f"[INFO] ラベル数: {metadata.label_count}")
     print(f"[INFO] metadata version: {metadata.metadata_version}")
     print(f"[INFO] 入力 shape: {session.get_inputs()[0].shape}")

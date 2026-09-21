@@ -58,6 +58,10 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "preprocess_file": "preprocess.json",
         "categories_file": "categories.json",
         "thresholds_file": "thresholds.csv",
+        "runtime_warning": (
+            "highはDirectML実測でbalancedより約2.8倍遅く、ultraとの差も小さいため、"
+            "新規利用には非推奨です。互換性と比較試験用に保持しています。"
+        ),
     },
     "ultra": {
         "repo_id": "itterative/convnextv2_huge.dbv4-full-onnx",
@@ -65,9 +69,39 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "model_file": "model.onnx",
         "model_external_files": ["model.onnx_data"],
         "vram_warning": (
-            "ultraはDirectML・batch-size=4で約6.6GBのVRAM使用を確認済みです。"
+            "ultraはRTX 2070 Max-Q・DirectML・batch-size=4で"
+            "ピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。"
             "8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。"
         ),
+        "tags_file": "selected_tags.csv",
+        "preprocess_file": "preprocess.json",
+        "categories_file": "categories.json",
+        "thresholds_file": "thresholds.csv",
+    },
+    "wd14_v3": {
+        "family": "wd14_v3",
+        "repo_id": "SmilingWolf/wd-swinv2-tagger-v3",
+        "model_file": "model.onnx",
+        "tags_file": "selected_tags.csv",
+        "preprocess": {
+            "alpha_background": "white",
+            "output_channel_order": "BGR",
+            "output_scale": "raw_255",
+            "test": [
+                {"type": "PadToSquare", "background_color": "white"},
+                {"type": "Resize", "size": [448, 448], "interpolation": "bicubic"},
+            ],
+        },
+    },
+    "future_1b": {
+        "family": "dbv4",
+        "repo_id": "animetimm/vit_giantopt_patch16_siglip_384.dbv4-full",
+        "available": False,
+        "unavailable_reason": (
+            "future_1bは将来対応予約です。公式repoは現在Safetensorsのみで、"
+            "ONNXが公開されていないため、このONNX Runtime版ではまだ実行できません。"
+        ),
+        "model_file": "model.onnx",
         "tags_file": "selected_tags.csv",
         "preprocess_file": "preprocess.json",
         "categories_file": "categories.json",
@@ -233,7 +267,10 @@ def _read_selected_tags(
     return labels, category_names, thresholds
 
 
-def _metadata_hash(paths: Iterable[Optional[str]]) -> str:
+def _metadata_hash(
+    paths: Iterable[Optional[str]],
+    extra_values: Iterable[Any] = (),
+) -> str:
     digest = hashlib.sha256()
     for path in paths:
         if not path or not os.path.exists(path):
@@ -242,6 +279,10 @@ def _metadata_hash(paths: Iterable[Optional[str]]) -> str:
         with open(path, "rb") as f:
             while chunk := f.read(1024 * 1024):
                 digest.update(chunk)
+    for value in extra_values:
+        digest.update(
+            json.dumps(value, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        )
     return digest.hexdigest()[:16]
 
 
@@ -259,6 +300,8 @@ class DBV4Metadata:
     tag_thresholds: Dict[str, float]
     rating_indices: Dict[str, int]
     metadata_version: str
+    family: str = "dbv4"
+    preprocess_config: Optional[Dict[str, Any]] = None
 
     @classmethod
     def load(
@@ -309,12 +352,17 @@ class DBV4Metadata:
             base_dir,
             True,
         )
-        preprocess_path = resolve_model_artifact(
-            metadata_repo_id,
-            profile.get("preprocess_file", "preprocess.json"),
-            base_dir,
-            True,
-        )
+        preprocess_config = profile.get("preprocess")
+        if preprocess_config is not None:
+            preprocess_config = clone_profile(preprocess_config)
+            preprocess_path = ""
+        else:
+            preprocess_path = resolve_model_artifact(
+                metadata_repo_id,
+                profile.get("preprocess_file", "preprocess.json"),
+                base_dir,
+                True,
+            )
         categories_path = resolve_model_artifact(
             metadata_repo_id,
             profile.get("categories_file", "categories.json"),
@@ -357,8 +405,11 @@ class DBV4Metadata:
             tag_thresholds=thresholds,
             rating_indices=rating_indices,
             metadata_version=_metadata_hash(
-                [tags_path, preprocess_path, categories_path, thresholds_path]
+                [tags_path, preprocess_path, categories_path, thresholds_path],
+                [preprocess_config] if preprocess_config is not None else [],
             ),
+            family=str(profile.get("family", "dbv4")),
+            preprocess_config=preprocess_config,
         )
 
     @property
@@ -367,7 +418,8 @@ class DBV4Metadata:
 
     @property
     def rating_tags_marker(self) -> str:
-        return f"dbv4_model:{self.repo_id}"
+        prefix = "wd14" if self.family == "wd14_v3" else "dbv4"
+        return f"{prefix}_model:{self.repo_id}"
 
     def threshold_for(self, label: str, override: Optional[float] = None) -> float:
         return float(override) if override is not None else float(self.tag_thresholds.get(label, 0.35))
@@ -414,9 +466,16 @@ class DBV4Metadata:
 class DBV4Preprocessor:
     def __init__(self, payload: Dict[str, Any]):
         self.steps = self._steps(payload)
+        self.alpha_background = self._color(payload.get("alpha_background", "black"))
+        self.output_channel_order = str(
+            payload.get("output_channel_order", "RGB")
+        ).upper()
+        self.output_scale = str(payload.get("output_scale", "unit")).lower()
 
     @classmethod
     def from_metadata(cls, metadata: DBV4Metadata) -> "DBV4Preprocessor":
+        if metadata.preprocess_config is not None:
+            return cls(metadata.preprocess_config)
         with open(metadata.preprocess_path, "r", encoding="utf-8") as f:
             return cls(json.load(f))
 
@@ -493,7 +552,13 @@ class DBV4Preprocessor:
         return table.get(str(value or "bicubic").lower(), Image.Resampling.BICUBIC)
 
     def __call__(self, image: Image.Image) -> np.ndarray:
-        current = image.convert("RGB")
+        if image.mode in {"RGBA", "LA"} or "transparency" in image.info:
+            rgba = image.convert("RGBA")
+            background = Image.new("RGBA", rgba.size, self.alpha_background + (255,))
+            background.alpha_composite(rgba)
+            current = background.convert("RGB")
+        else:
+            current = image.convert("RGB")
         normalize_steps: List[Dict[str, Any]] = []
         for raw_step in self.steps:
             name, params = self._step(raw_step)
@@ -514,6 +579,16 @@ class DBV4Preprocessor:
                         ),
                     )
                     current = canvas
+            elif name in {"padtosquare", "pad_to_square"}:
+                width, height = current.size
+                size = max(width, height)
+                canvas = Image.new(
+                    "RGB",
+                    (size, size),
+                    self._color(params.get("background_color", "white")),
+                )
+                canvas.paste(current, ((size - width) // 2, (size - height) // 2))
+                current = canvas
             elif name == "resize":
                 value = params.get("size")
                 resample = self._resampling(params.get("interpolation"))
@@ -552,7 +627,13 @@ class DBV4Preprocessor:
             else:
                 raise ValueError(f"未対応のDBV4前処理です: {name}")
 
-        array = np.asarray(current, dtype=np.float32) / 255.0
+        array = np.asarray(current, dtype=np.float32)
+        if self.output_channel_order == "BGR":
+            array = array[:, :, ::-1]
+        elif self.output_channel_order != "RGB":
+            raise ValueError(f"未対応の出力色順序です: {self.output_channel_order}")
+        if self.output_scale not in {"raw_255", "raw", "255"}:
+            array = array / 255.0
         array = np.transpose(array, (2, 0, 1))
         for params in normalize_steps:
             mean = np.asarray(

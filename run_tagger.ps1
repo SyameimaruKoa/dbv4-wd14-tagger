@@ -199,7 +199,7 @@ function Show-Help {
     Write-Host "    -Thresh <0.0-1.0>     DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
     Write-Host "    -BatchSize <n>        推論バッチサイズ"
     Write-Host "    -IoWorkers <n>        前処理の並列ワーカー数"
-    Write-Host "    -ModelProfile <name>  DBV4モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra)"
+    Write-Host "    -ModelProfile <name>  モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
     Write-Host "    -ModelRepo <repo>     DBV4モデル/タグのHFリポジトリIDを明示指定"
     Write-Host "    -ModelFile <file>     モデルファイル名またはパス"
     Write-Host "    -TagsFile <file>      タグCSVファイル名またはパス"

@@ -2,6 +2,13 @@
 
 ## 2026-09-21
 
+- DBV4移行前の既定`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`互換プロファイルとして復元。
+  - 公式実装と同じ白背景square padding、448角Bicubic、BGR、0～255 float32前処理を追加。
+  - READMEへ新モデルの検索語、metadata・入出力・精度・計算量・ライセンスの採用チェック項目を追加。
+  - high代替モデルを再調査したが、balancedより高精度でEVA02より十分軽い公開ONNXがないため、EVA02は互換用の非推奨profileとして維持。
+  - RTX 2070 Max-Q・DirectML・batch-size=4で公開モデルを統一測定し、測定前VRAM、常駐、ピーク、差分、ms/imgをREADMEへ記録。
+  - 1B級`vit_giantopt_patch16_siglip_384.dbv4-full`を`future_1b`として予約。ONNX未公開のため、理由付きで停止する将来profileとした。
+
 - 管理者承認制モデルのうち、現行プロファイルに対してサイズ・精度面の追加価値がある`compact_manual`（RepViT M2.3）と`medium_manual`（ConvFormer S36）を追加。
   - 未承認時の実行警告、実ファイル容量、公式評価値、VRAM概算をREADMEへ記載。
   - 未ログイン時はHugging FaceのブラウザOAuthを開始し、未承認時は対象モデルの申請・同意ページを自動表示する認証フローを追加。
@@ -12,7 +19,8 @@
   - WindowsのHugging FaceキャッシュリンクがONNX Runtimeの外部データ検証に拒否されるため、同一ディレクトリへハードリンク（非対応時はコピー）して読み込むよう修正。
   - 既存configに誤ったultra取得元が残っている場合は自動移行。
   - 全モデルの実際のONNXファイル名と容量をHugging Face上の実ファイルから調査しREADMEへ記載。
-  - DirectML・batch-size=4のVRAM目安と、ultraで約6.6GBを使用した実測警告をREADMEおよび実行時表示へ追加。
+  - DirectML・batch-size=4のVRAM目安と、ultraでピーク6,583MiBを使用した実測警告をREADMEおよび実行時表示へ追加。
+  - lightweight/balanced/high/ultra/wd14_v3の実測推論時間、常駐VRAM、ピークVRAM、測定前との差分を統一条件で記録。
 
 - DBV4移行時に抜けた既存機能の互換性を復元。
   - ClientモードはONNXモデル本体を取得せず、metadataのみを読み込むよう修正。
