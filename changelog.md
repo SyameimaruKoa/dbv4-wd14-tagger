@@ -2,6 +2,8 @@
 
 ## 2026-09-21
 
+- Linux Intel Iris Xeで`wd14_v3`のOpenVINO推論と合成PNGへのXMP書き込みを確認。GPU.0を要求し、OpenVINO EPがactive、debugログでモデル対応と推論成功を確認。通常ログの内部診断抑制、全30件の単体テストも確認。詳細と未検証項目をREADMEに記録。`lightweight`はHugging Faceの401でモデル取得前に停止した。コード変更なし。
+
 - Serverの`/metadata`を使い、Clientが起動時にServerのmodel IDへ対応する既知profileを自動選択するよう変更。明示profileは尊重し、metadata versionとoutput sizeを推論前に検証する。ClientはONNX本体を取得しない。
 
 - Linux実機検証でBashセットアップ経路を修正。

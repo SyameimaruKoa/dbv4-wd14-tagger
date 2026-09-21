@@ -349,6 +349,12 @@ Serverは複数Clientの要求を既定で2件まで並列処理する。`config
 
 ## テスト
 
+### Linux Intel GPU実機確認（2026-09-21）
+
+Ubuntu 26.04.1、kernel 7.0.0-31-generic、Core i7-1355U内蔵 Iris Xe（8086:a7a1）、Python 3.13.15、onnxruntime-openvino 1.24.1で、`/dev/dri/renderD128`とIntel OpenCL platformを確認した。`openvino_gpu_device`は`GPU.0`。`--force-intel --model-profile wd14_v3`で合成PNGを処理し、active providerは`OpenVINOExecutionProvider`と`CPUExecutionProvider`、OpenVINO debugログはモデル全体の対応と推論成功を報告した。入力はNHWC `[batch_size, 448, 448, 3]`、ラベルは10,861件。ExifToolでXMP Subject書き込みを確認した。通常ログではOpenVINO内部診断は表示されなかった。
+
+batch-size=4、初回warmup 2.89秒、1枚の通常推論176.0 ms/img（再試行178.1 ms/img）。合成画像1枚の測定値であり、タグ品質や安定した性能の評価ではない。GPU.0指定とOpenVINO EPの実行は確認したが、カーネル単位のGPU使用率は測定していないためCPU fallbackの完全な排除は未確認。`lightweight`はHugging Faceのモデル取得が401（gated repository、未認証）で推論前に停止した。`balanced`、保存scoreでの整理、実画像、Server/Clientの実機疎通は未検証。
+
 DBV4 metadata / preprocessing / input layout / output probability変換の単体テストを実行できる。
 
 ~~~bash
