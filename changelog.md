@@ -2,6 +2,10 @@
 
 ## 2026-09-21
 
+- ultraプロファイルのONNX取得元を`itterative/convnextv2_huge.dbv4-full-onnx`へ修正。
+  - 外部重み`model.onnx_data`も取得し、metadataは元の`animetimm/convnextv2_huge.dbv4-full`から読み込む構成へ分離。
+  - 既存configに誤ったultra取得元が残っている場合は自動移行。
+
 - DBV4移行時に抜けた既存機能の互換性を復元。
   - ClientモードはONNXモデル本体を取得せず、metadataのみを読み込むよう修正。
   - ClientのHTTPエラーは対象画像だけをスキップし、接続断時のみ全体を中断する動作を復元。

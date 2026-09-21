@@ -4,6 +4,7 @@ import os
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import numpy as np
 from PIL import Image
@@ -14,6 +15,7 @@ from dbv4 import (
     adapt_input_layout,
     detect_input_layout,
     infer_output_to_probabilities,
+    resolve_model_artifact,
     select_output_name,
 )
 
@@ -93,6 +95,44 @@ class DBV4MetadataTests(unittest.TestCase):
 
             self.assertEqual(client_metadata.model_path, "")
             self.assertEqual(client_metadata.label_count, 5)
+
+    def test_split_model_and_metadata_repositories_with_external_weights(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self._make_metadata(directory)
+            with open(os.path.join(directory, "model.onnx_data"), "wb") as f:
+                f.write(b"external-weights")
+            profile = {
+                "profile_name": "ultra-test",
+                "repo_id": "itterative/convnextv2_huge.dbv4-full-onnx",
+                "metadata_repo_id": "animetimm/convnextv2_huge.dbv4-full",
+                "model_file": "model.onnx",
+                "model_external_files": ["model.onnx_data"],
+                "tags_file": "selected_tags.csv",
+                "preprocess_file": "preprocess.json",
+                "categories_file": "categories.json",
+                "thresholds_file": "thresholds.csv",
+            }
+
+            with patch("dbv4.resolve_model_artifact", wraps=resolve_model_artifact) as resolver:
+                metadata = DBV4Metadata.load(profile, base_dir=directory)
+
+            repositories_by_file = {
+                call.args[1]: call.args[0]
+                for call in resolver.call_args_list
+            }
+            self.assertEqual(
+                repositories_by_file["model.onnx"],
+                "itterative/convnextv2_huge.dbv4-full-onnx",
+            )
+            self.assertEqual(
+                repositories_by_file["model.onnx_data"],
+                "itterative/convnextv2_huge.dbv4-full-onnx",
+            )
+            self.assertEqual(
+                repositories_by_file["preprocess.json"],
+                "animetimm/convnextv2_huge.dbv4-full",
+            )
+            self.assertEqual(metadata.label_count, 5)
 
     def test_preprocess_and_layout(self):
         preprocessor = DBV4Preprocessor({

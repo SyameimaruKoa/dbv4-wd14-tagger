@@ -43,6 +43,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 "balanced": {"repo_id": "animetimm/convformer_s36.dbv4-full"},
                 "high": {"repo_id": "animetimm/swinv2_base_window8_256.dbv4-full"},
                 "large": {"repo_id": "animetimm/eva02_large_patch14_448.dbv4-full"},
+                "ultra": {"repo_id": "animetimm/convnextv2_huge.dbv4-full"},
                 "custom": {"repo_id": "example/custom.dbv4-full"},
             },
         }
@@ -58,6 +59,18 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         self.assertEqual(
             config["model_profiles"]["custom"]["repo_id"],
             "example/custom.dbv4-full",
+        )
+        self.assertEqual(
+            config["model_profiles"]["ultra"]["repo_id"],
+            "itterative/convnextv2_huge.dbv4-full-onnx",
+        )
+        self.assertEqual(
+            config["model_profiles"]["ultra"]["metadata_repo_id"],
+            "animetimm/convnextv2_huge.dbv4-full",
+        )
+        self.assertEqual(
+            config["model_profiles"]["ultra"]["model_external_files"],
+            ["model.onnx_data"],
         )
 
     def test_parser_accepts_custom_model_profile(self):

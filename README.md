@@ -25,7 +25,7 @@ Windows (PowerShell) と Linux (Bash) に対応しており、DBV4のモデル�
 | lightweight | animetimm/mobilenetv4_conv_aa_large.dbv4-full | 47.3M / 軽量 |
 | balanced | animetimm/caformer_b36.dbv4-full | 134.0M / デフォルト |
 | high | animetimm/eva02_large_patch14_448.dbv4-full | 316.8M / 高精度 |
-| ultra | animetimm/convnextv2_huge.dbv4-full | 692.6M / 精度最優先 |
+| ultra | itterative/convnextv2_huge.dbv4-full-onnx | 692.6M / 精度最優先 |
 
 balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-full をデフォルトとして使用する。
 

@@ -39,8 +39,10 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "thresholds_file": "thresholds.csv",
     },
     "ultra": {
-        "repo_id": "animetimm/convnextv2_huge.dbv4-full",
+        "repo_id": "itterative/convnextv2_huge.dbv4-full-onnx",
+        "metadata_repo_id": "animetimm/convnextv2_huge.dbv4-full",
         "model_file": "model.onnx",
+        "model_external_files": ["model.onnx_data"],
         "tags_file": "selected_tags.csv",
         "preprocess_file": "preprocess.json",
         "categories_file": "categories.json",
@@ -202,34 +204,48 @@ class DBV4Metadata:
         load_model: bool = True,
     ) -> "DBV4Metadata":
         repo_id = model_repo_override or profile["repo_id"]
+        metadata_repo_id = (
+            repo_id
+            if model_repo_override
+            else profile.get("metadata_repo_id", repo_id)
+        )
         model_path = ""
         if load_model:
+            model_filename = model_file_override or profile.get("model_file", "model.onnx")
             model_path = resolve_model_artifact(
                 repo_id,
-                model_file_override or profile.get("model_file", "model.onnx"),
+                model_filename,
                 base_dir,
                 True,
             ) or ""
+            if model_file_override is None:
+                for external_filename in profile.get("model_external_files", []):
+                    resolve_model_artifact(
+                        repo_id,
+                        external_filename,
+                        base_dir,
+                        True,
+                    )
         tags_path = resolve_model_artifact(
-            repo_id,
+            metadata_repo_id,
             tags_file_override or profile.get("tags_file", "selected_tags.csv"),
             base_dir,
             True,
         )
         preprocess_path = resolve_model_artifact(
-            repo_id,
+            metadata_repo_id,
             profile.get("preprocess_file", "preprocess.json"),
             base_dir,
             True,
         )
         categories_path = resolve_model_artifact(
-            repo_id,
+            metadata_repo_id,
             profile.get("categories_file", "categories.json"),
             base_dir,
             False,
         )
         thresholds_path = resolve_model_artifact(
-            repo_id,
+            metadata_repo_id,
             profile.get("thresholds_file", "thresholds.csv"),
             base_dir,
             False,

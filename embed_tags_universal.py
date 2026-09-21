@@ -45,6 +45,7 @@ from dbv4 import (
     DBV4_RATING_NAMES,
     MODEL_PROFILES,
     adapt_input_layout,
+    clone_profile,
     get_model_profile,
     infer_output_to_probabilities,
     select_output_name,
@@ -159,11 +160,18 @@ def migrate_legacy_config(config: Dict[str, Any]) -> bool:
         },
         "balanced": {"animetimm/convformer_s36.dbv4-full"},
         "high": {"animetimm/swinv2_base_window8_256.dbv4-full"},
+        "ultra": {"animetimm/convnextv2_huge.dbv4-full"},
     }
     for profile_name, legacy_repositories in migrations.items():
         profile = profiles.get(profile_name, {})
         if isinstance(profile, dict) and profile.get("repo_id") in legacy_repositories:
-            profile["repo_id"] = MODEL_PROFILES[profile_name]["repo_id"]
+            replacement = MODEL_PROFILES[profile_name]
+            profile["repo_id"] = replacement["repo_id"]
+            if profile_name == "ultra":
+                profile["metadata_repo_id"] = replacement["metadata_repo_id"]
+                profile["model_external_files"] = clone_profile(
+                    replacement["model_external_files"]
+                )
             changed = True
     legacy_large = profiles.get("large", {})
     if (
