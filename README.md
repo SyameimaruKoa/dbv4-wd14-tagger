@@ -33,7 +33,7 @@ balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-f
 
 各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。ultraだけはONNX変換済みrepoに前処理metadataがないため、metadataを`animetimm/convnextv2_huge.dbv4-full`から取得する。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
 
-`compact_manual`と`medium_manual`はHugging Face管理者の承認後に利用できる。各モデルページでアクセス申請を行い、承認済みアカウントで`huggingface-cli login`または`hf auth login`を実行してから指定すること。承認待ち・未承認の場合はダウンロードできない。
+`compact_manual`と`medium_manual`はHugging Face管理者の承認後に利用できる。プリセット選択時に未ログインならブラウザOAuth認証を自動開始する。ログイン後にモデルファイルへのアクセス権を確認し、未承認・承認待ちの場合は対象モデルの申請・同意ページをブラウザで自動表示してから停止する。URLやCLIコマンドを手作業で探す必要はないが、申請ボタンの操作と管理者による承認待ちはHugging Face上で必要になる。
 
 | Profile | Params | 入力解像度 | Macro@Best F1 | 選定理由 |
 | --- | ---: | ---: | ---: | --- |

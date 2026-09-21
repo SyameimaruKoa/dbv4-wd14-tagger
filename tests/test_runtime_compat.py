@@ -4,6 +4,7 @@ import urllib.error
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import httpx
 import numpy as np
 from PIL import Image
 
@@ -88,6 +89,36 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         self.assertEqual(medium["repo_id"], "animetimm/convformer_s36.dbv4-full")
         self.assertIn("管理者", compact["access_notice"])
         self.assertIn("管理者", medium["access_notice"])
+
+    def test_manual_profile_starts_browser_login_when_logged_out(self):
+        profile = app.MODEL_PROFILES["compact_manual"]
+        with (
+            patch.object(app, "get_token", return_value=None),
+            patch.object(app, "login") as login,
+            patch.object(app, "get_hf_file_metadata") as metadata,
+        ):
+            app.ensure_profile_access("compact_manual", profile)
+
+        login.assert_called_once_with(skip_if_logged_in=True)
+        metadata.assert_called_once()
+
+    def test_manual_profile_opens_approval_page_when_access_is_denied(self):
+        profile = app.MODEL_PROFILES["medium_manual"]
+        request = httpx.Request("HEAD", "https://huggingface.co/test/model.onnx")
+        response = httpx.Response(403, request=request)
+        denied = app.GatedRepoError("approval required", response=response)
+        with (
+            patch.object(app, "get_token", return_value="saved-token"),
+            patch.object(app, "get_hf_file_metadata", side_effect=denied),
+            patch.object(app.webbrowser, "open", return_value=True) as browser,
+            self.assertRaises(SystemExit),
+        ):
+            app.ensure_profile_access("medium_manual", profile)
+
+        browser.assert_called_once_with(
+            "https://huggingface.co/animetimm/convformer_s36.dbv4-full",
+            new=2,
+        )
 
     def test_client_http_error_skips_only_failed_image(self):
         with tempfile.TemporaryDirectory() as directory:

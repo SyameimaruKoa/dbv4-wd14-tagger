@@ -4,6 +4,7 @@
 
 - 管理者承認制モデルのうち、現行プロファイルに対してサイズ・精度面の追加価値がある`compact_manual`（RepViT M2.3）と`medium_manual`（ConvFormer S36）を追加。
   - 未承認時の実行警告、実ファイル容量、公式評価値、VRAM概算をREADMEへ記載。
+  - 未ログイン時はHugging FaceのブラウザOAuthを開始し、未承認時は対象モデルの申請・同意ページを自動表示する認証フローを追加。
   - 現行モデルまたは追加候補より精度・サイズの両面で劣る承認制モデルはプリセット対象外とした。
 
 - ultraプロファイルのONNX取得元を`itterative/convnextv2_huge.dbv4-full-onnx`へ修正。

@@ -23,6 +23,7 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "categories_file": "categories.json",
         "thresholds_file": "thresholds.csv",
         "access_notice": "Hugging Faceで管理者によるアクセス承認が必要です。",
+        "requires_manual_approval": True,
     },
     "lightweight": {
         "repo_id": "animetimm/mobilenetv4_conv_aa_large.dbv4-full",
@@ -40,6 +41,7 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "categories_file": "categories.json",
         "thresholds_file": "thresholds.csv",
         "access_notice": "Hugging Faceで管理者によるアクセス承認が必要です。",
+        "requires_manual_approval": True,
     },
     "balanced": {
         "repo_id": "animetimm/caformer_b36.dbv4-full",

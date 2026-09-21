@@ -15,6 +15,7 @@ import urllib.error
 import urllib.request
 import uuid
 import warnings
+import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -22,7 +23,14 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import onnxruntime as ort
 from PIL import Image
-from huggingface_hub import hf_hub_download
+from huggingface_hub import (
+    get_hf_file_metadata,
+    get_token,
+    hf_hub_download,
+    hf_hub_url,
+    login,
+)
+from huggingface_hub.errors import GatedRepoError
 
 try:
     import pillow_avif  # noqa: F401
@@ -429,6 +437,7 @@ def load_runtime_model(
     profile = get_model_profile(profile_name, profiles)
     if profile.get("access_notice"):
         print(f"[WARN] {profile_name}: {profile['access_notice']}")
+    ensure_profile_access(profile_name, profile)
     if use_gpu and profile.get("vram_warning"):
         print(f"[WARN] {profile['vram_warning']}")
     metadata = DBV4Metadata.load(
@@ -485,6 +494,37 @@ def load_runtime_model(
         if not active_names.intersection(candidate_names):
             raise RuntimeError("DBV4モデルでGPU Execution Providerを有効化できませんでした。")
     return RuntimeModel(metadata, preprocessor, session)
+
+
+def ensure_profile_access(profile_name: str, profile: Dict[str, Any]) -> None:
+    if not profile.get("requires_manual_approval"):
+        return
+    repo_id = str(profile["repo_id"])
+    model_filename = str(profile.get("model_file", "model.onnx"))
+    model_page_url = f"https://huggingface.co/{repo_id}"
+
+    if not get_token():
+        print("[INFO] Hugging Faceへ未ログインのため、ブラウザ認証を開始します。")
+        try:
+            login(skip_if_logged_in=True)
+        except Exception as exc:
+            raise RuntimeError(f"Hugging Faceのブラウザ認証に失敗しました: {exc}") from exc
+
+    try:
+        get_hf_file_metadata(
+            hf_hub_url(repo_id=repo_id, filename=model_filename),
+            token=True,
+        )
+    except GatedRepoError as exc:
+        opened = webbrowser.open(model_page_url, new=2)
+        if opened:
+            print(f"[INFO] アクセス申請・同意ページをブラウザで開きました: {model_page_url}")
+        else:
+            print(f"[WARN] ブラウザを開けませんでした。次のページを開いてください: {model_page_url}")
+        raise SystemExit(
+            f"[ERROR] {profile_name}は未承認または承認待ちです。"
+            "ブラウザで申請・同意を完了し、管理者の承認後に再実行してください。"
+        ) from exc
 
 
 def warmup_runtime(runtime: RuntimeModel, batch_size: int) -> float:
