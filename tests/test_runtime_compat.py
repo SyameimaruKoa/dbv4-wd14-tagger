@@ -149,16 +149,32 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         denied = app.GatedRepoError("approval required", response=response)
         with (
             patch.object(app, "get_token", return_value="saved-token"),
+            patch.object(app, "login") as login,
             patch.object(app, "get_hf_file_metadata", side_effect=denied),
             patch.object(app.webbrowser, "open", return_value=True) as browser,
             self.assertRaises(SystemExit),
         ):
             app.ensure_profile_access("medium_manual", profile)
 
+        login.assert_called_once_with(skip_if_logged_in=False)
         browser.assert_called_once_with(
             "https://huggingface.co/animetimm/convformer_s36.dbv4-full",
             new=2,
         )
+
+    def test_gated_profile_retries_after_login(self):
+        profile = app.MODEL_PROFILES["ultra"]
+        request = httpx.Request("HEAD", "https://huggingface.co/test/selected_tags.csv")
+        denied = app.GatedRepoError("login required", response=httpx.Response(401, request=request))
+        with (
+            patch.object(app, "get_token", return_value="expired-token"),
+            patch.object(app, "login") as login,
+            patch.object(app, "get_hf_file_metadata", side_effect=[denied, None]) as metadata,
+            patch.object(app.webbrowser, "open", return_value=True),
+        ):
+            app.ensure_profile_access("ultra", profile)
+        login.assert_called_once_with(skip_if_logged_in=False)
+        self.assertEqual(metadata.call_count, 2)
 
     def test_ultra_checks_gated_metadata_before_model_download(self):
         profile = app.MODEL_PROFILES["ultra"]

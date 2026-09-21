@@ -2,6 +2,8 @@
 
 ## 2026-09-21
 
+- gated metadataへのアクセスが401になった場合、対象ページを開き、保存済み認証情報があっても再ログインを促して同じ実行内で再確認するよう変更。
+
 - `ultra`のONNX取得後にメタデータ側のgated repositoryで401になる問題に対応。モデル本体の取得前に`selected_tags.csv`へのアクセスを確認し、未ログイン時の認証と利用条件ページの案内を行う。
 
 - Linux Intel Iris Xeで`wd14_v3`のOpenVINO推論と合成PNGへのXMP書き込みを確認。GPU.0を要求し、OpenVINO EPがactive、debugログでモデル対応と推論成功を確認。通常ログの内部診断抑制、全30件の単体テストも確認。詳細と未検証項目をREADMEに記録。`lightweight`はHugging Faceの401でモデル取得前に停止した。コード変更なし。

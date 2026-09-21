@@ -535,27 +535,32 @@ def ensure_profile_access(profile_name: str, profile: Dict[str, Any]) -> None:
     model_page_url = f"https://huggingface.co/{repo_id}"
 
     if not get_token():
-        print("[INFO] Hugging Faceへ未ログインのため、ブラウザ認証を開始します。")
+        print("[INFO] Hugging Faceへ未ログインのため、ログインを開始します。")
         try:
             login(skip_if_logged_in=True)
         except Exception as exc:
-            raise RuntimeError(f"Hugging Faceのブラウザ認証に失敗しました: {exc}") from exc
+            raise RuntimeError(f"Hugging Faceのログインに失敗しました: {exc}") from exc
 
+    artifact_url = hf_hub_url(repo_id=repo_id, filename=model_filename)
     try:
-        get_hf_file_metadata(
-            hf_hub_url(repo_id=repo_id, filename=model_filename),
-            token=True,
-        )
-    except GatedRepoError as exc:
+        get_hf_file_metadata(artifact_url, token=True)
+    except GatedRepoError:
         opened = webbrowser.open(model_page_url, new=2)
         if opened:
             print(f"[INFO] アクセス申請・同意ページをブラウザで開きました: {model_page_url}")
         else:
             print(f"[WARN] ブラウザを開けませんでした。次のページを開いてください: {model_page_url}")
-        raise SystemExit(
-            f"[ERROR] {profile_name}は未承認または承認待ちです。"
-            "ブラウザで申請・同意を完了し、管理者の承認後に再実行してください。"
-        ) from exc
+        print("[INFO] 利用条件への同意後、Hugging Faceへ再ログインしてください。")
+        try:
+            login(skip_if_logged_in=False)
+            get_hf_file_metadata(artifact_url, token=True)
+        except GatedRepoError as retry_exc:
+            raise SystemExit(
+                f"[ERROR] {profile_name}は未承認または承認待ちです。"
+                "ブラウザで申請・同意を完了し、管理者の承認後に再実行してください。"
+            ) from retry_exc
+        except Exception as retry_exc:
+            raise RuntimeError(f"Hugging Faceの再ログインまたはアクセス確認に失敗しました: {retry_exc}") from retry_exc
 
 
 def warmup_runtime(runtime: RuntimeModel, batch_size: int) -> float:
