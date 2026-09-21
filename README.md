@@ -229,6 +229,8 @@ explicit_score:0.XXXX
 
 ## Linux / Bash
 
+`run_tagger.sh`の一時ファイルは`/tmp`を使う。`~/.cache`が容量の小さいtmpfsの場合、Hugging Faceのモデルキャッシュは自動的に`~/.local/share/huggingface`へ保存する。既存の`HF_HUB_CACHE`・`HF_XET_CACHE`指定は優先される。モデルキャッシュは再利用するデータであり、`/tmp`には置かない。
+
 初回セットアップ：
 
 ~~~bash

@@ -20,6 +20,35 @@ IS_CLIENT=0
 DEBUG_MODE=0
 LOGIN_MODE=0
 
+configure_storage_paths() {
+    if [ ! -d /tmp ] || [ ! -w /tmp ]; then
+        echo "[ERROR] 一時フォルダ /tmp を使用できません。"
+        exit 1
+    fi
+    export TMPDIR=/tmp
+    export TMP=/tmp
+    export TEMP=/tmp
+
+    if [ -z "${HF_HOME:-}" ] && command -v findmnt >/dev/null 2>&1; then
+        local cache_type=""
+        cache_type=$(findmnt -n -o FSTYPE -T "$HOME/.cache" 2>/dev/null || true)
+        if [ "$cache_type" = "tmpfs" ]; then
+            local cache_base="$HOME/.local/share/huggingface"
+            if [ -z "${HF_HUB_CACHE:-}" ]; then
+                export HF_HUB_CACHE="$cache_base/hub"
+            fi
+            if [ -z "${HF_XET_CACHE:-}" ]; then
+                export HF_XET_CACHE="$cache_base/xet"
+            fi
+            mkdir -p "$HF_HUB_CACHE" "$HF_XET_CACHE" || {
+                echo "[ERROR] Hugging Faceモデルキャッシュを作成できません: $cache_base"
+                exit 1
+            }
+            echo "[INFO] 一時領域: /tmp、モデルキャッシュ: $HF_HUB_CACHE"
+        fi
+    fi
+}
+
 show_help() {
     echo "DBV4 Tagger Universal (日本語ヘルプ)"
     echo ""
@@ -258,6 +287,7 @@ setup_env() {
 
 # 引数なしチェック
 if [ $# -eq 0 ]; then
+    configure_storage_paths
     echo "=========================================="
     echo "   DBV4 Tagger Universal - Setup Mode"
     echo "=========================================="
@@ -304,6 +334,8 @@ while [[ $# -gt 0 ]]; do
         *) PY_ARGS+=("$1"); shift ;;
     esac
 done
+
+configure_storage_paths
 
 if [ "$LOGIN_MODE" -eq 1 ]; then
     echo "[INFO] Hugging Faceログインモードを開始します。"
