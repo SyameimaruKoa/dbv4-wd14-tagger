@@ -160,6 +160,20 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             new=2,
         )
 
+    def test_ultra_checks_gated_metadata_before_model_download(self):
+        profile = app.MODEL_PROFILES["ultra"]
+        with (
+            patch.object(app, "get_token", return_value="saved-token"),
+            patch.object(app, "hf_hub_url", return_value="metadata-url") as hub_url,
+            patch.object(app, "get_hf_file_metadata") as metadata,
+        ):
+            app.ensure_profile_access("ultra", profile)
+        hub_url.assert_called_once_with(
+            repo_id="animetimm/convnextv2_huge.dbv4-full",
+            filename="selected_tags.csv",
+        )
+        metadata.assert_called_once_with("metadata-url", token=True)
+
     def test_client_http_error_skips_only_failed_image(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = [f"{directory}/one.jpg", f"{directory}/two.jpg"]

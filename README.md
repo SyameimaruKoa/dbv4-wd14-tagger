@@ -241,6 +241,8 @@ Hugging Faceのgated modelを利用する前のログイン：
 ./run_tagger.sh --login
 ~~~
 
+`ultra`はONNX本体の公開リポジトリとは別に、タグと前処理データを`animetimm/convnextv2_huge.dbv4-full`から取得する。利用前に[モデルページ](https://huggingface.co/animetimm/convnextv2_huge.dbv4-full)で利用条件に同意し、同意したアカウントで`--login`を実行する。401が出る場合は、そのアカウントにアクセス権があるか確認する。
+
 既存のGPU／CPU仮想環境から`hf`を利用できる環境を再利用し、環境が一つもない場合だけCPU環境を作成する。ブラウザで作成したread権限のtokenを入力すると、認証情報はHugging Face標準の保存先へ保存され、ログイン後は推論を実行せず終了する。
 
 通常実行：

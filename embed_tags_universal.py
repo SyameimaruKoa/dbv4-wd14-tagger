@@ -523,10 +523,15 @@ def load_runtime_model(
 
 
 def ensure_profile_access(profile_name: str, profile: Dict[str, Any]) -> None:
-    if not profile.get("requires_manual_approval"):
+    metadata_repo_id = profile.get("metadata_repo_id")
+    if not profile.get("requires_manual_approval") and not metadata_repo_id:
         return
-    repo_id = str(profile["repo_id"])
-    model_filename = str(profile.get("model_file", "model.onnx"))
+    repo_id = str(metadata_repo_id or profile["repo_id"])
+    model_filename = str(
+        profile.get("tags_file", "selected_tags.csv")
+        if metadata_repo_id
+        else profile.get("model_file", "model.onnx")
+    )
     model_page_url = f"https://huggingface.co/{repo_id}"
 
     if not get_token():
