@@ -1568,50 +1568,54 @@ def process_images(args: argparse.Namespace) -> None:
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="DBV4 Tagger Universal (日本語版)")
     parser.add_argument("images", nargs="*", help="処理対象の画像またはフォルダパス")
-    parser.add_argument("--mode", choices=["standalone", "server", "client"], default="standalone")
-    parser.add_argument("--no-tag", action="store_true", help="タグ付け処理を行わない")
-    parser.add_argument("--organize", action="store_true", help="レーティングに基づきフォルダ整理を行う")
+    parser.add_argument("-D", "--mode", choices=["standalone", "server", "client"], default="standalone")
+    parser.add_argument("-Z", "--no-tag", action="store_true", help="タグ付け処理を行わない")
+    parser.add_argument("-o", "--organize", action="store_true", help="レーティングに基づきフォルダ整理を行う")
     parser.add_argument(
+        "-x",
         "--pixiv",
         action="store_true",
         help="Pixiv整理モード（画像を含むフォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
     )
-    parser.add_argument("--no-report", action="store_true", help="HTMLレポートを作成しない")
+    parser.add_argument("-z", "--no-report", action="store_true", help="HTMLレポートを作成しない")
     parser.add_argument(
+        "-q",
         "--thresh",
         type=float,
         default=None,
         help="DBV4のtag best_thresholdを上書きする明示的な閾値",
     )
-    parser.add_argument("--gpu", action="store_true", help="GPUを使用する")
-    parser.add_argument("--batch-size", type=int, default=4, help="推論バッチサイズ")
-    parser.add_argument("--io-workers", type=int, default=-1, help="画像読込みの並列数（-1=自動）")
-    parser.add_argument("--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
-    parser.add_argument("--recursive", action="store_const", const=True, default=None, help="再帰検索ON")
-    parser.add_argument("--no-recursive", action="store_const", const=False, dest="recursive", help="再帰検索OFF")
+    parser.add_argument("-g", "--gpu", action="store_true", help="GPUを使用する")
+    parser.add_argument("-b", "--batch-size", type=int, default=4, help="推論バッチサイズ")
+    parser.add_argument("-w", "--io-workers", type=int, default=-1, help="画像読込みの並列数（-1=自動）")
+    parser.add_argument("-f", "--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
+    parser.add_argument("-r", "--recursive", action="store_const", const=True, default=None, help="再帰検索ON")
+    parser.add_argument("-n", "--no-recursive", action="store_const", const=False, dest="recursive", help="再帰検索OFF")
     parser.add_argument(
+        "-m",
         "--model-profile",
         default=None,
         metavar="NAME",
         help="DBV4モデルプロファイル（configのカスタム定義も指定可）",
     )
-    parser.add_argument("--model-repo", default=None, help="DBV4モデル/metadataのHugging FaceリポジトリID")
-    parser.add_argument("--model-file", default=None, help="ONNXモデルファイル名またはパス")
-    parser.add_argument("--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
-    parser.add_argument("--host", default=None, help="Client接続先ホスト")
-    parser.add_argument("--port", type=int, default=None, help="Server/Clientポート")
+    parser.add_argument("-e", "--model-repo", default=None, help="DBV4モデル/metadataのHugging FaceリポジトリID")
+    parser.add_argument("-l", "--model-file", default=None, help="ONNXモデルファイル名またはパス")
+    parser.add_argument("-y", "--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
+    parser.add_argument("-j", "--host", default=None, help="Client接続先ホスト")
+    parser.add_argument("-u", "--port", type=int, default=None, help="Server/Clientポート")
     parser.add_argument(
+        "-v",
         "--sensitive-split-mode",
         choices=[2, 4, 6],
         type=int,
         default=None,
         help="旧CLI互換（DBV4ではR-15/R-17の5段階固定）",
     )
-    parser.add_argument("--record-ratio", action="store_true", default=None, help="rating scoreをXMPへ保存")
-    parser.add_argument("--no-record-ratio", action="store_false", dest="record_ratio", help="rating scoreのXMP保存を無効化")
-    parser.add_argument("--rating-thresh", type=float, default=None, help="非General rating判定閾値（旧CLI互換）")
-    parser.add_argument("--ignore-sensitive", action="store_true", help="Sensitive判定をGeneralとして扱う")
-    parser.add_argument("--gen-config", action="store_true", help="config.jsonを生成・更新")
+    parser.add_argument("-a", "--record-ratio", action="store_true", default=None, help="rating scoreをXMPへ保存")
+    parser.add_argument("-k", "--no-record-ratio", action="store_false", dest="record_ratio", help="rating scoreのXMP保存を無効化")
+    parser.add_argument("-d", "--rating-thresh", type=float, default=None, help="非General rating判定閾値（旧CLI互換）")
+    parser.add_argument("-i", "--ignore-sensitive", action="store_true", help="Sensitive判定をGeneralとして扱う")
+    parser.add_argument("-G", "--gen-config", action="store_true", help="config.jsonを生成・更新")
     return parser
 
 
