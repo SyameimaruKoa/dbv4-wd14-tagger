@@ -82,6 +82,31 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         args = app.create_parser().parse_args(["--model-profile", "custom", "image.jpg"])
         self.assertEqual(args.model_profile, "custom")
 
+    def test_build_providers_skips_tensorrt_when_runtime_is_missing(self):
+        available = ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+        with (
+            patch.object(app, "IS_WINDOWS", False),
+            patch.object(app, "IS_LINUX", True),
+            patch.object(app.ort, "get_available_providers", return_value=available),
+            patch.object(app.ctypes, "CDLL", side_effect=OSError("missing")),
+        ):
+            providers = app.build_providers(True)
+        self.assertEqual(providers, ["CUDAExecutionProvider", "CPUExecutionProvider"])
+
+    def test_build_providers_uses_tensorrt_when_runtime_is_loadable(self):
+        available = ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+        with (
+            patch.object(app, "IS_WINDOWS", False),
+            patch.object(app, "IS_LINUX", True),
+            patch.object(app.ort, "get_available_providers", return_value=available),
+            patch.object(app.ctypes, "CDLL"),
+        ):
+            providers = app.build_providers(True)
+        self.assertEqual(
+            providers,
+            ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"],
+        )
+
     def test_manual_approval_profiles_are_available(self):
         compact = app.MODEL_PROFILES["compact_manual"]
         medium = app.MODEL_PROFILES["medium_manual"]

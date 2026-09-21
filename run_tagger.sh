@@ -18,6 +18,7 @@ DO_TAG=0
 DO_PIXIV=0
 IS_CLIENT=0
 DEBUG_MODE=0
+LOGIN_MODE=0
 
 show_help() {
     echo "DBV4 Tagger Universal (日本語ヘルプ)"
@@ -52,6 +53,7 @@ show_help() {
     echo "    --no-record-ratio   RAW・割合スコアタグを記録しない"
     echo "    --server            サーバーモード"
     echo "    --client            クライアントモード"
+    echo "    --login             Hugging Faceログインモード（認証後に終了）"
     echo "    -H, --host <ip>     サーバーのIPアドレス"
     echo "    -P, --port <port>   ポート番号"
     echo "    --debug             GPU/OpenVINOの詳細デバッグログを有効化"
@@ -163,18 +165,7 @@ setup_env() {
             backend="client"
         fi
     elif [ "$backend" = "cpu" ]; then
-        if [ -d "$SCRIPT_DIR/venv_gpu" ]; then
-            venv_name="venv_gpu"
-            backend="nvidia"
-        elif [ -d "$SCRIPT_DIR/venv_intel" ]; then
-            venv_name="venv_intel"
-            backend="intel"
-        elif [ -d "$SCRIPT_DIR/venv_amd" ]; then
-            venv_name="venv_amd"
-            backend="amd"
-        else
-            venv_name="venv_std"
-        fi
+        venv_name="venv_std"
     else
         if [ "$backend" = "nvidia" ]; then
             venv_name="venv_gpu"
@@ -226,7 +217,7 @@ setup_env() {
         else
             local cuda_ver=$(detect_cuda_major)
             local ort_pkg="onnxruntime-gpu"
-            local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt<11 tensorrt-cu12<11"
+            local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt-cu12<11"
             if [ "$cuda_ver" -ge 13 ]; then
                 ort_pkg="onnxruntime-gpu"
             elif [ "$cuda_ver" -eq 12 ]; then
@@ -281,6 +272,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --server) PY_ARGS+=("--mode" "server"); shift ;;
         --client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
+        --login) LOGIN_MODE=1; shift ;;
         --organize) DO_ORGANIZE=1; shift ;;
         --tag) DO_TAG=1; shift ;; 
         --pixiv) PY_ARGS+=("--pixiv"); DO_PIXIV=1; shift ;;
@@ -310,6 +302,14 @@ while [[ $# -gt 0 ]]; do
         *) PY_ARGS+=("$1"); shift ;;
     esac
 done
+
+if [ "$LOGIN_MODE" -eq 1 ]; then
+    echo "[INFO] Hugging Faceログインモードを開始します。"
+    setup_env "cpu" "0"
+    "$VENV_DIR/bin/hf" auth login
+    echo "[INFO] Hugging Faceログインモードを終了します。"
+    exit 0
+fi
 
 # デバッグログ制御
 # OpenVINOの内部診断（Inference successful / Model is fully supported on OpenVINO 等）は

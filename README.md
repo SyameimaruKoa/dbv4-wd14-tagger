@@ -235,6 +235,14 @@ explicit_score:0.XXXX
 ./run_tagger.sh
 ~~~
 
+Hugging Faceのgated modelを利用する前のログイン：
+
+~~~bash
+./run_tagger.sh --login
+~~~
+
+ブラウザで作成したread権限のtokenを入力する。認証情報はHugging Face標準の保存先へ保存され、ログイン後は推論を実行せず終了する。
+
 通常実行：
 
 ~~~bash
@@ -266,6 +274,21 @@ explicit_score:0.XXXX
 ~~~
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
+
+### Linux実機検証
+
+Ubuntu 26.04.1 LTS、kernel 7.0.0-31-generic、Intel Core i7-8750H、GeForce RTX 2070 Mobile 8GB、NVIDIA driver 610.57.04で検証した。システムのPython 3.14.4は使用せず、wrapperがPython 3.13を検出して`venv_std`と`venv_gpu`を作成した。
+
+| Profile | Provider | batch-size | 結果 | 合成画像1枚の実測 |
+| --- | --- | ---: | --- | ---: |
+| lightweight | CPUExecutionProvider | 4 | 推論・XMP書き込み成功 | 89.8 ms/img |
+| lightweight | CUDAExecutionProvider | 4 | 推論・XMP書き込み成功 | 499.2 ms/img |
+| balanced | CPUExecutionProvider | 4 | 推論・XMP書き込み成功 | 719.9 ms/img |
+| balanced | CUDAExecutionProvider | 4 | 推論・XMP書き込み成功 | 303.9 ms/img |
+| wd14_v3 | CPUExecutionProvider | 4 | 推論・XMP書き込み成功 | 919.8 ms/img |
+| wd14_v3 | CUDAExecutionProvider | 4 | 推論・XMP書き込み成功 | 376.3 ms/img |
+
+保存済みrating scoreを使った2回目の整理は、推論0枚・skip 1枚で完了した。lightweightのlocalhost Server/Client推論と、lightweight serverへ接続したbalanced clientのmodel ID不一致拒否も確認した。上記は起動経路確認用の4 × 4合成画像による単発値であり、モデル間性能比較やタグ品質評価には使用しない。TensorRTは検証環境の`libnvinfer`が不完全だったため候補から除外され、実測providerはCUDAまたはCPUである。
 
 ## Google Colab
 

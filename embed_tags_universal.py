@@ -1,4 +1,5 @@
 import argparse
+import ctypes
 import csv
 import glob
 import io
@@ -382,6 +383,12 @@ def build_providers(use_gpu: bool) -> List[Any]:
     providers: List[Any] = []
     for candidate in candidates:
         name = candidate[0] if isinstance(candidate, tuple) else candidate
+        if name == "TensorrtExecutionProvider":
+            library_name = "nvinfer_10.dll" if IS_WINDOWS else "libnvinfer.so.10"
+            try:
+                ctypes.CDLL(library_name)
+            except OSError:
+                continue
         if name in available:
             providers.append(candidate)
     providers.append("CPUExecutionProvider")
