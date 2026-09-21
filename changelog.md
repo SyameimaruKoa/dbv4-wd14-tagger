@@ -1,12 +1,101 @@
 # 実装履歴
 
+## 2026-09-22
+
+- Linux/Bashの一時ファイルを`/tmp`へ統一。`~/.cache`がtmpfsの場合、Hugging Faceのモデルキャッシュをディスク上の`~/.local/share/huggingface`へ自動配置し、容量不足を回避する。
+
 ## 2026-09-21
 
-- Pixiv整理モードを末端フォルダ単位の一括処理へ改修。
-  - 末端フォルダ内の全画像を先にスキャン・レーティング判定し、移動処理はスキャン完了後に実行。
-  - R17以上を1枚でも含む末端フォルダは、そのフォルダ内の全画像を代表レーティングの移動先へまとめて移動。
+- mainで導入されたPixiv整理の末端フォルダ単位処理をDBV4経路へ統合。親フォルダに子フォルダがある場合は親の画像を対象外とし、各末端フォルダをまとめて判定・移動する。
+
+- gated metadataへのアクセスが401になった場合、対象ページを開き、保存済み認証情報があっても再ログインを促して同じ実行内で再確認するよう変更。
+
+- `ultra`のONNX取得後にメタデータ側のgated repositoryで401になる問題に対応。モデル本体の取得前に`selected_tags.csv`へのアクセスを確認し、未ログイン時の認証と利用条件ページの案内を行う。
+
+- Linux Intel Iris Xeで`wd14_v3`のOpenVINO推論と合成PNGへのXMP書き込みを確認。GPU.0を要求し、OpenVINO EPがactive、debugログでモデル対応と推論成功を確認。通常ログの内部診断抑制、全30件の単体テストも確認。詳細と未検証項目をREADMEに記録。`lightweight`はHugging Faceの401でモデル取得前に停止した。コード変更なし。
+
+- Serverの`/metadata`を使い、Clientが起動時にServerのmodel IDへ対応する既知profileを自動選択するよう変更。明示profileは尊重し、metadata versionとoutput sizeを推論前に検証する。ClientはONNX本体を取得しない。
+
+- Linux実機検証でBashセットアップ経路を修正。
+  - 引数なしのCPUセットアップが既存GPU仮想環境を再利用していたため、必ず`venv_std`を作成・使用するよう修正。
+  - x86_64 NVIDIA環境で`TensorRT`のCUDA 13版と`TensorRT-CUDA 12`版を重複導入していたため、ONNX Runtime用のCUDA 12版だけを導入するよう修正。
+  - ONNX RuntimeがTensorRT EPを列挙しても`libnvinfer`をロードできない環境では、TensorRTを候補から外してCUDAへ直接接続するよう修正。
+  - `./run_tagger.sh --login`で既存のGPU／CPU仮想環境を再利用し、Hugging Face認証だけを実行して終了するログインモードを追加。
+  - Clientモードも既存仮想環境をそのまま再利用し、不要なGPU依存関係の再導入を行わないよう修正。
+  - Server/Clientのprotocol、model ID、output size、metadata version不一致は画像単位skipではなく、以後の処理を即時停止するよう修正。
+  - Serverへ画像名・サイズ・受信時刻・処理時間・完了状態のリクエスト単位ログを復元し、推論後にClientが切断済みの場合は`BrokenPipeError` tracebackではなく簡潔な警告を表示して稼働を継続。
+  - Serverを上限付き並列リクエスト処理へ変更。既定2件、`server_workers`で同時推論数を調整可能。
+  - Ubuntu 26.04.1、Python 3.13 fallback、RTX 2070 MobileでCPU/CUDA推論、XMP書き込み、保存score再利用を確認。
+
+- DBV4移行前の既定`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`互換プロファイルとして復元。
+  - 公式実装と同じ白背景square padding、448角Bicubic、BGR、0～255 float32前処理を追加。
+  - READMEへ新モデルの検索語、metadata・入出力・精度・計算量・ライセンスの採用チェック項目を追加。
+  - high代替モデルを再調査したが、balancedより高精度でEVA02より十分軽い公開ONNXがないため、EVA02は互換用の非推奨profileとして維持。
+  - RTX 2070 Max-Q・DirectML・batch-size=4で公開モデルを統一測定し、測定前VRAM、常駐、ピーク、差分、ms/imgをREADMEへ記録。
+  - 1B級`vit_giantopt_patch16_siglip_384.dbv4-full`を`future_1b`として予約。ONNX未公開のため、理由付きで停止する将来profileとした。
+
+- 管理者承認制モデルのうち、現行プロファイルに対してサイズ・精度面の追加価値がある`compact_manual`（RepViT M2.3）と`medium_manual`（ConvFormer S36）を追加。
+  - 未承認時の実行警告、実ファイル容量、公式評価値、VRAM概算をREADMEへ記載。
+  - 未ログイン時はHugging FaceのブラウザOAuthを開始し、未承認時は対象モデルの申請・同意ページを自動表示する認証フローを追加。
+  - 現行モデルまたは追加候補より精度・サイズの両面で劣る承認制モデルはプリセット対象外とした。
+
+- ultraプロファイルのONNX取得元を`itterative/convnextv2_huge.dbv4-full-onnx`へ修正。
+  - 外部重み`model.onnx_data`も取得し、metadataは元の`animetimm/convnextv2_huge.dbv4-full`から読み込む構成へ分離。
+  - WindowsのHugging FaceキャッシュリンクがONNX Runtimeの外部データ検証に拒否されるため、同一ディレクトリへハードリンク（非対応時はコピー）して読み込むよう修正。
+  - 既存configに誤ったultra取得元が残っている場合は自動移行。
+  - 全モデルの実際のONNXファイル名と容量をHugging Face上の実ファイルから調査しREADMEへ記載。
+  - DirectML・batch-size=4のVRAM目安と、ultraでピーク6,583MiBを使用した実測警告をREADMEおよび実行時表示へ追加。
+  - lightweight/balanced/high/ultra/wd14_v3の実測推論時間、常駐VRAM、ピークVRAM、測定前との差分を統一条件で記録。
+
+- DBV4移行時に抜けた既存機能の互換性を復元。
+  - ClientモードはONNXモデル本体を取得せず、metadataのみを読み込むよう修正。
+  - ClientのHTTPエラーは対象画像だけをスキップし、接続断時のみ全体を中断する動作を復元。
+  - 画像単位の例外継続、Ctrl+C中断、モデルのbatch上限警告を復元。
+  - 初回バッチ外れ値の除外、img/s、ms/imgの詳細速度統計を復元。
+  - 旧configのfolder mapping fallback、config更新保存失敗時の継続、Windows UTF-8出力を復元。
+  - 既知の旧DBV4 profile定義を現行モデルへ自動移行し、configのカスタムprofile選択を復元。
+  - レポート生成状態と既存CLIオプションのヘルプ表示を復元。
+  - HTMLレポートのR-15/R-17各5段階badgeと対応rating score表示をDBV4形式へ移行。
+
+- Pixiv整理モードを画像フォルダ単位の一括処理へ改修。
+  - 画像を含む各フォルダの全画像を先にスキャン・レーティング判定し、移動処理はスキャン完了後に実行。
+  - R17以上を1枚でも含む画像フォルダは、そのフォルダ内の全画像を代表レーティングの移動先へまとめて移動。
+  - R17の段階判定に使う正規表現の二重エスケープを修正。
+  - 子フォルダを持つフォルダ直下の画像もスキャン対象に含めるよう修正。
+  - 進捗表示に推論数・スキップ数・各速度のpostfixを復元。
   - 全画像の移動に成功して元フォルダが空になった場合は、元フォルダを削除。
   - 全画像のスキャンが完了していないフォルダは移動せず、処理途中のフォルダ移動による競合を防止。
+
+## 2026-09-20
+
+- DBV4 fullモデルファミリーへの推論エンジン移行。
+  - DBV4用 Model Profile を追加し、lightweight / balanced / high / ultra を共通インターフェースで切り替え可能にした。
+  - 初期デフォルトを animetimm/convformer_s36.dbv4-full の balanced に設定。
+  - model.onnx / selected_tags.csv / preprocess.json / categories.json / thresholds.csv をモデルmetadataとして一体管理。
+  - selected_tags.csv の tag-specific best_threshold を標準thresholdとして使用し、--thresh は明示overrideとして分離。
+  - General / Character / Rating をmetadataから解釈し、WD14 V3の固定rating位置依存を廃止。
+  - preprocess.json に基づく PadToSize / Resize / CenterCrop / Tensor化 / ImageNet Normalize のモデル固有前処理を追加。
+  - Server / Client間で model_id / metadata_version / output_size / protocol version を検証。
+  - Client側はモデル本体をダウンロードせず、metadataのみを取得してサーバー推論結果を利用する構成に変更。
+
+- R-00 / R-15 / R-17 / R-18体系をDBV4へ接続。
+  - R-15_0〜R-15_4、R-17_0〜R-17_4 の5段階体系を維持。
+  - R-15 / R-17のseverity計算をDBV4 rating scoreへ接続。
+  - DBV4 scoreをWD14 V3 scoreと同一視せず、severity calibrationを独立レイヤーとして保持。
+
+- XMP / 再整理 / reportをDBV4対応。
+  - XMPへ dbv4_model marker と4 ratingのraw score / percentageを保存。
+  - 同一DBV4 model markerと4 raw scoreが揃っている場合、再推論せずrating再計算・整理できるよう変更。
+  - 旧WD14 scoreだけが存在する場合はDBV4推論へフォールバック。
+  - HTML reportをR-15/R-17の5段階ラベルへ対応。
+
+- Windows / Linux / Colabの実行経路をDBV4向けに更新。
+  - --model-profile をPowerShell / Bash wrapperへ追加。
+  - --thresh を明示指定した場合のみDBV4標準thresholdをoverride。
+  - ColabサーバーをDBV4サーバーへ更新。
+
+- DBV4 metadata / preprocessing / input layout / output probability変換の単体テストを追加。
+
 
 
 ## 2026-09-19

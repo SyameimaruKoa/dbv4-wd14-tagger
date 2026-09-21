@@ -18,9 +18,39 @@ DO_TAG=0
 DO_PIXIV=0
 IS_CLIENT=0
 DEBUG_MODE=0
+LOGIN_MODE=0
+
+configure_storage_paths() {
+    if [ ! -d /tmp ] || [ ! -w /tmp ]; then
+        echo "[ERROR] 一時フォルダ /tmp を使用できません。"
+        exit 1
+    fi
+    export TMPDIR=/tmp
+    export TMP=/tmp
+    export TEMP=/tmp
+
+    if [ -z "${HF_HOME:-}" ] && command -v findmnt >/dev/null 2>&1; then
+        local cache_type=""
+        cache_type=$(findmnt -n -o FSTYPE -T "$HOME/.cache" 2>/dev/null || true)
+        if [ "$cache_type" = "tmpfs" ]; then
+            local cache_base="$HOME/.local/share/huggingface"
+            if [ -z "${HF_HUB_CACHE:-}" ]; then
+                export HF_HUB_CACHE="$cache_base/hub"
+            fi
+            if [ -z "${HF_XET_CACHE:-}" ]; then
+                export HF_XET_CACHE="$cache_base/xet"
+            fi
+            mkdir -p "$HF_HUB_CACHE" "$HF_XET_CACHE" || {
+                echo "[ERROR] Hugging Faceモデルキャッシュを作成できません: $cache_base"
+                exit 1
+            }
+            echo "[INFO] 一時領域: /tmp、モデルキャッシュ: $HF_HUB_CACHE"
+        fi
+    fi
+}
 
 show_help() {
-    echo "WD14 Tagger Universal (日本語ヘルプ)"
+    echo "DBV4 Tagger Universal (日本語ヘルプ)"
     echo ""
     echo "使い方: ./run_tagger.sh [オプション] [パス]"
     echo ""
@@ -40,16 +70,19 @@ show_help() {
     echo "    --no-recursive      再帰検索OFF"
     echo "    --batch-size <n>    推論バッチサイズ（デフォルト: 4 / 非対応時は 1）"
     echo "    --io-workers <n>    前処理の並列ワーカー数（デフォルト: 自動）"
-    echo "    --model-repo <repo> モデル/タグのHFリポジトリID"
+    echo "    --model-profile <name> モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
+    echo "    --model-repo <repo> DBV4モデル/タグのHFリポジトリIDを明示指定"
     echo "    --model-file <file> モデルファイル名またはパス"
     echo "    --tags-file <file>  タグCSVファイル名またはパス"
+    echo "    --thresh <0.0-1.0> DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
     echo "    -f, --force         既存タグがあっても強制的に再解析・上書きする"
     echo "    --sensitive-split-mode <2|4|6>"
-    echo "                        Sensitive分割数 (2=2分割/4=4分割/6=6分割, デフォルト: config準拠)"
+    echo "                        旧CLI互換（DBV4ではR-15/R-17の5段階固定・非推奨）"
     echo "    --record-ratio      全レーティングのRAW・割合スコアタグを記録する"
     echo "    --no-record-ratio   RAW・割合スコアタグを記録しない"
     echo "    --server            サーバーモード"
     echo "    --client            クライアントモード"
+    echo "    --login             Hugging Faceログインモード（認証後に終了）"
     echo "    -H, --host <ip>     サーバーのIPアドレス"
     echo "    -P, --port <port>   ポート番号"
     echo "    --debug             GPU/OpenVINOの詳細デバッグログを有効化"
@@ -146,33 +179,18 @@ setup_env() {
     if [ "$is_client" = "1" ]; then
         if [ -d "$SCRIPT_DIR/venv_gpu" ]; then
             venv_name="venv_gpu"
-            backend="nvidia"
         elif [ -d "$SCRIPT_DIR/venv_intel" ]; then
             venv_name="venv_intel"
-            backend="intel"
         elif [ -d "$SCRIPT_DIR/venv_amd" ]; then
             venv_name="venv_amd"
-            backend="amd"
         elif [ -d "$SCRIPT_DIR/venv_std" ]; then
             venv_name="venv_std"
-            backend="cpu"
         else
             venv_name="venv_client"
-            backend="client"
         fi
+        backend="client"
     elif [ "$backend" = "cpu" ]; then
-        if [ -d "$SCRIPT_DIR/venv_gpu" ]; then
-            venv_name="venv_gpu"
-            backend="nvidia"
-        elif [ -d "$SCRIPT_DIR/venv_intel" ]; then
-            venv_name="venv_intel"
-            backend="intel"
-        elif [ -d "$SCRIPT_DIR/venv_amd" ]; then
-            venv_name="venv_amd"
-            backend="amd"
-        else
-            venv_name="venv_std"
-        fi
+        venv_name="venv_std"
     else
         if [ "$backend" = "nvidia" ]; then
             venv_name="venv_gpu"
@@ -206,6 +224,12 @@ setup_env() {
     fi
     
     PIP_CMD="$VENV_DIR/bin/pip"
+
+    if [ "$is_client" = "1" ] && "$VENV_DIR/bin/python" -c "import huggingface_hub, numpy, PIL" >/dev/null 2>&1; then
+        echo "[INFO] Clientは既存の仮想環境を再利用します: $venv_name"
+        return 0
+    fi
+
     $PIP_CMD install --upgrade pip >/dev/null 2>&1
     
     # 必要なパッケージのインストール
@@ -224,7 +248,7 @@ setup_env() {
         else
             local cuda_ver=$(detect_cuda_major)
             local ort_pkg="onnxruntime-gpu"
-            local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt<11 tensorrt-cu12<11"
+            local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt-cu12<11"
             if [ "$cuda_ver" -ge 13 ]; then
                 ort_pkg="onnxruntime-gpu"
             elif [ "$cuda_ver" -eq 12 ]; then
@@ -263,8 +287,9 @@ setup_env() {
 
 # 引数なしチェック
 if [ $# -eq 0 ]; then
+    configure_storage_paths
     echo "=========================================="
-    echo "   WD14 Tagger Universal - Setup Mode"
+    echo "   DBV4 Tagger Universal - Setup Mode"
     echo "=========================================="
     echo "引数が指定されなかったため、環境構築のみを行います。"
     # CPUのみ作っておく（クライアントフラグ0）
@@ -279,6 +304,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --server) PY_ARGS+=("--mode" "server"); shift ;;
         --client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
+        --login) LOGIN_MODE=1; shift ;;
         --organize) DO_ORGANIZE=1; shift ;;
         --tag) DO_TAG=1; shift ;; 
         --pixiv) PY_ARGS+=("--pixiv"); DO_PIXIV=1; shift ;;
@@ -287,9 +313,11 @@ while [[ $# -gt 0 ]]; do
         --no-recursive) PY_ARGS+=("--no-recursive"); shift ;;
         --batch-size) PY_ARGS+=("--batch-size" "$2"); shift 2 ;;
         --io-workers) PY_ARGS+=("--io-workers" "$2"); shift 2 ;;
+        --model-profile) PY_ARGS+=("--model-profile" "$2"); shift 2 ;;
         --model-repo) PY_ARGS+=("--model-repo" "$2"); shift 2 ;;
         --model-file) PY_ARGS+=("--model-file" "$2"); shift 2 ;;
         --tags-file) PY_ARGS+=("--tags-file" "$2"); shift 2 ;;
+        --thresh) PY_ARGS+=("--thresh" "$2"); shift 2 ;;
         -g|--gpu) USE_GPU=1; shift ;;
         --force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
         --force-nvidia) USE_GPU=1; FORCE_TYPE="nvidia"; shift ;;
@@ -306,6 +334,26 @@ while [[ $# -gt 0 ]]; do
         *) PY_ARGS+=("$1"); shift ;;
     esac
 done
+
+configure_storage_paths
+
+if [ "$LOGIN_MODE" -eq 1 ]; then
+    echo "[INFO] Hugging Faceログインモードを開始します。"
+    VENV_DIR=""
+    for venv_name in venv_gpu venv_intel venv_amd venv_std venv_client; do
+        if [ -x "$SCRIPT_DIR/$venv_name/bin/hf" ]; then
+            VENV_DIR="$SCRIPT_DIR/$venv_name"
+            echo "[INFO] 既存の仮想環境を使用します: $venv_name"
+            break
+        fi
+    done
+    if [ -z "$VENV_DIR" ]; then
+        setup_env "cpu" "0"
+    fi
+    "$VENV_DIR/bin/hf" auth login
+    echo "[INFO] Hugging Faceログインモードを終了します。"
+    exit 0
+fi
 
 # デバッグログ制御
 # OpenVINOの内部診断（Inference successful / Model is fully supported on OpenVINO 等）は

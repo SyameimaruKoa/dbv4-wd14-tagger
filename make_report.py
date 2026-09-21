@@ -25,7 +25,7 @@ HTML_TEMPLATE = """
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>WD14 Tagger Report - {category}</title>
+    <title>DBV4 Tagger Report - {category}</title>
     <style>
         body {{ background-color: #1e1e1e; color: #ddd; font-family: sans-serif; margin: 0; padding: 20px; }}
         h1 {{ border-bottom: 2px solid #444; padding-bottom: 10px; }}
@@ -102,8 +102,18 @@ CARD_TEMPLATE = """
 """
 
 
-def get_badge_info(rating, sen_prob):
+def get_badge_info(rating, probabilities):
     lvl_map = {
+        "sensitive_0": ("badge-lvl1", "R-15_0"),
+        "sensitive_1": ("badge-lvl2", "R-15_1"),
+        "sensitive_2": ("badge-lvl3", "R-15_2"),
+        "sensitive_3": ("badge-lvl4", "R-15_3"),
+        "sensitive_4": ("badge-lvl5", "R-15_4"),
+        "questionable_0": ("badge-lvl2", "R-17_0"),
+        "questionable_1": ("badge-lvl3", "R-17_1"),
+        "questionable_2": ("badge-lvl4", "R-17_2"),
+        "questionable_3": ("badge-lvl5", "R-17_3"),
+        "questionable_4": ("badge-lvl6", "R-17_4"),
         "sensitive_lvl1": ("badge-lvl1", "L1"),
         "sensitive_lvl2": ("badge-lvl2", "L2"),
         "sensitive_lvl3": ("badge-lvl3", "L3"),
@@ -115,17 +125,32 @@ def get_badge_info(rating, sen_prob):
     }
     if rating in lvl_map:
         cls_name, text = lvl_map[rating]
-    elif "sensitive" in rating:
+    elif str(rating).startswith("sensitive"):
         cls_name, text = "badge-lvl3", "Sen"
     elif rating == "explicit":
-        cls_name, text = "badge-lvl6", "Exp"
-    elif rating == "questionable":
-        cls_name, text = "badge-lvl4", "Que"
+        cls_name, text = "badge-lvl6", "R-18"
+    elif str(rating).startswith("questionable"):
+        cls_name, text = "badge-lvl4", "R-17"
     elif rating == "general":
-        cls_name, text = "badge-lvl1", "Gen"
+        cls_name, text = "badge-lvl1", "R-00"
     else:
         cls_name, text = "badge-default", rating
-    score_info = f"Sen: {sen_prob:.4f} ({sen_prob*100:.1f}%)"
+    if isinstance(probabilities, (int, float)):
+        values = [0.0, float(probabilities), 0.0, 0.0]
+    else:
+        values = list(probabilities[:4])
+    while len(values) < 4:
+        values.append(0.0)
+    score_index = 0
+    score_label = "Gen"
+    if str(rating).startswith("sensitive"):
+        score_index, score_label = 1, "Sen"
+    elif str(rating).startswith("questionable"):
+        score_index, score_label = 2, "Que"
+    elif rating == "explicit":
+        score_index, score_label = 3, "Exp"
+    score = float(values[score_index])
+    score_info = f"{score_label}: {score:.4f} ({score * 100:.1f}%)"
     return cls_name, text, score_info
 
 
@@ -154,7 +179,11 @@ def make_report():
 
     generated_files = []
     for rating, items in grouped.items():
-        folder_name = folder_mapping.get(rating, rating)
+        folder_name = folder_mapping.get(rating)
+        if folder_name is None and isinstance(rating, str) and "_" in rating:
+            folder_name = folder_mapping.get(rating.split("_", 1)[0])
+        if folder_name is None:
+            folder_name = rating
         html_filename = f"report_{folder_name}.html"
 
         cards_html = ""
@@ -166,8 +195,7 @@ def make_report():
                 rel_path = "file:///" + abs_path.replace("\\", "/")
 
             probs = item["probs"]
-            sen_prob = probs[1]
-            badge_cls, badge_text, score_info = get_badge_info(rating, sen_prob)
+            badge_cls, badge_text, score_info = get_badge_info(rating, probs)
             cards_html += CARD_TEMPLATE.format(
                 rel_path=rel_path.replace("\\", "/"),
                 filename=os.path.basename(abs_path),
