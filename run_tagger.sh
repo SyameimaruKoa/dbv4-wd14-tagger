@@ -59,33 +59,33 @@ show_help() {
     echo "主なオプション:"
     echo "    -p, --path <path>   処理対象ファイル/フォルダ"
     echo "    -g, --gpu           GPUを使用する（自動判別）"
-    echo "    --force-intel       Intel GPUを強制的に使用する"
-    echo "    --force-nvidia      NVIDIA GPUを強制的に使用する"
-    echo "    --force-amd         AMD GPUを強制的に使用する"
-    echo "    --organize          フォルダ整理のみ行う（タグ付けOFF）"
-    echo "    --tag               タグ付けも行う（--organize併用時）"
-    echo "    --pixiv             Pixiv整理モード（末端フォルダ単位で判定し、対象フォルダの全画像を一括移動）"
-    echo "    --no-report         レポート作成なし"
-    echo "    --recursive         再帰検索ON"
-    echo "    --no-recursive      再帰検索OFF"
-    echo "    --batch-size <n>    推論バッチサイズ（デフォルト: 4 / 非対応時は 1）"
-    echo "    --io-workers <n>    前処理の並列ワーカー数（デフォルト: 自動）"
-    echo "    --model-profile <name> モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
-    echo "    --model-repo <repo> DBV4モデル/タグのHFリポジトリIDを明示指定"
-    echo "    --model-file <file> モデルファイル名またはパス"
-    echo "    --tags-file <file>  タグCSVファイル名またはパス"
-    echo "    --thresh <0.0-1.0> DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
+    echo "    -I, --force-intel   Intel GPUを強制的に使用する"
+    echo "    -N, --force-nvidia  NVIDIA GPUを強制的に使用する"
+    echo "    -A, --force-amd     AMD GPUを強制的に使用する"
+    echo "    -o, --organize      フォルダ整理のみ行う（タグ付けOFF）"
+    echo "    -t, --tag           タグ付けも行う（--organize併用時）"
+    echo "    -x, --pixiv         Pixiv整理モード（末端フォルダ単位で判定し、対象フォルダの全画像を一括移動）"
+    echo "    -R, --no-report     レポート作成なし"
+    echo "    -r, --recursive     再帰検索ON"
+    echo "    -n, --no-recursive  再帰検索OFF"
+    echo "    -b, --batch-size <n> 推論バッチサイズ（デフォルト: 4 / 非対応時は 1）"
+    echo "    -w, --io-workers <n> 前処理の並列ワーカー数（デフォルト: 自動）"
+    echo "    -m, --model-profile <name> モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
+    echo "    -e, --model-repo <repo> DBV4モデル/タグのHFリポジトリIDを明示指定"
+    echo "    -M, --model-file <file> モデルファイル名またはパス"
+    echo "    -T, --tags-file <file> タグCSVファイル名またはパス"
+    echo "    -q, --thresh <0.0-1.0> DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
     echo "    -f, --force         既存タグがあっても強制的に再解析・上書きする"
-    echo "    --sensitive-split-mode <2|4|6>"
+    echo "    -s, --sensitive-split-mode <2|4|6>"
     echo "                        旧CLI互換（DBV4ではR-15/R-17の5段階固定・非推奨）"
-    echo "    --record-ratio      全レーティングのRAW・割合スコアタグを記録する"
-    echo "    --no-record-ratio   RAW・割合スコアタグを記録しない"
-    echo "    --server            サーバーモード"
-    echo "    --client            クライアントモード"
-    echo "    --login             Hugging Faceログインモード（認証後に終了）"
+    echo "    -c, --record-ratio  全レーティングのRAW・割合スコアタグを記録する"
+    echo "    -C, --no-record-ratio RAW・割合スコアタグを記録しない"
+    echo "    -S, --server        サーバーモード"
+    echo "    -K, --client        クライアントモード"
+    echo "    -L, --login         Hugging Faceログインモード（認証後に終了）"
     echo "    -H, --host <ip>     サーバーのIPアドレス"
     echo "    -P, --port <port>   ポート番号"
-    echo "    --debug             GPU/OpenVINOの詳細デバッグログを有効化"
+    echo "    -d, --debug         GPU/OpenVINOの詳細デバッグログを有効化"
     echo "    -h, --help          ヘルプ表示"
     echo ""
 }
@@ -302,34 +302,34 @@ fi
 # 引数解析
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --server) PY_ARGS+=("--mode" "server"); shift ;;
-        --client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
-        --login) LOGIN_MODE=1; shift ;;
-        --organize) DO_ORGANIZE=1; shift ;;
-        --tag) DO_TAG=1; shift ;; 
-        --pixiv) PY_ARGS+=("--pixiv"); DO_PIXIV=1; shift ;;
-        --no-report) PY_ARGS+=("--no-report"); shift ;;
-        --recursive) PY_ARGS+=("--recursive"); shift ;;
-        --no-recursive) PY_ARGS+=("--no-recursive"); shift ;;
-        --batch-size) PY_ARGS+=("--batch-size" "$2"); shift 2 ;;
-        --io-workers) PY_ARGS+=("--io-workers" "$2"); shift 2 ;;
-        --model-profile) PY_ARGS+=("--model-profile" "$2"); shift 2 ;;
-        --model-repo) PY_ARGS+=("--model-repo" "$2"); shift 2 ;;
-        --model-file) PY_ARGS+=("--model-file" "$2"); shift 2 ;;
-        --tags-file) PY_ARGS+=("--tags-file" "$2"); shift 2 ;;
-        --thresh) PY_ARGS+=("--thresh" "$2"); shift 2 ;;
+        -S|--server) PY_ARGS+=("--mode" "server"); shift ;;
+        -K|--client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
+        -L|--login) LOGIN_MODE=1; shift ;;
+        -o|--organize) DO_ORGANIZE=1; shift ;;
+        -t|--tag) DO_TAG=1; shift ;; 
+        -x|--pixiv) PY_ARGS+=("--pixiv"); DO_PIXIV=1; shift ;;
+        -R|--no-report) PY_ARGS+=("--no-report"); shift ;;
+        -r|--recursive) PY_ARGS+=("--recursive"); shift ;;
+        -n|--no-recursive) PY_ARGS+=("--no-recursive"); shift ;;
+        -b|--batch-size) PY_ARGS+=("--batch-size" "$2"); shift 2 ;;
+        -w|--io-workers) PY_ARGS+=("--io-workers" "$2"); shift 2 ;;
+        -m|--model-profile) PY_ARGS+=("--model-profile" "$2"); shift 2 ;;
+        -e|--model-repo) PY_ARGS+=("--model-repo" "$2"); shift 2 ;;
+        -M|--model-file) PY_ARGS+=("--model-file" "$2"); shift 2 ;;
+        -T|--tags-file) PY_ARGS+=("--tags-file" "$2"); shift 2 ;;
+        -q|--thresh) PY_ARGS+=("--thresh" "$2"); shift 2 ;;
         -g|--gpu) USE_GPU=1; shift ;;
-        --force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
-        --force-nvidia) USE_GPU=1; FORCE_TYPE="nvidia"; shift ;;
-        --force-amd) USE_GPU=1; FORCE_TYPE="amd"; shift ;;
+        -I|--force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
+        -N|--force-nvidia) USE_GPU=1; FORCE_TYPE="nvidia"; shift ;;
+        -A|--force-amd) USE_GPU=1; FORCE_TYPE="amd"; shift ;;
         -f|--force) PY_ARGS+=("--force"); shift ;;
-        --sensitive-split-mode) PY_ARGS+=("--sensitive-split-mode" "$2"); shift 2 ;;
-        --record-ratio) PY_ARGS+=("--record-ratio"); shift ;;
-        --no-record-ratio) PY_ARGS+=("--no-record-ratio"); shift ;;
+        -s|--sensitive-split-mode) PY_ARGS+=("--sensitive-split-mode" "$2"); shift 2 ;;
+        -c|--record-ratio) PY_ARGS+=("--record-ratio"); shift ;;
+        -C|--no-record-ratio) PY_ARGS+=("--no-record-ratio"); shift ;;
         -p|--path) PY_ARGS+=("$2"); shift 2 ;;
         -H|--host) PY_ARGS+=("--host" "$2"); shift 2 ;;
         -P|--port) PY_ARGS+=("--port" "$2"); shift 2 ;;
-        --debug) DEBUG_MODE=1; shift ;;
+        -d|--debug) DEBUG_MODE=1; shift ;;
         -h|--help) show_help; exit 0 ;;
         *) PY_ARGS+=("$1"); shift ;;
     esac
