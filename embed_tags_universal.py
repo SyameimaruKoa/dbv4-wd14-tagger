@@ -908,6 +908,16 @@ def organize_pixiv_folder(
 class TagServerHandler(BaseHTTPRequestHandler):
     runtime: Optional[RuntimeModel] = None
 
+    def do_GET(self) -> None:
+        if self.path != "/metadata":
+            self._send_json_response(404, b'{}')
+            return
+        if not self.runtime:
+            self._send_json_response(503, b'{}')
+            return
+        body = json.dumps(self.runtime.metadata.summary(), ensure_ascii=False).encode("utf-8")
+        self._send_json_response(200, body)
+
     def _send_json_response(self, status: int, body: bytes) -> bool:
         try:
             self.send_response(status)
@@ -1033,6 +1043,50 @@ class ClientCompatibilityError(RuntimeError):
     pass
 
 
+def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
+    url = f"http://{args.host}:{args.port}/metadata"
+    try:
+        with urllib.request.urlopen(url, timeout=int(APP_CONFIG.get("client_timeout", 15))) as response:
+            server_info = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            raise ClientCompatibilityError(
+                "Serverが/metadataに未対応です。新しい版でServerを再起動してください。"
+            ) from exc
+        raise
+    if not isinstance(server_info, dict) or server_info.get("protocol") != 1:
+        raise ClientCompatibilityError("Serverのモデル情報またはprotocol versionが不正です。")
+    model_id = server_info.get("model_id")
+    if not isinstance(model_id, str) or not model_id:
+        raise ClientCompatibilityError("Serverのmodel_idが不正です。")
+
+    profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
+    if getattr(args, "auto_model_profile", False) and args.model_repo is None:
+        matching = [
+            name for name, profile in profiles.items()
+            if isinstance(profile, dict) and profile.get("repo_id") == model_id
+        ]
+        preferred = server_info.get("profile")
+        if preferred in matching:
+            args.model_profile = preferred
+        elif matching:
+            args.model_profile = matching[0]
+        else:
+            raise ClientCompatibilityError(
+                f"Serverのmodel_id={model_id}に対応するClient profileがありません。"
+            )
+        print(f"[INFO] Serverのモデルに自動整合: {args.model_profile} ({model_id})")
+
+    metadata = load_client_metadata(args)
+    if metadata.repo_id != model_id:
+        raise ClientCompatibilityError("サーバーとクライアントのmodel_idが不一致です。")
+    if server_info.get("metadata_version") != metadata.metadata_version:
+        raise ClientCompatibilityError("サーバーとクライアントのmetadata versionが不一致です。")
+    if server_info.get("output_size") != metadata.label_count:
+        raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
+    return metadata
+
+
 def client_predict(
     server_url: str,
     image_path: str,
@@ -1101,7 +1155,10 @@ def inference_timing_summary(
 
 def process_images(args: argparse.Namespace) -> None:
     is_client = args.mode == "client"
-    metadata = load_client_metadata(args) if is_client else None
+    try:
+        metadata = align_client_model(args) if is_client else None
+    except ClientCompatibilityError as exc:
+        raise SystemExit(f"[ERROR] {exc}") from exc
     runtime: Optional[RuntimeModel] = None
     if not is_client:
         runtime = load_runtime_model(
@@ -1553,6 +1610,7 @@ def main() -> None:
         return
 
     profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
+    args.auto_model_profile = args.model_profile is None
     if args.model_profile is None:
         args.model_profile = APP_CONFIG.get("model_profile", "balanced")
     if args.model_profile not in profiles:

@@ -5,9 +5,10 @@ import unittest
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from http.server import BaseHTTPRequestHandler
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 import numpy as np
@@ -195,13 +196,39 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             )
 
             with (
-                patch.object(app, "load_client_metadata", return_value=self._metadata()),
+                patch.object(app, "align_client_model", return_value=self._metadata()),
                 patch.object(app, "collect_images", return_value=paths),
                 patch.object(app, "client_predict", side_effect=[http_error, prediction]) as predict,
             ):
                 app.process_images(args)
 
             self.assertEqual(predict.call_count, 2)
+
+    def test_client_auto_selects_server_profile_without_model_download(self):
+        metadata = replace(
+            self._metadata(), repo_id="animetimm/mobilenetv4_conv_aa_large.dbv4-full"
+        )
+        payload = {
+            "protocol": 1,
+            "model_id": metadata.repo_id,
+            "profile": "lightweight",
+            "metadata_version": metadata.metadata_version,
+            "output_size": metadata.label_count,
+        }
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = app.json.dumps(payload).encode("utf-8")
+        args = SimpleNamespace(
+            host="127.0.0.1", port=5000, model_profile="balanced",
+            model_repo=None, auto_model_profile=True,
+        )
+        with (
+            patch.object(app.urllib.request, "urlopen", return_value=response),
+            patch.object(app, "load_client_metadata", return_value=metadata) as load,
+        ):
+            result = app.align_client_model(args)
+        self.assertIs(result, metadata)
+        self.assertEqual(args.model_profile, "lightweight")
+        load.assert_called_once_with(args)
 
     def test_client_compatibility_error_stops_remaining_images(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -232,7 +259,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
 
             with self.assertRaises(SystemExit) as raised:
                 with (
-                    patch.object(app, "load_client_metadata", return_value=self._metadata()),
+                    patch.object(app, "align_client_model", return_value=self._metadata()),
                     patch.object(app, "collect_images", return_value=paths),
                     patch.object(
                         app,
@@ -286,6 +313,24 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join()
+
+    def test_server_metadata_endpoint_returns_model_without_inference(self):
+        metadata = self._metadata()
+        runtime = SimpleNamespace(metadata=metadata)
+        with patch.object(app.TagServerHandler, "runtime", runtime):
+            server = app.ParallelTagServer(("127.0.0.1", 0), app.TagServerHandler, 2)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                url = f"http://127.0.0.1:{server.server_port}/metadata"
+                with urllib.request.urlopen(url) as response:
+                    payload = app.json.loads(response.read().decode("utf-8"))
+                self.assertEqual(payload, metadata.summary())
+                self.assertNotIn("probabilities", payload)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
 
     def test_postprocess_error_does_not_retry_batch_inference(self):
         with tempfile.TemporaryDirectory() as directory:

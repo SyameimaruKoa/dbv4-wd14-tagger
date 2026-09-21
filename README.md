@@ -341,7 +341,7 @@ Serverは次の情報をJSONで返す。
 }
 ~~~
 
-Clientは model_id、metadata_version、output_size を検証してから結果を利用する。異なるDBV4モデルやmetadataを接続した場合はエラーとして停止するのじゃ。
+Clientは処理開始時にServerの`/metadata`からmodel ID、profile、metadata version、output sizeを取得する。`--model-profile`を省略した場合はmodel IDに一致する既知profileを自動選択し、ONNX本体をダウンロードせずmetadataだけを読み込む。明示指定したprofileは自動変更しない。どちらの場合もmetadata versionとoutput sizeが一致しなければ、画像処理前に停止する。
 
 Serverは画像ごとに受信時刻、Client IP、ファイル名、転送サイズ、処理開始、処理時間、完了状態を表示する。推論中にClientが切断した場合もServerは停止せず、長い`BrokenPipeError` tracebackの代わりに対象リクエストの警告だけを表示して次の接続を待機する。
 

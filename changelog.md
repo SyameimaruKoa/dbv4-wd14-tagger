@@ -2,6 +2,8 @@
 
 ## 2026-09-21
 
+- Serverの`/metadata`を使い、Clientが起動時にServerのmodel IDへ対応する既知profileを自動選択するよう変更。明示profileは尊重し、metadata versionとoutput sizeを推論前に検証する。ClientはONNX本体を取得しない。
+
 - Linux実機検証でBashセットアップ経路を修正。
   - 引数なしのCPUセットアップが既存GPU仮想環境を再利用していたため、必ず`venv_std`を作成・使用するよう修正。
   - x86_64 NVIDIA環境で`TensorRT`のCUDA 13版と`TensorRT-CUDA 12`版を重複導入していたため、ONNX Runtime用のCUDA 12版だけを導入するよう修正。
