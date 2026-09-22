@@ -357,7 +357,9 @@ run_colab_server.ipynb はDBV4サーバーを起動する構成へ更新され�
 
 <a href="https://colab.research.google.com/github/SyameimaruKoa/dbv4-wd14-tagger/blob/main/run_colab_server.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-初期状態では balanced プロファイルを使用する。ローカル側は通常のClientモードで接続できるぞ。
+初期状態では balanced プロファイルを使用する。設定セルのプルダウンから、実行可能なDBV4プロファイルと旧WD14 V3互換プロファイルを選択できる。`compact_manual`または`medium_manual`を使う場合は、アクセス承認済みHugging FaceトークンをColab Secretsの`HF_TOKEN`へ登録する。
+
+Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使用し、未登録の場合は設定セルの`HOSTNAME`へフォールバックする。Tailscale認証キーを使う場合は従来どおり`TAILSCALE_AUTHKEY`へ登録する。ローカル側は通常のClientモードで接続できるぞ。
 
 ## 設定ファイル
 
