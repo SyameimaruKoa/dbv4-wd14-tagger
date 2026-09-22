@@ -1,4 +1,4 @@
-"""Run one repeatable CUDA or WebGPU benchmark and write its raw JSON result.
+"""Run one repeatable GPU provider benchmark and write its raw JSON result.
 
 Run each provider in its own virtual environment; see WEBGPU_BENCHMARK_WINDOWS.md
 and WEBGPU_BENCHMARK_LINUX.md. This script does not change user images.
@@ -46,11 +46,13 @@ def nvidia_memory_mib(index):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--provider", choices=("cuda", "webgpu"), required=True)
+    parser.add_argument("--provider", choices=("cuda", "tensorrt", "webgpu", "intel", "directml"), required=True)
+    parser.add_argument("--openvino-device", default="GPU.0")
     parser.add_argument("--profile", choices=tuple(MODEL_PROFILES), required=True)
     parser.add_argument("--batch-size", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--gpu-index", type=int, default=0)
+    parser.add_argument("--track-nvidia-memory", action="store_true")
     parser.add_argument("--webgpu-device-index", type=int, default=0)
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--iterations", type=int, default=20)
@@ -62,12 +64,13 @@ def main():
     if not profile.get("available", True):
         parser.error(str(profile.get("unavailable_reason", "profile unavailable")))
 
+    track_nvidia = args.provider in ("cuda", "tensorrt") or args.track_nvidia_memory
     try:
-        baseline_vram = nvidia_memory_mib(args.gpu_index)
+        baseline_vram = nvidia_memory_mib(args.gpu_index) if track_nvidia else None
     except (OSError, subprocess.SubprocessError, ValueError) as exc:
         parser.error(f"nvidia-smi cannot read GPU {args.gpu_index}: {exc}")
     baseline_rss = psutil.Process().memory_info().rss / 1048576
-    samples_vram = [baseline_vram]
+    samples_vram = [baseline_vram] if track_nvidia else []
     samples_rss = [baseline_rss]
     stop = threading.Event()
 
@@ -75,7 +78,8 @@ def main():
         process = psutil.Process()
         while not stop.wait(0.1):
             try:
-                samples_vram.append(nvidia_memory_mib(args.gpu_index))
+                if track_nvidia:
+                    samples_vram.append(nvidia_memory_mib(args.gpu_index))
                 samples_rss.append(process.memory_info().rss / 1048576)
             except (OSError, subprocess.SubprocessError, ValueError):
                 pass
@@ -87,16 +91,37 @@ def main():
         metadata = DBV4Metadata.load(profile, base_dir=str(Path(__file__).resolve().parent))
         metadata_seconds = time.perf_counter() - started
         options = ort.SessionOptions()
-        if args.provider == "cuda":
+        options.enable_profiling = True
+        if args.provider in ("cuda", "tensorrt", "intel", "directml"):
+            if args.provider == "directml":
+                options.enable_mem_pattern = False
+                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
             available = ort.get_available_providers()
-            if "CUDAExecutionProvider" not in available:
-                raise RuntimeError(f"CUDA EP unavailable: {available}")
-            providers = [("CUDAExecutionProvider", {"device_id": str(args.gpu_index)}),
-                         "CPUExecutionProvider"]
+            names = {
+                "cuda": "CUDAExecutionProvider",
+                "tensorrt": "TensorrtExecutionProvider",
+                "intel": "OpenVINOExecutionProvider",
+                "directml": "DmlExecutionProvider",
+            }
+            expected_provider = names[args.provider]
+            if expected_provider not in available:
+                raise RuntimeError(f"{expected_provider} unavailable: {available}")
+            if args.provider == "cuda":
+                providers = [(expected_provider, {"device_id": str(args.gpu_index)}),
+                             "CPUExecutionProvider"]
+            elif args.provider == "tensorrt":
+                providers = [(expected_provider, {"device_id": str(args.gpu_index)}),
+                             ("CUDAExecutionProvider", {"device_id": str(args.gpu_index)}),
+                             "CPUExecutionProvider"]
+            elif args.provider == "intel":
+                providers = [(expected_provider, {"device_type": args.openvino_device}),
+                             "CPUExecutionProvider"]
+            else:
+                providers = [(expected_provider, {"device_id": str(args.gpu_index)}),
+                             "CPUExecutionProvider"]
             started = time.perf_counter()
             session = ort.InferenceSession(metadata.model_path, sess_options=options,
                                            providers=providers)
-            expected_provider = "CUDAExecutionProvider"
         else:
             import onnxruntime_ep_webgpu as webgpu
 
@@ -139,7 +164,20 @@ def main():
             raise RuntimeError(f"unexpected output shape: {result_shape}")
         stop.set()
         watcher.join(timeout=2)
-        peak_vram = max(samples_vram + [nvidia_memory_mib(args.gpu_index)])
+        peak_vram = max(samples_vram + [nvidia_memory_mib(args.gpu_index)]) if track_nvidia else None
+        profile_path = Path(session.end_profiling())
+        try:
+            events = json.loads(profile_path.read_text(encoding="utf-8"))
+            executed = sorted({
+                event.get("args", {}).get("provider")
+                for event in events
+                if event.get("cat") == "Node"
+                and event.get("args", {}).get("provider")
+            })
+        finally:
+            profile_path.unlink(missing_ok=True)
+        if expected_provider not in executed:
+            raise RuntimeError(f"{expected_provider} did not execute a profiled node: {executed}")
         record = {
             "status": "ok", "provider_requested": args.provider,
             "provider_active": active, "profile": args.profile,
@@ -155,7 +193,7 @@ def main():
                 [statistics.median(values) for values in timings]
             ),
             "baseline_vram_mib": baseline_vram, "peak_vram_mib": peak_vram,
-            "vram_increment_mib": peak_vram - baseline_vram,
+            "vram_increment_mib": peak_vram - baseline_vram if track_nvidia else None,
             "baseline_rss_mib": baseline_rss, "peak_rss_mib": max(samples_rss),
             "metadata_seconds": metadata_seconds, "session_seconds": session_seconds,
             "platform": platform.platform(), "python": platform.python_version(),
@@ -163,7 +201,9 @@ def main():
             "webgpu_plugin": version("onnxruntime-ep-webgpu") if args.provider == "webgpu" else None,
             "gpu_index": args.gpu_index,
             "webgpu_device_index": args.webgpu_device_index if args.provider == "webgpu" else None,
-            "nvidia_gpu_memory_observed": peak_vram - baseline_vram >= 16,
+            "nvidia_gpu_memory_observed": peak_vram - baseline_vram >= 16 if track_nvidia else None,
+            "executed_node_providers": executed,
+            "openvino_device": args.openvino_device if args.provider == "intel" else None,
         }
     except Exception as exc:
         record = {
