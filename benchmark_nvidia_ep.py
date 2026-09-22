@@ -274,6 +274,10 @@ def main():
             if args.provider == "directml":
                 options.enable_mem_pattern = False
                 options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+                # ORT 1.24.4's default graph optimizer can detach the CaFormer
+                # graph output ("logits") before DirectML partitions the graph.
+                # Keep the original graph so DML can create and run the session.
+                options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
             available = ort.get_available_providers()
             names = {
                 "cuda": "CUDAExecutionProvider",

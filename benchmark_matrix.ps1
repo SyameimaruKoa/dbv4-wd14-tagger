@@ -56,8 +56,10 @@ $python = if (Test-Path -LiteralPath ".venv_bench_cpu\Scripts\python.exe") {
 } else {
     "python"
 }
-$tensorRtArgs = if ($TensorRtLibDir) { @("--tensorrt-lib-dir", $TensorRtLibDir) } else { @() }
-$retryArgs = if ($RetryFailed) { @("--retry-failed") } else { @() }
+[string[]]$tensorRtArgs = @()
+if ($TensorRtLibDir) { $tensorRtArgs += @("--tensorrt-lib-dir", $TensorRtLibDir) }
+[string[]]$retryArgs = @()
+if ($RetryFailed) { $retryArgs += "--retry-failed" }
 if ($RetryProvider) { $retryArgs += @("--retry-provider", $RetryProvider) }
 & $python benchmark_matrix.py --vendor $Vendor --device-name $DeviceName --output-dir $OutputDir --gpu-index $GpuIndex --directml-device-index $DirectMlDeviceIndex --webgpu-device-index $WebGpuDeviceIndex --openvino-device $OpenVinoDevice @tensorRtArgs @retryArgs @ExtraArgs
 exit $LASTEXITCODE
