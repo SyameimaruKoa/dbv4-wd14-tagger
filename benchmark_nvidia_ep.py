@@ -107,6 +107,22 @@ def main():
                     tensor_ir = cudnn_bin / "cudnn_engines_tensor_ir64_9.dll"
                     if tensor_ir.is_file():
                         tensor_ir_handle = ctypes.WinDLL(str(tensor_ir))
+        if args.provider == "intel" and platform.system() == "Windows":
+            openvino_libs = (Path(ort.__file__).resolve().parent.parent
+                             / "openvino" / "libs")
+            openvino_dll = openvino_libs / "openvino.dll"
+            if openvino_dll.is_file():
+                dll_directory_handle = os.add_dll_directory(str(openvino_libs))
+                os.environ["PATH"] = str(openvino_libs) + os.pathsep + os.environ.get("PATH", "")
+                openvino_handle = ctypes.WinDLL(str(openvino_dll))
+            else:
+                try:
+                    openvino_handle = ctypes.WinDLL("openvino.dll")
+                except OSError as exc:
+                    raise RuntimeError(
+                        "OpenVINO runtime missing; install openvino==2025.4.1 "
+                        "in the Intel benchmark environment"
+                    ) from exc
         options = ort.SessionOptions()
         options.enable_profiling = True
         if args.provider in ("cuda", "tensorrt", "intel", "directml"):

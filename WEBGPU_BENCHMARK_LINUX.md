@@ -14,10 +14,18 @@ done
 .venv_bench_cuda/bin/python -m pip install 'onnxruntime-gpu[cuda,cudnn]<1.27'
 .venv_bench_tensorrt/bin/python -m pip install 'onnxruntime-gpu[cuda,cudnn]<1.27' 'tensorrt-cu12<11'
 .venv_bench_webgpu/bin/python -m pip install onnxruntime onnxruntime-ep-webgpu
-.venv_bench_intel/bin/python -m pip install onnxruntime-openvino
+.venv_bench_intel/bin/python -m pip install 'onnxruntime-openvino==1.24.1' 'openvino==2025.4.1'
 for provider in cuda tensorrt webgpu intel; do
     ".venv_bench_$provider/bin/python" -c 'import onnxruntime as ort; print(ort.get_available_providers())'
 done
+~~~
+
+OpenVINO EP 1.24.1 には対応する OpenVINO 2025.4.1 本体が別途必要。pip で導入した共有ライブラリの場所を Intel 測定プロセスへ渡す。
+
+~~~bash
+openvino_libs=$(.venv_bench_intel/bin/python -c 'import openvino, pathlib; print(pathlib.Path(openvino.__file__).resolve().parent / "libs")')
+export LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}"
+.venv_bench_intel/bin/python -c 'import openvino as ov; print(ov.__version__); print(ov.Core().available_devices)'
 ~~~
 
 CUDA 12 に対応する TensorRT 10 と共有ライブラリを揃える。ドライバーの CUDA 表示だけでは CUDA/cuDNN ランタイムが使えるとは限らない。目的 EP の列挙だけでなく、DLL/共有ライブラリを読み込んでノードが実行されることを結果 JSON で確認する。Hugging Face 認証は端末内で行い、トークンを AI に渡さない。
