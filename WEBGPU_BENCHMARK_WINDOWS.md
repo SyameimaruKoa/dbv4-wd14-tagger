@@ -1,93 +1,59 @@
-# Windows ベンチマーク：CUDA・TensorRT・Intel・DirectML・WebGPU
+# Windows ベンチマーク手順（NVIDIA・Intel iGPU・AMD・CPU）
 
-Windows と Linux は別セッションで測る。Windows を先に実行する。測定と環境調査はユーザーが行い、AI には集計 JSON と失敗条件だけ渡して解析・結果文書を更新させる。古い LINUX_HANDOFF.md は参照しない。
+測定・GPU 調査はユーザーが実施し、`summary.json` と失敗 JSON、環境メモを AI に渡して解析・結果文書を更新する。古い Linux ハンドオーバーは参照しない。既存の測定 JSON は残し、今回の結果は新しいディレクトリに保存する。
 
-## 1. 準備
+## 1. 条件と対象
 
-git status --short、branch、HEAD を記録する。Windows、NVIDIA/Intel GPU、ドライバー、CUDA/cuDNN/TensorRT、Python、電源モードをユーザーが記録する。NVIDIA は nvidia-smi、Intel はデバイスマネージャー等で実機を確認する。各 EP を独立した仮想環境へ入れる。Python 3.13 の wheel がなければ 3.12 を使い、以下の py -3.13 を読み替える。NVIDIA ドライバーの表示する CUDA バージョンは、CUDA ランタイム DLL の存在を保証しない。CUDA と TensorRT の仮想環境には CUDA 12 版の ONNX Runtime と CUDA/cuDNN DLL を揃える。TensorRT は対応する TensorRT 10 ランタイム（nvinfer_10.dll）も別途導入して PATH から読めるようにする。run_tagger.ps1 -Gpu は DirectML 経路なので CUDA 比較には使わない。
+すべての GPU 群で CPU を測定する。NVIDIA は CUDA、TensorRT、DirectML、WebGPU、Intel は OpenVINO GPU、DirectML、WebGPU、AMD は DirectML、WebGPU が対象。モデルは `wd14_v3` と `balanced`、batch は 1 と 4、固定 seed の 640×480 合成 RGB、warmup 3、20 回×3 セット。モデル取得、セッション作成、前処理は推論時間に含まない。各 EP は別の仮想環境で実行する。導入できない EP や実行に失敗した EP は JSON に残り、成功値にはしない。使用可能なものはすべて測るが、使えない EP の導入を無理に成功扱いしない。
+
+先に `git status --short` と HEAD、Windows 版、CPU/GPU の正式名、ドライバー、Python、電源設定を記録する。Intel iGPU がデバイスマネージャーにない場合、BIOS のハイブリッド GPU 設定と Intel ドライバーをユーザーが確認する。OpenVINO が `GPU.0` に NVIDIA を表示している現状では Intel 測定を始めない。対象 GPU が有効になり、OpenVINO に Intel として列挙されてから行う。
+
+## 2. 仮想環境
+
+Python 3.13 用 wheel がなければ 3.12 を使用する。既存環境を再利用できるが、各環境の ONNX Runtime と GPU ランタイム版を確認する。追加パッケージは必ず仮想環境に入れる。
 
 ```powershell
 $packages = @{
-    cuda = @("onnxruntime-gpu[cuda,cudnn]<1.27")
-    tensorrt = @("onnxruntime-gpu[cuda,cudnn]<1.27")
-    webgpu = @("onnxruntime", "onnxruntime-ep-webgpu")
-    intel = @("onnxruntime-openvino==1.24.1", "openvino==2025.4.1")
-    directml = @("onnxruntime-directml")
+    cpu = @('onnxruntime')
+    cuda = @('onnxruntime-gpu[cuda,cudnn]<1.27')
+    tensorrt = @('onnxruntime-gpu[cuda,cudnn]<1.27')
+    directml = @('onnxruntime-directml')
+    webgpu = @('onnxruntime', 'onnxruntime-ep-webgpu')
+    intel = @('onnxruntime-openvino==1.24.1', 'openvino==2025.4.1')
 }
-foreach ($name in $packages.Keys) {
-    py -3.13 -m venv ".venv_bench_$name"
-    $python = ".\.venv_bench_$name\Scripts\python.exe"
+foreach ($provider in $packages.Keys) {
+    py -3.13 -m venv ".venv_bench_$provider"
+    $python = ".\.venv_bench_$provider\Scripts\python.exe"
     & $python -m pip install -r requirements.txt psutil
-    & $python -m pip install $packages[$name]
-    & $python -c "import onnxruntime as ort; print(ort.get_available_providers())"
+    & $python -m pip install $packages[$provider]
+    & $python -c 'import onnxruntime as ort; print(ort.__version__, ort.get_available_providers())'
 }
 ```
 
-既存の .venv_bench_cuda と .venv_bench_tensorrt で ONNX Runtime 1.30.0 が入っている場合も、上記の pip install で CUDA 12 版に入れ替える。CUDA/cuDNN の DLL は測定コードが ONNX Runtime の preload_dlls で読み込む。ONNX Runtime 1.26.0 が読み込み対象に含めていない cuDNN の cudnn_engines_tensor_ir64_9.dll は、仮想環境内にある場合に測定コードが追加で読み込む。TensorRT の DLL は別途確認する。各環境で目的の EP が列挙されることを確認する。ただし EP の列挙だけでは DLL 読み込み成功を意味しない。Hugging Face 認証が必要なら端末で行い、トークンを AI に渡さない。
+CUDA/cuDNN DLL は測定コードで読み込む。TensorRT は別に TensorRT 10 の `nvinfer_10.dll` が必要で、対応する CUDA 12 版を導入し、実行する PowerShell の `PATH` に TensorRT の `bin` を追加する。例: `$env:PATH = "C:\Users\kouki\Downloads\TensorRT-10.16.1.11\bin;$env:PATH"`。DLL と ONNX Runtime の互換性を確認する。EP が列挙されても推論成功の保証にはならない。
 
-### OpenVINO の DLL がない場合
-
-onnxruntime-openvino 1.24.1 は OpenVINO 本体を自動導入しない。対応する [OpenVINO 2025.4.1](https://onnxruntime.ai/docs/execution-providers/OpenVINO-ExecutionProvider.html#requirements) を Intel 測定用の仮想環境へ追加する。既に仮想環境がある場合は次のコマンドで不足分を導入し、同じ条件の失敗 JSON を再測定で置き換える。
-
-~~~powershell
-& .\.venv_bench_intel\Scripts\python.exe -m pip install "openvino==2025.4.1"
-& .\.venv_bench_intel\Scripts\python.exe -c "import openvino as ov; print(ov.__version__); print(ov.Core().available_devices)"
-~~~
-
-測定コードは同じ仮想環境の openvino/libs にある openvino.dll を読み込む。GPU.0 が列挙されない場合は Intel GPU ドライバーとデバイス選択を確認する。
-
-### TensorRT の DLL がない場合
-
-CUDA が成功しても、TensorRT は別のランタイムを必要とする。nvinfer_10.dll がない場合は NVIDIA の [TensorRT 10 Windows ZIP 導入手順](https://docs.nvidia.com/deeplearning/tensorrt/10.x.x/installing-tensorrt/install-zip.html)に従い、CUDA 12 対応の TensorRT 10 を取得・展開する。ONNX Runtime の仮想環境へ Python binding を入れるだけでは、DLL の検索パスが設定されたとは限らない。展開先を次の $trtRoot に指定し、**同じ PowerShell セッション**で確認してから TensorRT 条件を再実行する。
+Intel の OpenVINO DLL は同じ仮想環境の `openvino\libs` から測定コードが読み込む。まず GPU の実名を確認する。
 
 ```powershell
-$trtRoot = "C:\Users\kouki\Downloads\TensorRT-10.16.1.11\bin"
-$trtDll = Get-ChildItem -LiteralPath $trtRoot -Recurse -File -Filter "nvinfer_10.dll" | Select-Object -First 1
-if (-not $trtDll) {
-    throw "nvinfer_10.dll が TensorRT 展開先に見つかりません"
-}
-$env:PATH = "$($trtDll.DirectoryName);$env:PATH"
-$env:TENSORRT_LIB_DIR = $trtDll.DirectoryName
-& .\.venv_bench_tensorrt\Scripts\python.exe -c "import ctypes, os, onnxruntime as ort; ort.preload_dlls(); h=os.add_dll_directory(os.environ['TENSORRT_LIB_DIR']); ctypes.WinDLL(os.path.join(os.environ['TENSORRT_LIB_DIR'], 'nvinfer_10.dll')); print('TensorRT DLL OK')"
+& .\.venv_bench_intel\Scripts\python.exe -c "import openvino as ov; c=ov.Core(); print([(d, c.get_property(d, 'FULL_DEVICE_NAME')) for d in c.available_devices])"
 ```
 
-TensorRT の DLL と CUDA/cuDNN の版が ONNX Runtime と整合することを確認する。TensorRT が使えない間も CUDA と WebGPU の結果は保持し、TensorRT 条件だけ失敗として記録する。
+Intel 名の `GPU.N` が見えない場合は Intel 条件を測らない。Intel の `OpenVINOExecutionProvider` は実行時にも製造元名を検証する。DirectML の `device_id` と WebGPU のデバイス番号は別体系なので、それぞれ対象アダプターがどれかユーザーが確認する。`--device-name` は確認した名称を記録する項目であり、この文字列だけで DirectML/WebGPU の物理デバイスが自動検証されるわけではない。NVIDIA では `nvidia-smi` の VRAM 増分も補助的に確認する。GPU と EP の対応が不明ならその条件を比較に採用しない。
 
-## 2. ユーザーが測定する
+## 3. 測定
 
-NVIDIA の CUDA、TensorRT、WebGPU と、Intel の OpenVINO、DirectML、WebGPU を別ディレクトリに測る。Intel GPU がない場合は Intel 側を実行せず、その旨を記録する。wd14_v3 と balanced、batch size 1 と 4、warmup 3 回、20 回×3 セットを共通にする。画像は seed 固定の合成 640×480 RGB で、モデル取得・セッション作成・前処理は推論時間から除かれる。
+`benchmark_matrix.ps1 -h` で全オプションを表示する。以下は各 GPU があるホストで個別に実行する例。`--device-name` は実機名に置き換え、`GpuIndex` / `DirectMlDeviceIndex` / `WebGpuDeviceIndex` / `OpenVinoDevice` は確認した番号に変更する。同時に複数の測定を走らせない。モデル取得に認証が必要な場合は端末で行い、トークンを AI に渡さない。
 
 ```powershell
-foreach ($profile in @("wd14_v3", "balanced")) {
-    foreach ($batch in @(1, 4)) {
-        foreach ($provider in @("cuda", "tensorrt")) {
-            $python = ".\.venv_bench_$provider\Scripts\python.exe"
-            & $python benchmark_nvidia_ep.py --provider $provider --profile $profile --batch-size $batch --gpu-index 0 --output "benchmarks/nvidia_windows/$($profile)-b$($batch)-$($provider).json"
-        }
-        & .\.venv_bench_webgpu\Scripts\python.exe benchmark_nvidia_ep.py --provider webgpu --profile $profile --batch-size $batch --gpu-index 0 --track-nvidia-memory --output "benchmarks/nvidia_windows/$($profile)-b$($batch)-webgpu.json"
-    }
-}
-py -3.13 summarize_nvidia_ep.py benchmarks/nvidia_windows --providers cuda tensorrt webgpu --reference cuda --output benchmarks/nvidia_windows_summary.json
+.\benchmark_matrix.ps1 -Vendor nvidia -DeviceName 'NVIDIA GeForce RTX 2070 with Max-Q Design' -OutputDir 'benchmarks\nvidia_windows_20260923' -GpuIndex 0 -DirectMlDeviceIndex 0 -WebGpuDeviceIndex 0
+.\benchmark_matrix.ps1 -Vendor intel -DeviceName 'Intel UHD Graphics 630' -OutputDir 'benchmarks\intel_windows_20260923' -GpuIndex 0 -DirectMlDeviceIndex 1 -WebGpuDeviceIndex 1 -OpenVinoDevice 'GPU.1'
+.\benchmark_matrix.ps1 -Vendor amd -DeviceName 'AMD Radeon Graphics' -OutputDir 'benchmarks\amd_windows_20260923' -GpuIndex 0 -DirectMlDeviceIndex 0 -WebGpuDeviceIndex 0
 ```
 
-Intel の WebGPU が GPU 0 以外なら --webgpu-device-index で選ぶ。DirectML の --gpu-index は DirectML の device_id、OpenVINO の --openvino-device は GPU.0 などの対象デバイスを指定する。三つの EP が同じ Intel GPU を使ったか確認する。
+Intel の例の番号は仮定値であり、実機確認前にそのまま使わない。CPU 環境がない場合も結果は `skipped` になるため、最初に CPU 環境を準備する。特定 EP だけ再測定する場合は `--providers` を渡せるが、CPU も再測定される。結果を混ぜないため、新しい出力先を使う。
 
-```powershell
-foreach ($profile in @("wd14_v3", "balanced")) {
-    foreach ($batch in @(1, 4)) {
-        foreach ($provider in @("intel", "directml", "webgpu")) {
-            $python = ".\.venv_bench_$provider\Scripts\python.exe"
-            & $python benchmark_nvidia_ep.py --provider $provider --profile $profile --batch-size $batch --output "benchmarks/intel_windows/$($profile)-b$($batch)-$($provider).json"
-        }
-    }
-}
-py -3.13 summarize_nvidia_ep.py benchmarks/intel_windows --providers intel directml webgpu --reference directml --output benchmarks/intel_windows_summary.json
-```
+各条件の JSON に `status`、実行したノードの EP、各回の時間、RSS が残る。NVIDIA 指定時の VRAM 増分は GPU 選択の補助情報。`D3D12CreateDevice` 警告や CPU ノード割当警告だけでは成否を決めず、JSON の `status` と目的 EP の実行ノードを確認する。失敗した条件を修正後、同条件だけ再測定してもよい。
 
-CUDA または TensorRT が失敗したら、出力 JSON とコンソールの DLL エラーを確認し、依存ライブラリを修正してから同条件を再実行する。CPUExecutionProvider だけの結果を GPU 測定に採用しない。
+## 4. AI に渡すもの
 
-出力 JSON に実行ノードの EP、各回の時間、プロセス RAM、NVIDIA 指定時のみ VRAM 増分が残る。目的 EP が実行ノードに現れない条件は失敗になる。WebGPU の NVIDIA VRAM 増分が観測されなければ --webgpu-device-index を変えて再測定し、GPU 名を記録する。Intel の VRAM は計測しない。D3D12CreateDevice 警告が出ても、WebGPU の JSON が status=ok で、executed_node_providers に WebGpuExecutionProvider があり、NVIDIA VRAM 増分も観測されれば測定値を保持し、警告を環境メモに残す。実際に使われた Dawn backend は別途確認する。失敗条件を成功値で埋めない。
-
-## 3. AI に渡すもの
-
-nvidia_windows_summary.json と intel_windows_summary.json、各 incomplete 条件の JSON またはコンソールエラー、GPU と EP の対応・ドライバー等の環境メモを渡す。AI は同一 GPU・同一 OS 内で CUDA 対 TensorRT/WebGPU、DirectML 対 OpenVINO/WebGPU を解析する。異なる GPU の比率を混ぜない。必要な生データだけ追加で確認し、Windows 結果を同じ branch と PR に commit・通常 push する。Linux セッションへ branch、SHA、実行条件を渡す。AMD 測定は別 GPU の参考値として扱う。
+各出力先の `summary.json`、`manifest.json`、`incomplete` に載った条件の JSON とコンソールエラー、OS/CPU/GPU/ドライバー/電源設定、各 EP が実際に選んだアダプターの確認メモを渡す。AI は同一ホスト・モデル・batch の CPU 比と GPU EP 間を解析する。Windows と Linux、異なる GPU の比率は環境差を明示する。AMD も同じ手順・同じ条件で測り直し、古い AMD 値を今回の比較に混ぜない。既存 PR の branch を継続する。

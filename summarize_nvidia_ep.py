@@ -61,11 +61,11 @@ def main():
                 continue
             mismatched = [name for name in COMPARABLE
                           if row.get(name) != reference.get(name)]
-            if (args.reference == "cuda" and provider == "webgpu"
+            if (args.reference == "cuda" and provider in ("webgpu", "directml")
                     and not row.get("nvidia_gpu_memory_observed")):
                 summary["incomplete"].append({
                     "profile": profile, "batch_size": batch, "provider": provider,
-                    "reason": "WebGPU NVIDIA VRAM increment not observed",
+                    "reason": f"{provider} NVIDIA VRAM increment not observed",
                 })
                 continue
             if mismatched:

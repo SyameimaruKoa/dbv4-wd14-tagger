@@ -1,66 +1,53 @@
-# Linux ベンチマーク：CUDA・TensorRT・Intel・WebGPU
+# Linux ベンチマーク手順（NVIDIA・Intel iGPU・AMD・CPU）
 
-Windows 結果が同じ branch に commit・push された後、別の Linux セッションで始める。古い LINUX_HANDOFF.md は参照しない。測定と環境調査はユーザーが行い、AI は集計結果を解析して結果文書を更新する。Windows の測定ファイルは変更しない。DirectML は Windows 用 EP なので Linux では測らず、Windows の DirectML 結果と Linux の Intel 結果を同一 OS 内の比率として扱わない。
+測定と GPU 調査はユーザーが行い、`summary.json` と失敗条件、環境メモを AI に渡して解析・結果文書を更新する。古い Linux ハンドオーバーは不要なので参照しない。Windows と同じ branch・PR を使い、今回の結果は新しいディレクトリに置く。
 
-## 1. 準備
+## 1. 条件と対象
 
-git status --short、branch、HEAD と Windows から引き継いだ SHA を確認する。ディストリビューション、kernel、NVIDIA/Intel GPU、ドライバー、CUDA/cuDNN/TensorRT、Vulkan、Python、電源状態をユーザーが記録する。nvidia-smi、vulkaninfo --summary、lspci 等で対象 GPU を確認し、llvmpipe を対象にしない。Python 3.13 の wheel がなければ以下の python3.13 を 3.12 に読み替える。各 EP は独立した仮想環境に入れる。TensorRT は run_tagger.sh と同じく、ONNX Runtime に整合する CUDA/cuDNN と TensorRT 10 の共有ライブラリが必要で、必要なら LD_LIBRARY_PATH を設定する。
+CPU は全 GPU 群の基準。NVIDIA は CUDA、TensorRT、WebGPU、Intel は OpenVINO GPU、WebGPU、AMD は MIGraphX、WebGPU が対象。MIGraphX は ROCm 対応 GPU と一致する wheel/ランタイムがある場合に限る。AMD の古い iGPU など ROCm 非対応の機器では `skipped`/`failed` を保持し、WebGPU の結果だけ使う。DirectML は Windows 用。モデル・seed・画像・batch・warmup・反復回数は Windows と同一。
 
-~~~bash
-for provider in cuda tensorrt webgpu intel; do
+`git status --short` と HEAD、ディストリビューション、kernel、CPU/GPU 正式名、ドライバー、CUDA/ROCm/Vulkan、Python、電源設定を記録する。`lspci`、`nvidia-smi`、`vulkaninfo --summary`、OpenVINO のデバイス名などで対象 GPU を確認し、ソフトウェアレンダラーを GPU として記録しない。
+
+## 2. 仮想環境
+
+Python 3.13 用 wheel がなければ 3.12 を使う。依存パッケージは必ず各仮想環境に入れる。MIGraphX は対象 ROCm 版に一致する AMD 提供の ONNX Runtime wheel を選ぶ必要があるため、下記の共通 `pip install` には含めない。
+
+```bash
+for provider in cpu cuda tensorrt webgpu intel migraphx; do
     python3.13 -m venv ".venv_bench_$provider"
     ".venv_bench_$provider/bin/python" -m pip install -r requirements.txt psutil
 done
+.venv_bench_cpu/bin/python -m pip install onnxruntime
 .venv_bench_cuda/bin/python -m pip install 'onnxruntime-gpu[cuda,cudnn]<1.27'
 .venv_bench_tensorrt/bin/python -m pip install 'onnxruntime-gpu[cuda,cudnn]<1.27' 'tensorrt-cu12<11'
 .venv_bench_webgpu/bin/python -m pip install onnxruntime onnxruntime-ep-webgpu
 .venv_bench_intel/bin/python -m pip install 'onnxruntime-openvino==1.24.1' 'openvino==2025.4.1'
-for provider in cuda tensorrt webgpu intel; do
-    ".venv_bench_$provider/bin/python" -c 'import onnxruntime as ort; print(ort.get_available_providers())'
-done
-~~~
+```
 
-OpenVINO EP 1.24.1 には対応する OpenVINO 2025.4.1 本体が別途必要。pip で導入した共有ライブラリの場所を Intel 測定プロセスへ渡す。
+MIGraphX を使う場合は対象 GPU が ROCm に対応することを確認し、[AMD の ONNX Runtime/ROCm 手順](https://rocm.docs.amd.com/)で適合 wheel と ROCm ランタイムを `.venv_bench_migraphx` に入れる。実行前に `onnxruntime.get_available_providers()` に `MIGraphXExecutionProvider` があるか確認する。ROCm 版や GPU 世代が合わない場合はこの条件だけ失敗とする。TensorRT は対応する TensorRT 10 の共有ライブラリを `LD_LIBRARY_PATH` から読めるようにする。
 
-~~~bash
+OpenVINO は Intel GPU の実名を確認する。必要なら `openvino/libs` を `LD_LIBRARY_PATH` に含める。
+
+```bash
 openvino_libs=$(.venv_bench_intel/bin/python -c 'import openvino, pathlib; print(pathlib.Path(openvino.__file__).resolve().parent / "libs")')
 export LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}"
-.venv_bench_intel/bin/python -c 'import openvino as ov; print(ov.__version__); print(ov.Core().available_devices)'
-~~~
+.venv_bench_intel/bin/python -c 'import openvino as ov; c=ov.Core(); print([(d, c.get_property(d, "FULL_DEVICE_NAME")) for d in c.available_devices])'
+```
 
-CUDA 12 に対応する TensorRT 10 と共有ライブラリを揃える。ドライバーの CUDA 表示だけでは CUDA/cuDNN ランタイムが使えるとは限らない。目的 EP の列挙だけでなく、DLL/共有ライブラリを読み込んでノードが実行されることを結果 JSON で確認する。Hugging Face 認証は端末内で行い、トークンを AI に渡さない。
+Intel 名の GPU が列挙されないときは Intel 条件を実行しない。WebGPU のデバイス番号は OpenVINO/CUDA/MIGraphX と別体系なので、実際のアダプターをユーザーが確認する。`--device-name` は確認結果の記録であり、WebGPU の物理デバイスを文字列だけで自動確認はできない。
 
-## 2. ユーザーが測定する
+## 3. 測定
 
-Windows と同じモデル、seed 固定の合成 640×480 RGB 入力、batch size 1 と 4、warmup 3 回、20 回×3 セットを使う。NVIDIA と Intel は別ディレクトリに記録する。Intel GPU がない場合は Intel 側を実行せず、その旨を記録する。
+`./benchmark_matrix.sh --help` に全オプションがある。各 GPU の実名と確認したデバイス番号に置き換えて実行する。Intel の `GPU.N` と WebGPU の番号は独立している。下記の番号 0 は例であり、実機で確認してから使う。GPU ごとに別の出力先を使い、同時実行しない。
 
-~~~bash
-for profile in wd14_v3 balanced; do
-    for batch in 1 4; do
-        for provider in cuda tensorrt; do
-            ".venv_bench_$provider/bin/python" benchmark_nvidia_ep.py --provider "$provider" --profile "$profile" --batch-size "$batch" --gpu-index 0 --output "benchmarks/nvidia_linux/$profile-b$batch-$provider.json"
-        done
-        .venv_bench_webgpu/bin/python benchmark_nvidia_ep.py --provider webgpu --profile "$profile" --batch-size "$batch" --gpu-index 0 --track-nvidia-memory --output "benchmarks/nvidia_linux/$profile-b$batch-webgpu.json"
-    done
-done
-python3.13 summarize_nvidia_ep.py benchmarks/nvidia_linux --providers cuda tensorrt webgpu --reference cuda --output benchmarks/nvidia_linux_summary.json
-~~~
+```bash
+./benchmark_matrix.sh --vendor nvidia --device-name 'NVIDIA GeForce RTX 2070' --output-dir benchmarks/nvidia_linux_20260923 --gpu-index 0 --webgpu-device-index 0
+./benchmark_matrix.sh --vendor intel --device-name 'Intel UHD Graphics' --output-dir benchmarks/intel_linux_20260923 --openvino-device GPU.0 --webgpu-device-index 0
+./benchmark_matrix.sh --vendor amd --device-name 'AMD Radeon Graphics' --output-dir benchmarks/amd_linux_20260923 --gpu-index 0 --webgpu-device-index 0
+```
 
-Intel の WebGPU が別デバイスなら --webgpu-device-index を指定する。OpenVINO の GPU.0 と同じ Intel GPU が選ばれたことを確認する。
+EP が列挙されるだけでは成功ではない。JSON の `status=ok` と `executed_node_providers` で目的 EP のノード実行を確認する。GPU 依存ライブラリ不足、デバイス不一致、モデル非対応は条件別の失敗として残す。CPU のみへフォールバックした結果は GPU 成功として扱わない。
 
-~~~bash
-for profile in wd14_v3 balanced; do
-    for batch in 1 4; do
-        for provider in intel webgpu; do
-            ".venv_bench_$provider/bin/python" benchmark_nvidia_ep.py --provider "$provider" --profile "$profile" --batch-size "$batch" --output "benchmarks/intel_linux/$profile-b$batch-$provider.json"
-        done
-    done
-done
-python3.13 summarize_nvidia_ep.py benchmarks/intel_linux --providers intel webgpu --reference intel --output benchmarks/intel_linux_summary.json
-~~~
+## 4. AI に渡すもの
 
-出力 JSON には実行ノードの EP、各回の時間、プロセス RAM、NVIDIA 指定時のみ VRAM 増分が残る。目的 EP のノードが実行されない条件は失敗になる。WebGPU で NVIDIA VRAM 増分が観測されなければ --webgpu-device-index を変えて再測定し、GPU 名を記録する。Intel の VRAM は計測しない。失敗条件を成功値で埋めない。
-
-## 3. AI に渡すもの
-
-nvidia_linux_summary.json と intel_linux_summary.json、各 incomplete 条件の JSON またはコンソールエラー、GPU と EP の対応・環境メモを渡す。AI は同一 OS・同一 GPU 内の比率を解析し、Windows と Linux の結果を環境差を明示して並べる。絶対速度の OS 間差を特定 EP 固有の損失とみなさない。必要な生データだけ追加で確認し、Linux 結果を同じ branch と PR に commit・通常 push する。
+各出力先の `summary.json` と `manifest.json`、`incomplete` の条件の JSON/コンソールエラー、OS・CPU・GPU・ドライバー・電源設定・EP と物理 GPU の対応を渡す。AI は同一ホスト内の CPU 比と同一 GPU の EP 間を解析する。Windows と Linux の差は環境差を明示し、異なる GPU の結果を同じデバイスとして比較しない。AMD の過去値は今回の一貫した比較には含めない。

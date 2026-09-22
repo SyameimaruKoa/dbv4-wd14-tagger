@@ -48,12 +48,15 @@ def nvidia_memory_mib(index):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--provider", choices=("cuda", "tensorrt", "webgpu", "intel", "directml"), required=True)
+    parser.add_argument("--provider", choices=("cpu", "cuda", "tensorrt", "webgpu", "intel", "directml", "migraphx"), required=True)
     parser.add_argument("--openvino-device", default="GPU.0")
+    parser.add_argument("--target-vendor", choices=("cpu", "intel", "nvidia", "amd"))
+    parser.add_argument("--device-name", help="Operator-confirmed adapter name for DirectML/WebGPU/MIGraphX")
     parser.add_argument("--profile", choices=tuple(MODEL_PROFILES), required=True)
     parser.add_argument("--batch-size", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--gpu-index", type=int, default=0)
+    parser.add_argument("--directml-device-index", type=int, default=0)
     parser.add_argument("--track-nvidia-memory", action="store_true")
     parser.add_argument("--webgpu-device-index", type=int, default=0)
     parser.add_argument("--warmup", type=int, default=3)
@@ -67,6 +70,17 @@ def main():
         parser.error(str(profile.get("unavailable_reason", "profile unavailable")))
 
     track_nvidia = args.provider in ("cuda", "tensorrt") or args.track_nvidia_memory
+    if args.provider == "cpu" and args.target_vendor not in (None, "cpu"):
+        parser.error("CPU provider requires target vendor cpu")
+    if args.provider == "intel" and args.target_vendor not in (None, "intel"):
+        parser.error("OpenVINO Intel provider requires target vendor intel")
+    if args.provider in ("directml", "webgpu", "migraphx") and args.target_vendor and not args.device_name:
+        parser.error("this provider requires --device-name when --target-vendor is set")
+    if args.provider in ("directml", "webgpu", "migraphx") and args.target_vendor:
+        if args.target_vendor not in args.device_name.lower():
+            parser.error("--device-name must include the target vendor")
+    if args.provider in ("cuda", "tensorrt") and args.target_vendor not in (None, "nvidia"):
+        parser.error("CUDA/TensorRT require target vendor nvidia")
     try:
         baseline_vram = nvidia_memory_mib(args.gpu_index) if track_nvidia else None
     except (OSError, subprocess.SubprocessError, ValueError) as exc:
@@ -123,9 +137,23 @@ def main():
                         "OpenVINO runtime missing; install openvino==2025.4.1 "
                         "in the Intel benchmark environment"
                     ) from exc
+        openvino_gpu_name = None
+        if args.provider == "intel":
+            if not args.openvino_device.upper().startswith("GPU"):
+                raise RuntimeError("Intel benchmark requires an OpenVINO GPU device")
+            import openvino as ov
+
+            openvino_gpu_name = ov.Core().get_property(
+                args.openvino_device, "FULL_DEVICE_NAME"
+            )
+            if "intel" not in openvino_gpu_name.lower():
+                raise RuntimeError(
+                    f"OpenVINO {args.openvino_device} is {openvino_gpu_name}; "
+                    "an Intel GPU is required for the Intel benchmark"
+                )
         options = ort.SessionOptions()
         options.enable_profiling = True
-        if args.provider in ("cuda", "tensorrt", "intel", "directml"):
+        if args.provider in ("cpu", "cuda", "tensorrt", "intel", "directml", "migraphx"):
             if args.provider == "directml":
                 options.enable_mem_pattern = False
                 options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
@@ -135,11 +163,15 @@ def main():
                 "tensorrt": "TensorrtExecutionProvider",
                 "intel": "OpenVINOExecutionProvider",
                 "directml": "DmlExecutionProvider",
+                "migraphx": "MIGraphXExecutionProvider",
+                "cpu": "CPUExecutionProvider",
             }
             expected_provider = names[args.provider]
             if expected_provider not in available:
                 raise RuntimeError(f"{expected_provider} unavailable: {available}")
-            if args.provider == "cuda":
+            if args.provider == "cpu":
+                providers = [expected_provider]
+            elif args.provider == "cuda":
                 providers = [(expected_provider, {"device_id": str(args.gpu_index)}),
                              "CPUExecutionProvider"]
             elif args.provider == "tensorrt":
@@ -149,8 +181,11 @@ def main():
             elif args.provider == "intel":
                 providers = [(expected_provider, {"device_type": args.openvino_device}),
                              "CPUExecutionProvider"]
-            else:
+            elif args.provider == "migraphx":
                 providers = [(expected_provider, {"device_id": str(args.gpu_index)}),
+                             "CPUExecutionProvider"]
+            else:
+                providers = [(expected_provider, {"device_id": str(args.directml_device_index)}),
                              "CPUExecutionProvider"]
             started = time.perf_counter()
             session = ort.InferenceSession(metadata.model_path, sess_options=options,
@@ -235,15 +270,20 @@ def main():
             "onnxruntime": ort.__version__,
             "webgpu_plugin": version("onnxruntime-ep-webgpu") if args.provider == "webgpu" else None,
             "gpu_index": args.gpu_index,
+            "directml_device_index": args.directml_device_index if args.provider == "directml" else None,
             "webgpu_device_index": args.webgpu_device_index if args.provider == "webgpu" else None,
             "nvidia_gpu_memory_observed": peak_vram - baseline_vram >= 16 if track_nvidia else None,
             "executed_node_providers": executed,
             "openvino_device": args.openvino_device if args.provider == "intel" else None,
+            "openvino_gpu_name": openvino_gpu_name,
+            "target_vendor": args.target_vendor,
+            "device_name": openvino_gpu_name if args.provider == "intel" else args.device_name,
         }
     except Exception as exc:
         record = {
             "status": "failed", "provider_requested": args.provider,
             "profile": args.profile, "batch_size": args.batch_size,
+            "target_vendor": args.target_vendor, "device_name": args.device_name,
             "error": f"{type(exc).__name__}: {exc}",
             "platform": platform.platform(), "onnxruntime": ort.__version__,
         }
