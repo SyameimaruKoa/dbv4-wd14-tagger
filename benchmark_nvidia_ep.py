@@ -5,7 +5,9 @@ and WEBGPU_BENCHMARK_LINUX.md. This script does not change user images.
 """
 
 import argparse
+import ctypes
 import json
+import os
 import platform
 import statistics
 import subprocess
@@ -92,8 +94,19 @@ def main():
         started = time.perf_counter()
         metadata = DBV4Metadata.load(profile, base_dir=str(Path(__file__).resolve().parent))
         metadata_seconds = time.perf_counter() - started
+        dll_directory_handle = None
+        tensor_ir_handle = None
         if args.provider in ("cuda", "tensorrt") and hasattr(ort, "preload_dlls"):
             ort.preload_dlls()
+            if platform.system() == "Windows":
+                cudnn_bin = (Path(ort.__file__).resolve().parent.parent
+                             / "nvidia" / "cudnn" / "bin")
+                if cudnn_bin.is_dir():
+                    dll_directory_handle = os.add_dll_directory(str(cudnn_bin))
+                    os.environ["PATH"] = str(cudnn_bin) + os.pathsep + os.environ.get("PATH", "")
+                    tensor_ir = cudnn_bin / "cudnn_engines_tensor_ir64_9.dll"
+                    if tensor_ir.is_file():
+                        tensor_ir_handle = ctypes.WinDLL(str(tensor_ir))
         options = ort.SessionOptions()
         options.enable_profiling = True
         if args.provider in ("cuda", "tensorrt", "intel", "directml"):
@@ -139,6 +152,7 @@ def main():
             session = ort.InferenceSession(metadata.model_path, sess_options=options)
             expected_provider = webgpu.get_ep_name()
         session_seconds = time.perf_counter() - started
+        session.disable_fallback()
         active = session.get_providers()
         if expected_provider not in active:
             raise RuntimeError(f"requested {expected_provider}, active providers are {active}")

@@ -23,7 +23,7 @@ foreach ($name in $packages.Keys) {
 }
 ~~~
 
-既存の .venv_bench_cuda と .venv_bench_tensorrt で ONNX Runtime 1.30.0 が入っている場合も、上記の pip install で CUDA 12 版に入れ替える。CUDA/cuDNN の DLL は測定コードが ONNX Runtime の preload_dlls で読み込む。TensorRT の DLL は別途確認する。各環境で目的の EP が列挙されることを確認する。ただし EP の列挙だけでは DLL 読み込み成功を意味しない。Hugging Face 認証が必要なら端末で行い、トークンを AI に渡さない。
+既存の .venv_bench_cuda と .venv_bench_tensorrt で ONNX Runtime 1.30.0 が入っている場合も、上記の pip install で CUDA 12 版に入れ替える。CUDA/cuDNN の DLL は測定コードが ONNX Runtime の preload_dlls で読み込む。ONNX Runtime 1.26.0 が読み込み対象に含めていない cuDNN の cudnn_engines_tensor_ir64_9.dll は、仮想環境内にある場合に測定コードが追加で読み込む。TensorRT の DLL は別途確認する。各環境で目的の EP が列挙されることを確認する。ただし EP の列挙だけでは DLL 読み込み成功を意味しない。Hugging Face 認証が必要なら端末で行い、トークンを AI に渡さない。
 
 ## 2. ユーザーが測定する
 
