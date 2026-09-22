@@ -36,13 +36,15 @@ export LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}"
 
 Intel 名の GPU が列挙されないときは Intel 条件を実行しない。WebGPU のデバイス番号は OpenVINO/CUDA/MIGraphX と別体系。`.venv_bench_webgpu/bin/python probe_webgpu_adapters.py` で実名と番号を表示し、ランナーも製造元を照合する。`--device-name` は確認結果の記録であり、WebGPU の物理デバイスを文字列だけで自動確認はできない。
 
+`balanced` モデルの取得が `GatedRepoError: 401` で失敗する場合は、そのモデルへのアクセス権がある Hugging Face アカウントで `./run_tagger.sh --login` を実行する。アクセス権が未承認の場合はモデルの利用条件・承認状況を確認する。認証後、完成済み `manifest.json` がある出力先に元と同じ引数と `--retry-failed` を付け、失敗条件だけ再測定する。トークンを結果ファイルや AI への報告に含めない。
+
 ## 3. 測定
 
 `./benchmark_matrix.sh --help` に全オプションがある。各 GPU の実名と確認したデバイス番号に置き換えて実行する。Intel の `GPU.N` と WebGPU の番号は独立している。下記の番号 0 は例であり、実機で確認してから使う。GPU ごとに別の出力先を使い、同時実行しない。
 
 ```bash
-./benchmark_matrix.sh --vendor nvidia --device-name 'NVIDIA GeForce RTX 2070' --output-dir benchmarks/nvidia_linux_20260923 --gpu-index 0 --webgpu-device-index 0
-./benchmark_matrix.sh --vendor intel --device-name 'Intel UHD Graphics' --output-dir benchmarks/intel_linux_20260923 --openvino-device GPU.0 --webgpu-device-index 0
+./benchmark_matrix.sh --vendor nvidia --device-name 'NVIDIA GeForce RTX 2070 with Max-Q Design' --output-dir benchmarks/nvidia_linux_20260923 --gpu-index 0 --webgpu-device-index 0
+./benchmark_matrix.sh --vendor intel --device-name 'Intel(R) UHD Graphics 630' --output-dir benchmarks/intel_linux_20260923 --openvino-device GPU.0 --webgpu-device-index 1
 ./benchmark_matrix.sh --vendor amd --device-name 'AMD Radeon Graphics' --output-dir benchmarks/amd_linux_20260923 --gpu-index 0 --webgpu-device-index 0
 ```
 

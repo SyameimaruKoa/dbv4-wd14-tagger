@@ -117,12 +117,19 @@
     【ヘルプ表示】 (スイッチ)
     このヘルプを表示する。
 
+.PARAMETER Login
+    【Hugging Faceログイン】 (スイッチ)
+    認証のみ実行して終了する。
+
 .PARAMETER RemainingArgs
     未定義の引数（--helpなど）を捕捉するための内部パラメータ。
 
 .EXAMPLE
     # 初回セットアップ (何もしない)
     .\run_tagger.ps1
+
+    # Hugging Faceへログイン
+    .\run_tagger.ps1 -Login
 
     # 通常実行 (タグ付け＋レポート)
     .\run_tagger.ps1 -Path "C:\Images" -Gpu
@@ -200,6 +207,8 @@ param (
     [Alias('h')]
     [switch]$Help,
 
+    [switch]$Login,
+
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$RemainingArgs
 )
@@ -237,12 +246,16 @@ function Show-Help {
     Write-Host "    -RecordRatio (-a)     メタデータにRAWスコア・割合スコアを記録"
     Write-Host "    -NoRecordRatio (-k)   メタデータへのスコア記録を無効化"
     Write-Host "    -Help (-h, --help)    このヘルプを表示"
+    Write-Host "    -Login               Hugging Faceへログインして終了"
     Write-Host "    -RatingThresh (-d)    旧CLI互換: 非General rating判定閾値"
     Write-Host "    -IgnoreSensitive (-i) 旧CLI互換: SensitiveをGeneralとして扱う"
     Write-Host ""
     Write-Host "実行例:" -ForegroundColor Yellow
     Write-Host "    # 初回セットアップ（何もしない）"
     Write-Host "    .\run_tagger.ps1"
+    Write-Host ""
+    Write-Host "    # Hugging Faceへログイン"
+    Write-Host "    .\run_tagger.ps1 -Login"
     Write-Host ""
     Write-Host "    # 通常実行（タグ付け＋レポート＋GPU）"
     Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu"
@@ -366,6 +379,31 @@ function Prepare-Environment {
 #endregion
 
 #region Main Logic
+
+if ($Login -or ($RemainingArgs -contains '--login')) {
+    $HfExecutable = $null
+    $VenvPython = $null
+    foreach ($VenvName in @('venv_gpu', 'venv_std', 'venv_client', 'venv_webgpu', 'venv_intel', 'venv_amd')) {
+        $Candidate = Join-Path $ScriptDir "$VenvName/Scripts/hf.exe"
+        if (Test-Path $Candidate) {
+            $HfExecutable = $Candidate
+            Write-Host "[INFO] 既存の仮想環境を使用します: $VenvName" -ForegroundColor Cyan
+            break
+        }
+    }
+    if (-not $HfExecutable) {
+        $VenvPython = Prepare-Environment -UseGpu $false -IsClient $false
+        $HfExecutable = Join-Path (Split-Path -Parent $VenvPython) 'hf.exe'
+    }
+    if (-not (Test-Path $HfExecutable)) {
+        Write-Error "Hugging Face CLIが見つかりません: $HfExecutable"
+        exit 1
+    }
+    & $HfExecutable auth login
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    Write-Host "[INFO] Hugging Faceログインが完了しました。" -ForegroundColor Green
+    exit 0
+}
 
 # 引数が一つもない場合はセットアップモード
 if ($PSBoundParameters.Count -eq 0 -and (-not $RemainingArgs)) {

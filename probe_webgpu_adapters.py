@@ -6,6 +6,8 @@ import json
 import onnxruntime as ort
 import onnxruntime_ep_webgpu as webgpu
 
+from webgpu_vendor import vendor_name
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -19,7 +21,7 @@ def main():
         hardware = item.device
         records.append({
             "webgpu_index": index,
-            "vendor": hardware.vendor,
+            "vendor": vendor_name(hardware.vendor, hardware.vendor_id),
             "vendor_id": hardware.vendor_id,
             "device_id": hardware.device_id,
             "metadata": dict(hardware.metadata),

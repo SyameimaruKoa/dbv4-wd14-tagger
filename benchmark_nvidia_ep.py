@@ -29,6 +29,7 @@ from dbv4 import (
     adapt_input_layout,
     select_output_name,
 )
+from webgpu_vendor import vendor_name
 
 
 def percentile(values, fraction):
@@ -254,11 +255,14 @@ def main():
         if args.provider == "intel":
             if not args.openvino_device.upper().startswith("GPU"):
                 raise RuntimeError("Intel benchmark requires an OpenVINO GPU device")
-            import openvino as ov
-
-            openvino_gpu_name = ov.Core().get_property(
-                args.openvino_device, "FULL_DEVICE_NAME"
+            device_query = (
+                "import openvino as ov, sys; "
+                "print(ov.Core().get_property(sys.argv[1], 'FULL_DEVICE_NAME'))"
             )
+            openvino_gpu_name = subprocess.check_output(
+                [sys.executable, "-c", device_query, args.openvino_device],
+                text=True, timeout=30,
+            ).strip()
             if "intel" not in openvino_gpu_name.lower():
                 raise RuntimeError(
                     f"OpenVINO {args.openvino_device} is {openvino_gpu_name}; "
@@ -312,16 +316,18 @@ def main():
             if args.webgpu_device_index < 0 or args.webgpu_device_index >= len(devices):
                 raise RuntimeError(f"WebGPU device index unavailable: {len(devices)} devices")
             selected = devices[args.webgpu_device_index].device
+            selected_vendor = vendor_name(selected.vendor, selected.vendor_id)
             webgpu_hardware = {
-                "vendor": selected.vendor,
+                "vendor": selected_vendor,
                 "vendor_id": selected.vendor_id,
                 "device_id": selected.device_id,
                 "metadata": dict(selected.metadata),
             }
-            if args.target_vendor and args.target_vendor not in selected.vendor.lower():
+            if args.target_vendor and args.target_vendor not in selected_vendor:
                 raise RuntimeError(
                     f"WebGPU device {args.webgpu_device_index} is "
-                    f"{selected.vendor} {selected.metadata.get('Description')}; "
+                    f"{selected_vendor or 'unknown vendor'} "
+                    f"{selected.metadata.get('Description')}; "
                     f"expected {args.target_vendor}"
                 )
             options.add_provider_for_devices([devices[args.webgpu_device_index]], {})

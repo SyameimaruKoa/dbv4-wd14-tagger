@@ -299,6 +299,8 @@ Hugging Faceのgated modelを利用する前のログイン：
 ./run_tagger.sh --login
 ~~~
 
+Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
+
 `ultra`はONNX本体の公開リポジトリとは別に、タグと前処理データを`animetimm/convnextv2_huge.dbv4-full`から取得する。利用前に[モデルページ](https://huggingface.co/animetimm/convnextv2_huge.dbv4-full)で利用条件に同意し、同意したアカウントで`--login`を実行する。401が出る場合は、そのアカウントにアクセス権があるか確認する。
 `ultra`などのアクセス確認で401が返った場合は、モデルページを開いて再ログインを促し、同じ実行内でアクセスを再確認する。利用条件への同意や管理者承認がまだ完了していない場合は、案内を表示して停止する。
 
