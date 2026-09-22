@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "provider_requested": "cpu",
+  "profile": "balanced",
+  "batch_size": 4,
+  "target_vendor": "cpu",
+  "device_name": null,
+  "error": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb52-6da93c12399bcac83168da27;150cfa8a-79b1-4694-bfb5-62a39f81b5e4)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in.",
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "onnxruntime": "1.30.0"
+}
