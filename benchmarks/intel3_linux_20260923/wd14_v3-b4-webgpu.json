@@ -1,0 +1,143 @@
+{
+  "status": "ok",
+  "provider_requested": "webgpu",
+  "provider_active": [
+    "WebGpuExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "profile": "wd14_v3",
+  "repo_id": "SmilingWolf/wd-swinv2-tagger-v3",
+  "metadata_version": "1eefe14281d9f129",
+  "model_path": "/home/syameimarukoa/.cache/huggingface/hub/models--SmilingWolf--wd-swinv2-tagger-v3/snapshots/627aef95638667ddcaa3ac8ae625e88ea5b02f51/model.onnx",
+  "batch_size": 4,
+  "input_shape": [
+    "batch_size",
+    448,
+    448,
+    3
+  ],
+  "output_shape": [
+    4,
+    10861
+  ],
+  "seed": 20260922,
+  "image_size": [
+    640,
+    480
+  ],
+  "warmup": 3,
+  "iterations_per_set": 20,
+  "sets": 3,
+  "raw_ms_per_image": [
+    [
+      2090.441192238359,
+      2090.7057747535873,
+      2123.696919006761,
+      2089.2871477408335,
+      2095.3010949888267,
+      2088.8129264931194,
+      2093.9842789957765,
+      2088.909723504912,
+      2080.773271241924,
+      2092.199349019211,
+      2094.6133537509013,
+      2084.0341885050293,
+      2084.6903142519295,
+      2095.867855241522,
+      2090.1202857494354,
+      2090.0385107379407,
+      2093.748138024239,
+      2084.7721587633714,
+      2091.8086219753604,
+      2087.0749579917174
+    ],
+    [
+      2089.7330467414577,
+      2092.5742530089337,
+      2088.8642669888213,
+      2088.3682940038852,
+      2086.3867245207075,
+      2091.247300733812,
+      2081.1390182352625,
+      2095.4062262317166,
+      2088.5477355041075,
+      2085.3516332572326,
+      2091.503119241679,
+      2085.664723505033,
+      2090.2450974972453,
+      2085.7344809919596,
+      2087.2645060007926,
+      2088.7253942491952,
+      2094.6982177556492,
+      2085.0432052393444,
+      2129.469547246117,
+      2085.861290252069
+    ],
+    [
+      2102.898098732112,
+      2085.4998510039877,
+      2088.456055993447,
+      2087.640325014945,
+      2092.7551767381374,
+      2090.474827506114,
+      2083.8195595133584,
+      2087.1996342611965,
+      2088.3608042495325,
+      2090.7035587588325,
+      2084.075664257398,
+      2097.444612008985,
+      2096.3360460009426,
+      2087.820427987026,
+      2086.5635985101108,
+      2092.5038644927554,
+      2085.5660595116206,
+      2081.987179495627,
+      2080.7229302299675,
+      2090.6097035040148
+    ]
+  ],
+  "set_median_ms": [
+    2090.280738993897,
+    2088.6365648766514,
+    2088.0906161182793
+  ],
+  "set_p95_ms": [
+    2097.259308429784,
+    2097.1093922824366,
+    2097.7172863451415
+  ],
+  "median_ms_per_image": 2088.6365648766514,
+  "baseline_vram_mib": null,
+  "peak_vram_mib": null,
+  "vram_increment_mib": null,
+  "baseline_rss_mib": 70.6640625,
+  "peak_rss_mib": 588.74609375,
+  "metadata_seconds": 0.8543138148961589,
+  "session_seconds": 2.0122067269403487,
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "python": "3.13.15",
+  "onnxruntime": "1.30.0",
+  "webgpu_plugin": "0.4.0",
+  "gpu_index": 0,
+  "directml_device_index": null,
+  "webgpu_device_index": 0,
+  "nvidia_gpu_memory_observed": null,
+  "executed_node_providers": [
+    "CPUExecutionProvider",
+    "WebGpuExecutionProvider"
+  ],
+  "openvino_device": null,
+  "openvino_gpu_name": null,
+  "webgpu_hardware": {
+    "vendor": "intel",
+    "vendor_id": 32902,
+    "device_id": 6418,
+    "metadata": {
+      "card_idx": "0",
+      "pci_bus_id": "0000:00:02.0"
+    }
+  },
+  "tensorrt_lib_dir": null,
+  "target_vendor": "intel",
+  "device_name": "Intel(R) HD Graphics 530"
+}
