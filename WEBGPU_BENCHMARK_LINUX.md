@@ -24,7 +24,7 @@ done
 .venv_bench_intel/bin/python -m pip install 'onnxruntime-openvino==1.24.1' 'openvino==2025.4.1'
 ```
 
-MIGraphX を使う場合は対象 GPU が ROCm に対応することを確認し、[AMD の ONNX Runtime/ROCm 手順](https://rocm.docs.amd.com/)で適合 wheel と ROCm ランタイムを `.venv_bench_migraphx` に入れる。実行前に `onnxruntime.get_available_providers()` に `MIGraphXExecutionProvider` があるか確認する。ROCm 版や GPU 世代が合わない場合はこの条件だけ失敗とする。TensorRT は対応する TensorRT 10 の共有ライブラリを `LD_LIBRARY_PATH` から読めるようにする。
+MIGraphX を使う場合は対象 GPU が ROCm に対応することを確認し、[AMD の ONNX Runtime/ROCm 手順](https://rocm.docs.amd.com/)で適合 wheel と ROCm ランタイムを `.venv_bench_migraphx` に入れる。実行前に `onnxruntime.get_available_providers()` に `MIGraphXExecutionProvider` があるか確認する。ROCm 版や GPU 世代が合わない場合はこの条件だけ失敗とする。TensorRT は対応する TensorRT 10 の共有ライブラリを用意する。ランナーは仮想環境内の `tensorrt*_libs`、`TENSORRT_LIB_DIR`、または `--tensorrt-lib-dir` から `libnvinfer.so.10` を検出し、TensorRT 条件の子プロセスへ `LD_LIBRARY_PATH` を渡す。開始時に TensorRT provider の読み込みも検証する。システム領域に導入した場合は通常の動的ローダーが解決できる状態にする。TensorRT がロードできなければ CUDA フォールバックを成功扱いしない。
 
 OpenVINO は Intel GPU の実名を確認する。必要なら `openvino/libs` を `LD_LIBRARY_PATH` に含める。
 
@@ -51,3 +51,7 @@ EP が列挙されるだけでは成功ではない。JSON の `status=ok` と `
 ## 4. AI に渡すもの
 
 各出力先の `summary.json` と `manifest.json`、`incomplete` の条件の JSON/コンソールエラー、OS・CPU・GPU・ドライバー・電源設定・EP と物理 GPU の対応を渡す。AI は同一ホスト内の CPU 比と同一 GPU の EP 間を解析する。Windows と Linux の差は環境差を明示し、異なる GPU の結果を同じデバイスとして比較しない。AMD の過去値は今回の一貫した比較には含めない。
+
+## 5. 失敗条件の再測定
+
+`manifest.json` が完成してから、元と同じ引数と出力先で `--retry-failed` を付ける。成功済み JSON は保持し、失敗条件だけ再実行する。TensorRT だけ再実行するときは `--retry-provider tensorrt` も付ける。TensorRT のライブラリ位置を明示する場合は `--tensorrt-lib-dir /path/to/TensorRT/lib` を追加する。

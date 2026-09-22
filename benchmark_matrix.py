@@ -32,6 +32,8 @@ def main():
     parser.add_argument("--directml-device-index", type=int, default=0)
     parser.add_argument("--webgpu-device-index", type=int, default=0)
     parser.add_argument("--openvino-device", default="GPU.0")
+    parser.add_argument("--tensorrt-lib-dir", type=Path,
+                        help="TensorRT 10 bin directory; auto-detected on Windows")
     parser.add_argument("--profiles", nargs="+",
                         default=["wd14_v3", "balanced"])
     parser.add_argument("--batches", nargs="+", type=int, default=[1, 4])
@@ -40,6 +42,10 @@ def main():
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--sets", type=int, default=3)
+    parser.add_argument("--retry-failed", action="store_true",
+                        help="Resume an existing completed matrix and rerun failed cases only")
+    parser.add_argument("--retry-provider", action="append",
+                        help="With --retry-failed, rerun only this provider (repeatable)")
     args = parser.parse_args()
     from dbv4 import MODEL_PROFILES
 
@@ -49,11 +55,15 @@ def main():
     system = platform.system()
     if system not in MATRIX:
         parser.error(f"unsupported OS: {system}")
+    if args.retry_provider and not args.retry_failed:
+        parser.error("--retry-provider requires --retry-failed")
     if args.vendor not in args.device_name.lower():
         parser.error("--device-name must include --vendor; confirm the actual adapter")
     if min(*args.batches, args.warmup, args.iterations, args.sets) < 1:
         parser.error("batch and repetition counts must be positive")
     providers = ("cpu",) + MATRIX[system][args.vendor]
+    if args.retry_provider and set(args.retry_provider) - set(providers):
+        parser.error("--retry-provider must be a provider in this matrix")
     if args.providers:
         unknown = set(args.providers) - set(providers)
         if unknown:
@@ -90,10 +100,25 @@ def main():
             parser.error(f"DirectML/DXGI index {args.directml_device_index} is "
                          f"{matching[0]['vendor']} {matching[0]['metadata'].get('Description')}; "
                          f"expected {args.vendor}")
+    existing_manifest = args.output_dir / "manifest.json"
     if args.output_dir.exists() and any(args.output_dir.iterdir()):
-        parser.error("--output-dir must be empty; preserve existing raw results")
+        if not args.retry_failed:
+            parser.error("--output-dir must be empty; use --retry-failed to preserve successes")
+        if not existing_manifest.is_file():
+            parser.error("cannot resume: manifest.json is missing (run may still be in progress)")
+        previous = json.loads(existing_manifest.read_text(encoding="utf-8"))
+        expected = {"platform": system, "vendor": args.vendor,
+                    "operator_device_name": args.device_name,
+                    "providers": list(providers), "profiles": args.profiles,
+                    "batches": args.batches, "warmup": args.warmup,
+                    "iterations": args.iterations, "sets": args.sets}
+        mismatch = [key for key, value in expected.items() if previous.get(key) != value]
+        if mismatch:
+            parser.error(f"cannot resume: matrix settings differ: {mismatch}")
+    elif args.retry_failed:
+        parser.error("--retry-failed requires an existing completed matrix")
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    manifest = {
+    manifest = previous if args.retry_failed else {
         "platform": system,
         "vendor": args.vendor,
         "operator_device_name": args.device_name,
@@ -113,6 +138,15 @@ def main():
                     "Scripts/python.exe" if system == "Windows" else "bin/python"
                 )
                 output = args.output_dir / f"{profile}-b{batch}-{provider}.json"
+                if args.retry_failed:
+                    if args.retry_provider and provider not in args.retry_provider:
+                        print(f"KEEP {output}: provider not selected for retry", flush=True)
+                        continue
+                    if output.is_file():
+                        prior = json.loads(output.read_text(encoding="utf-8"))
+                        if prior.get("status") == "ok":
+                            print(f"KEEP {output}: successful result preserved", flush=True)
+                            continue
                 if not executable.is_file():
                     record = {
                         "status": "skipped", "provider_requested": provider,
@@ -133,11 +167,45 @@ def main():
                            "--warmup", str(args.warmup),
                            "--iterations", str(args.iterations),
                            "--sets", str(args.sets)]
+                    if provider == "tensorrt" and args.tensorrt_lib_dir:
+                        cmd.extend(["--tensorrt-lib-dir", str(args.tensorrt_lib_dir)])
                     if provider != "cpu":
                         cmd.extend(["--device-name", args.device_name])
                     if args.vendor == "nvidia" and provider in ("directml", "webgpu"):
                         cmd.append("--track-nvidia-memory")
-                    result = subprocess.run(cmd, check=False)
+                    case_env = None
+                    if provider == "tensorrt" and system == "Linux":
+                        import os
+
+                        trt_dir = args.tensorrt_lib_dir
+                        if trt_dir is None and os.environ.get("TENSORRT_LIB_DIR"):
+                            trt_dir = Path(os.environ["TENSORRT_LIB_DIR"])
+                        if trt_dir is None:
+                            venv = executable.parent.parent
+                            for pattern in ("lib/python*/site-packages/tensorrt*_libs",
+                                            "lib/python*/site-packages/tensorrt*_libs/lib"):
+                                found = [item for item in venv.glob(pattern)
+                                         if (item / "libnvinfer.so.10").is_file()]
+                                if len(found) == 1:
+                                    trt_dir = found[0]
+                                    break
+                        case_env = os.environ.copy()
+                        library_dirs = []
+                        if trt_dir is not None:
+                            case_env["TENSORRT_LIB_DIR"] = str(trt_dir.resolve())
+                            library_dirs.append(str(trt_dir.resolve()))
+                        library_dirs.extend(
+                            str(item.resolve()) for item in
+                            executable.parent.parent.glob(
+                                "lib/python*/site-packages/nvidia/*/lib"
+                            ) if item.is_dir()
+                        )
+                        if library_dirs:
+                            case_env["LD_LIBRARY_PATH"] = (
+                                os.pathsep.join(library_dirs) + os.pathsep +
+                                case_env.get("LD_LIBRARY_PATH", "")
+                            )
+                    result = subprocess.run(cmd, check=False, env=case_env)
                     if not output.is_file():
                         record = {
                             "status": "failed", "provider_requested": provider,
@@ -146,7 +214,8 @@ def main():
                         }
                         output.write_text(json.dumps(record, indent=2), encoding="utf-8")
                     print(f"CASE {output}: exit={result.returncode}", flush=True)
-                manifest["results"].append(str(output))
+                if not args.retry_failed:
+                    manifest["results"].append(str(output))
     manifest_path = args.output_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Saved {manifest_path}")

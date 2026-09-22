@@ -16,6 +16,13 @@
     DirectML adapter index, independent of CUDA/TensorRT.
 .PARAMETER WebGpuDeviceIndex
     WebGPU adapter index. Verify the adapter before measuring.
+.PARAMETER RetryProvider
+    Provider to retry, such as tensorrt. Requires RetryFailed.
+.PARAMETER RetryFailed
+    Resume a completed matrix, preserving successful JSON and rerunning failures.
+.PARAMETER TensorRtLibDir
+    TensorRT 10 bin directory containing nvinfer_10.dll. If omitted, the
+    benchmark discovers a single TensorRT installation under Downloads.
 .PARAMETER OpenVinoDevice
     OpenVINO device such as GPU.0. Intel hardware name is checked automatically.
 .EXAMPLE
@@ -30,6 +37,9 @@ param(
     [int]$DirectMlDeviceIndex = 0,
     [int]$WebGpuDeviceIndex = 0,
     [string]$OpenVinoDevice = "GPU.0",
+    [string]$TensorRtLibDir,
+    [switch]$RetryFailed,
+    [string]$RetryProvider,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs
 )
@@ -46,6 +56,9 @@ $python = if (Test-Path -LiteralPath ".venv_bench_cpu\Scripts\python.exe") {
 } else {
     "python"
 }
-& $python benchmark_matrix.py --vendor $Vendor --device-name $DeviceName --output-dir $OutputDir --gpu-index $GpuIndex --directml-device-index $DirectMlDeviceIndex --webgpu-device-index $WebGpuDeviceIndex --openvino-device $OpenVinoDevice @ExtraArgs
+$tensorRtArgs = if ($TensorRtLibDir) { @("--tensorrt-lib-dir", $TensorRtLibDir) } else { @() }
+$retryArgs = if ($RetryFailed) { @("--retry-failed") } else { @() }
+if ($RetryProvider) { $retryArgs += @("--retry-provider", $RetryProvider) }
+& $python benchmark_matrix.py --vendor $Vendor --device-name $DeviceName --output-dir $OutputDir --gpu-index $GpuIndex --directml-device-index $DirectMlDeviceIndex --webgpu-device-index $WebGpuDeviceIndex --openvino-device $OpenVinoDevice @tensorRtArgs @retryArgs @ExtraArgs
 exit $LASTEXITCODE
 #endregion

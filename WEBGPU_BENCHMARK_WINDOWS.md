@@ -30,7 +30,7 @@ foreach ($provider in $packages.Keys) {
 }
 ```
 
-CUDA/cuDNN DLL は測定コードで読み込む。TensorRT は別に TensorRT 10 の `nvinfer_10.dll` が必要で、対応する CUDA 12 版を導入し、実行する PowerShell の `PATH` に TensorRT の `bin` を追加する。例: `$env:PATH = "C:\Users\kouki\Downloads\TensorRT-10.16.1.11\bin;$env:PATH"`。DLL と ONNX Runtime の互換性を確認する。EP が列挙されても推論成功の保証にはならない。
+CUDA/cuDNN DLL は測定コードで読み込む。TensorRT 10 の `nvinfer_10.dll` は測定プロセスが `TENSORRT_LIB_DIR`、単一の `Downloads/TensorRT-*/bin`、または `PATH` から検出し、TensorRT provider DLL とともに推論開始前にロードする。手動で `PATH` を毎回設定する必要はない。複数の TensorRT が見つかった場合は `-TensorRtLibDir` で対応する CUDA 12 版の `bin` を明示する。DLL が欠ける場合や版が整合しない場合はその条件を失敗とし、CUDA へのフォールバックを TensorRT 成功としない。EP の列挙だけでは成功の保証にならない。
 
 Intel の OpenVINO DLL は同じ仮想環境の `openvino\libs` から測定コードが読み込む。まず GPU の実名を確認する。
 
@@ -63,3 +63,11 @@ Intel の例の DirectML 1 と WebGPU 1 はこの PC で Intel として列挙�
 ## 4. AI に渡すもの
 
 各出力先の `summary.json`、`manifest.json`、`incomplete` に載った条件の JSON とコンソールエラー、OS/CPU/GPU/ドライバー/電源設定、各 EP が実際に選んだアダプターの確認メモを渡す。AI は同一ホスト・モデル・batch の CPU 比と GPU EP 間を解析する。Windows と Linux、異なる GPU の比率は環境差を明示する。AMD も同じ手順・同じ条件で測り直し、古い AMD 値を今回の比較に混ぜない。既存 PR の branch を継続する。
+
+### TensorRT 失敗条件だけ再測定する
+
+実行中の matrix が `manifest.json` を書き終えてから、元と同じ引数に `-RetryFailed` を付けて実行する。成功した JSON は保持し、TensorRT の失敗条件だけ上書きして集計を更新する。TensorRT の場所を明示するなら `-TensorRtLibDir "C:\Users\kouki\Downloads\TensorRT-10.16.1.11\bin"` を追加する。
+
+```powershell
+.\benchmark_matrix.ps1 -Vendor nvidia -DeviceName "NVIDIA GeForce RTX 2070 with Max-Q Design" -OutputDir "benchmarks\nvidia_windows_20260923" -GpuIndex 0 -DirectMlDeviceIndex 0 -WebGpuDeviceIndex 2 -RetryFailed -RetryProvider tensorrt
+```

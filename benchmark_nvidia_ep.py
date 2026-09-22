@@ -11,6 +11,7 @@ import os
 import platform
 import statistics
 import subprocess
+import sys
 import threading
 import time
 from importlib.metadata import version
@@ -46,10 +47,108 @@ def nvidia_memory_mib(index):
     return float(output.strip().splitlines()[0])
 
 
+
+def prepare_tensorrt_windows(explicit_dir):
+    """Load TensorRT and its ORT bridge before session creation on Windows."""
+    name = "nvinfer_10.dll"
+    if hasattr(ort, "preload_dlls"):
+        ort.preload_dlls()
+    candidates = []
+    if explicit_dir:
+        candidates.append(Path(explicit_dir))
+    elif os.environ.get("TENSORRT_LIB_DIR"):
+        candidates.append(Path(os.environ["TENSORRT_LIB_DIR"]))
+    else:
+        candidates.extend(Path.home().glob("Downloads/TensorRT-*/bin"))
+        candidates.extend(Path(part) for part in os.environ.get("PATH", "").split(os.pathsep)
+                          if part)
+    matches = []
+    for candidate in candidates:
+        directory = candidate.resolve()
+        if (directory / name).is_file() and directory not in matches:
+            matches.append(directory)
+    if not matches:
+        raise RuntimeError(
+            "TensorRT 10 runtime missing: nvinfer_10.dll not found. "
+            "Pass --tensorrt-lib-dir with the TensorRT bin directory or set TENSORRT_LIB_DIR."
+        )
+    if len(matches) > 1 and not explicit_dir and not os.environ.get("TENSORRT_LIB_DIR"):
+        raise RuntimeError(
+            f"Multiple TensorRT runtimes found: {matches}; choose --tensorrt-lib-dir"
+        )
+    directory = matches[0]
+    directory_handle = os.add_dll_directory(str(directory))
+    os.environ["PATH"] = str(directory) + os.pathsep + os.environ.get("PATH", "")
+    try:
+        runtime_handle = ctypes.WinDLL(str(directory / name))
+        provider_dll = Path(ort.__file__).resolve().parent / "capi" / "onnxruntime_providers_tensorrt.dll"
+        provider_handle = ctypes.WinDLL(str(provider_dll))
+    except OSError as exc:
+        directory_handle.close()
+        raise RuntimeError(f"TensorRT DLL preflight failed in {directory}: {exc}") from exc
+    return directory, (directory_handle, runtime_handle, provider_handle)
+
+
+def find_tensorrt_linux_dir(explicit_dir):
+    """Find TensorRT 10 in an explicit, pip-venv, or system library directory."""
+    name = "libnvinfer.so.10"
+    if explicit_dir:
+        candidates = [Path(explicit_dir)]
+    elif os.environ.get("TENSORRT_LIB_DIR"):
+        candidates = [Path(os.environ["TENSORRT_LIB_DIR"])]
+    else:
+        candidates = []
+        venv = Path(sys.prefix)
+        for pattern in ("lib/python*/site-packages/tensorrt*_libs",
+                        "lib/python*/site-packages/tensorrt*_libs/lib",
+                        "lib/python*/site-packages/tensorrt_libs"):
+            candidates.extend(venv.glob(pattern))
+        candidates.extend(Path(part) for part in
+                          os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep) if part)
+        candidates.extend((Path("/usr/lib/x86_64-linux-gnu"),
+                           Path("/usr/lib/aarch64-linux-gnu"), Path("/usr/local/lib")))
+    matches = []
+    for candidate in candidates:
+        directory = candidate.resolve()
+        if (directory / name).is_file() and directory not in matches:
+            matches.append(directory)
+    if len(matches) > 1 and not explicit_dir and not os.environ.get("TENSORRT_LIB_DIR"):
+        raise RuntimeError(
+            f"Multiple TensorRT 10 runtimes found: {matches}; choose --tensorrt-lib-dir"
+        )
+    return matches[0] if matches else None
+
+
+def prepare_tensorrt_linux(explicit_dir):
+    directory = find_tensorrt_linux_dir(explicit_dir)
+    if (explicit_dir or os.environ.get("TENSORRT_LIB_DIR")) and directory is None:
+        raise RuntimeError(
+            "TensorRT 10 runtime missing in selected directory: libnvinfer.so.10"
+        )
+    source = str(directory / "libnvinfer.so.10") if directory else "libnvinfer.so.10"
+    try:
+        runtime_handle = ctypes.CDLL(source, mode=ctypes.RTLD_GLOBAL)
+        plugin_handle = None
+        if directory and (directory / "libnvinfer_plugin.so.10").is_file():
+            plugin_handle = ctypes.CDLL(
+                str(directory / "libnvinfer_plugin.so.10"), mode=ctypes.RTLD_GLOBAL
+            )
+        provider_so = Path(ort.__file__).resolve().parent / "capi" / "libonnxruntime_providers_tensorrt.so"
+        provider_handle = ctypes.CDLL(str(provider_so), mode=ctypes.RTLD_GLOBAL)
+    except OSError as exc:
+        raise RuntimeError(
+            f"TensorRT Linux preflight failed ({source}). Set --tensorrt-lib-dir "
+            f"or install matching tensorrt-cu12 libraries: {exc}"
+        ) from exc
+    return directory, (runtime_handle, plugin_handle, provider_handle)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--provider", choices=("cpu", "cuda", "tensorrt", "webgpu", "intel", "directml", "migraphx"), required=True)
     parser.add_argument("--openvino-device", default="GPU.0")
+    parser.add_argument("--tensorrt-lib-dir", type=Path,
+                        help="TensorRT 10 bin directory; auto-detected on Windows when omitted")
     parser.add_argument("--target-vendor", choices=("cpu", "intel", "nvidia", "amd"))
     parser.add_argument("--device-name", help="Operator-confirmed adapter name for DirectML/WebGPU/MIGraphX")
     parser.add_argument("--profile", choices=tuple(MODEL_PROFILES), required=True)
@@ -105,7 +204,20 @@ def main():
     session = None
     profile_stopped = False
     webgpu_hardware = None
+    tensorrt_lib_dir = None
+    tensorrt_handles = None
     try:
+        if args.provider == "tensorrt":
+            if hasattr(ort, "preload_dlls"):
+                ort.preload_dlls()
+            if platform.system() == "Windows":
+                tensorrt_lib_dir, tensorrt_handles = prepare_tensorrt_windows(
+                    args.tensorrt_lib_dir
+                )
+            elif platform.system() == "Linux":
+                tensorrt_lib_dir, tensorrt_handles = prepare_tensorrt_linux(
+                    args.tensorrt_lib_dir
+                )
         started = time.perf_counter()
         metadata = DBV4Metadata.load(profile, base_dir=str(Path(__file__).resolve().parent))
         metadata_seconds = time.perf_counter() - started
@@ -291,6 +403,7 @@ def main():
             "openvino_device": args.openvino_device if args.provider == "intel" else None,
             "openvino_gpu_name": openvino_gpu_name,
             "webgpu_hardware": webgpu_hardware,
+            "tensorrt_lib_dir": str(tensorrt_lib_dir) if tensorrt_lib_dir else None,
             "target_vendor": args.target_vendor,
             "device_name": openvino_gpu_name if args.provider == "intel" else args.device_name,
         }

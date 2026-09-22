@@ -16,6 +16,9 @@ Options:
     --gpu-index N               CUDA/TensorRT/MIGraphX device index (default 0)
     --directml-device-index N   DirectML adapter index (Windows, default 0)
     --webgpu-device-index N     WebGPU adapter index (default 0)
+    --retry-failed            Resume completed matrix; keep successful cases
+    --retry-provider NAME     Retry only this provider (repeatable)
+    --tensorrt-lib-dir DIR      TensorRT 10 runtime library directory
     --openvino-device NAME      Intel OpenVINO device (default GPU.0)
     --profiles NAMES...         Model profiles (default wd14_v3 balanced)
     --batches NUMBERS...        Batch sizes (default 1 4)
