@@ -1,0 +1,7 @@
+{
+  "status": "skipped",
+  "provider_requested": "migraphx",
+  "profile": "balanced",
+  "batch_size": 4,
+  "error": "MIGraphX ONNX Runtime unavailable: ModuleNotFoundError: No module named 'onnxruntime'"
+}

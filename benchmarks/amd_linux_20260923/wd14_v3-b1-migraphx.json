@@ -1,0 +1,7 @@
+{
+  "status": "skipped",
+  "provider_requested": "migraphx",
+  "profile": "wd14_v3",
+  "batch_size": 1,
+  "error": "MIGraphX ONNX Runtime unavailable: ModuleNotFoundError: No module named 'onnxruntime'"
+}

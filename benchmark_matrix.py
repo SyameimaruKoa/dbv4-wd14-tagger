@@ -147,11 +147,23 @@ def main():
                         if prior.get("status") == "ok":
                             print(f"KEEP {output}: successful result preserved", flush=True)
                             continue
-                if not executable.is_file():
+                migraphx_issue = None
+                if provider == "migraphx" and executable.is_file():
+                    probe = subprocess.run(
+                        [str(executable), "-c", "import onnxruntime as ort; "
+                         "print(ort.get_available_providers())"],
+                        capture_output=True, text=True, check=False,
+                    )
+                    if probe.returncode != 0:
+                        detail = probe.stderr.strip().splitlines()[-1] if probe.stderr.strip() else "probe failed"
+                        migraphx_issue = f"MIGraphX ONNX Runtime unavailable: {detail}"
+                    elif "MIGraphXExecutionProvider" not in probe.stdout:
+                        migraphx_issue = "MIGraphXExecutionProvider unavailable: " + probe.stdout.strip()
+                if not executable.is_file() or migraphx_issue:
                     record = {
                         "status": "skipped", "provider_requested": provider,
                         "profile": profile, "batch_size": batch,
-                        "error": f"missing virtual environment: {executable}",
+                        "error": migraphx_issue or f"missing virtual environment: {executable}",
                     }
                     output.write_text(json.dumps(record, indent=2), encoding="utf-8")
                     print(f"SKIP {output}: {record['error']}", flush=True)

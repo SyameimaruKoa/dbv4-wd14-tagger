@@ -1,0 +1,47 @@
+{
+  "platform": "Linux",
+  "vendor": "amd",
+  "operator_device_name": "AMD Ryzen 5 7530U with Radeon Graphics",
+  "providers": [
+    "cpu",
+    "migraphx",
+    "webgpu"
+  ],
+  "profiles": [
+    "wd14_v3",
+    "balanced"
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "warmup": 3,
+  "iterations": 20,
+  "sets": 3,
+  "detected_webgpu_adapters": [
+    {
+      "webgpu_index": 0,
+      "vendor": "amd",
+      "vendor_id": 4098,
+      "device_id": 5607,
+      "metadata": {
+        "card_idx": "1",
+        "pci_bus_id": "0000:06:00.0"
+      }
+    }
+  ],
+  "results": [
+    "benchmarks/amd_linux_20260923/wd14_v3-b1-cpu.json",
+    "benchmarks/amd_linux_20260923/wd14_v3-b1-migraphx.json",
+    "benchmarks/amd_linux_20260923/wd14_v3-b1-webgpu.json",
+    "benchmarks/amd_linux_20260923/wd14_v3-b4-cpu.json",
+    "benchmarks/amd_linux_20260923/wd14_v3-b4-migraphx.json",
+    "benchmarks/amd_linux_20260923/wd14_v3-b4-webgpu.json",
+    "benchmarks/amd_linux_20260923/balanced-b1-cpu.json",
+    "benchmarks/amd_linux_20260923/balanced-b1-migraphx.json",
+    "benchmarks/amd_linux_20260923/balanced-b1-webgpu.json",
+    "benchmarks/amd_linux_20260923/balanced-b4-cpu.json",
+    "benchmarks/amd_linux_20260923/balanced-b4-migraphx.json",
+    "benchmarks/amd_linux_20260923/balanced-b4-webgpu.json"
+  ]
+}
