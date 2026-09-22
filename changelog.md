@@ -2,6 +2,8 @@
 
 ## 2026-09-22
 
+- Ryzen 5 7530U内蔵 Radeon Graphicsの専用VRAM 512 MiB設定で、取得可能な5モデルのWebGPU推論速度、専用VRAM、GTT、プロセスRAMを測定。生データと4 GiB再測定用スクリプトを`benchmarks/`へ保存。承認待ち2モデルとONNX未公開1モデルは理由を記録。
+
 - Linux AMD Barcelo向けにVulkan経由のWebGPU実行経路を追加。`--gpu`でPCI 1002:15e7を自動選択し、`--webgpu`でも明示指定可能。WD14 V3の実推論・XMP書き込みとONNX RuntimeプロファイルによるWebGPUノード実行を確認。
 
 - Linux/Bashの一時ファイルを`/tmp`へ統一。`~/.cache`がtmpfsの場合、Hugging Faceのモデルキャッシュをディスク上の`~/.local/share/huggingface`へ自動配置し、容量不足を回避する。

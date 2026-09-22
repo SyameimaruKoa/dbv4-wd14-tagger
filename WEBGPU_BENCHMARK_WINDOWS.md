@@ -9,6 +9,7 @@
 ## 開始時に確認すること
 
 1. `git status --short`、branch、HEAD、remote を記録する。既存変更は保持する。`AGENTS.md` があれば読む。
+   AMD Barcelo 512 MiB の [先行測定](benchmarks/amd_barcelo_512mb.md) は別 GPU の参考値として読み、NVIDIA の比率計算には混ぜない。
 2. Windows のバージョン、CPU、NVIDIA GPU、ドライバー、CUDA、Python、ONNX Runtime、CUDA EP、DirectML EP、WebGPU EP、利用した Dawn backend（D3D12 または Vulkan）を記録する。backend を特定できなければ不明と明記する。
 3. 現在の `run_tagger.ps1` は `-Gpu` で DirectML を入れるが CUDA/WebGPU 用環境を作らない。`embed_tags_universal.py` には `--webgpu` と plugin EP 登録がある。Windows 用に明示的な `-WebGpu` 経路を追加し、DirectML 環境を上書きしない専用 venv を使う。CUDA の比較環境も別 venv にする。PowerShell の既存引数と CPU/DirectML 経路を保つ。
 

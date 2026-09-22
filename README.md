@@ -420,6 +420,8 @@ batch-size=4、初回warmup 2.89秒、1枚の通常推論176.0 ms/img（再試�
 
 ### Linux AMD Barcelo WebGPU実機確認（2026-09-22）
 
+専用 VRAM 512 MiB 時の全実行可能モデルの VRAM・共有 GPU メモリ・RAM・速度は [測定記録](benchmarks/amd_barcelo_512mb.md) にまとめた。後日 4 GiB 設定で同じスクリプトを再実行して比較する。
+
 Ubuntu 26.04.1、kernel 7.0.0-31-generic、Ryzen 5 7530U内蔵 Radeon Graphics（PCI 1002:15e7、Mesa RADV）で、Vulkan 1.4と公式ONNX Runtime WebGPU EP 0.3.0を確認した。`./run_tagger.sh --gpu --model-profile wd14_v3 --force --no-report /path/to/image.png` はBarceloを検出して`venv_webgpu`を構築し、Vulkan経由のWebGPUを自動選択する。他のGPUでも `--webgpu` で明示的に試せる。GPU EPが使えない場合はエラーで停止する。
 
 16 × 16の単色合成PNGをWD14 V3で処理し、タグとXMPを書き込んだ。active providerは`WebGpuExecutionProvider`と`CPUExecutionProvider`。ONNX RuntimeのプロファイルではWebGPUで1,693ノード、CPUで885ノードが実行された。後者には形状処理などが含まれ、モデル全体がGPU専用になるわけではない。同じ入力に対するCPU出力との差は最大2.98e-6。単発の通常推論は945.7 ms/img。合成画像1枚の値であり、実画像での品質・性能比較やDBV4プロファイルの互換性は未検証。WebGPU EPは[ONNX Runtime公式手順](https://onnxruntime.ai/docs/execution-providers/WebGPU-ExecutionProvider.html)に従って導入する。

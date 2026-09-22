@@ -9,6 +9,7 @@ Windows セッションが終わり、そのコミットが push された後、
 ## 開始時に確認すること
 
 1. `git status --short`、branch、HEAD、remote を確認する。Windows 側の push 済みコミットと一致させ、既存変更を保持する。`AGENTS.md` があれば読む。
+   AMD Barcelo 512 MiB の [先行測定](benchmarks/amd_barcelo_512mb.md) は別 GPU の参考値として読み、NVIDIA の比率計算には混ぜない。
 2. Linux distribution、kernel、CPU、NVIDIA GPU、ドライバー、CUDA、Vulkan GPU、Python、ONNX Runtime、CUDA EP、WebGPU EP のバージョンを記録する。`nvidia-smi` と `vulkaninfo --summary` で対象 NVIDIA GPU を確認し、llvmpipe 等の software device を測定対象にしない。
 3. Windows セッションが追加した共通ベンチマークコードと `benchmarks/` の測定条件を読む。Windows の生データを変更しない。
 
