@@ -4,12 +4,12 @@ Windows と Linux は別セッションで測る。Windows を先に実行する
 
 ## 1. 準備
 
-git status --short、branch、HEAD を記録する。Windows、NVIDIA/Intel GPU、ドライバー、CUDA/cuDNN/TensorRT、Python、電源モードをユーザーが記録する。NVIDIA は nvidia-smi、Intel はデバイスマネージャー等で実機を確認する。各 EP を独立した仮想環境へ入れる。Python 3.13 の wheel がなければ 3.12 を使い、以下の py -3.13 を読み替える。TensorRT は ONNX Runtime と整合する CUDA/cuDNN/TensorRT 10 ランタイム（nvinfer_10.dll）を別途導入する。run_tagger.ps1 -Gpu は DirectML 経路なので CUDA 比較には使わない。
+git status --short、branch、HEAD を記録する。Windows、NVIDIA/Intel GPU、ドライバー、CUDA/cuDNN/TensorRT、Python、電源モードをユーザーが記録する。NVIDIA は nvidia-smi、Intel はデバイスマネージャー等で実機を確認する。各 EP を独立した仮想環境へ入れる。Python 3.13 の wheel がなければ 3.12 を使い、以下の py -3.13 を読み替える。NVIDIA ドライバーの表示する CUDA バージョンは、CUDA ランタイム DLL の存在を保証しない。CUDA と TensorRT の仮想環境には CUDA 12 版の ONNX Runtime と CUDA/cuDNN DLL を揃える。TensorRT は対応する TensorRT 10 ランタイム（nvinfer_10.dll）も別途導入して PATH から読めるようにする。run_tagger.ps1 -Gpu は DirectML 経路なので CUDA 比較には使わない。
 
 ~~~powershell
 $packages = @{
-    cuda = @("onnxruntime-gpu")
-    tensorrt = @("onnxruntime-gpu")
+    cuda = @("onnxruntime-gpu[cuda,cudnn]<1.27")
+    tensorrt = @("onnxruntime-gpu[cuda,cudnn]<1.27")
     webgpu = @("onnxruntime", "onnxruntime-ep-webgpu")
     intel = @("onnxruntime-openvino")
     directml = @("onnxruntime-directml")
@@ -23,7 +23,7 @@ foreach ($name in $packages.Keys) {
 }
 ~~~
 
-各環境で目的の EP が列挙されることを確認する。Hugging Face 認証が必要なら端末で行い、トークンを AI に渡さない。
+既存の .venv_bench_cuda と .venv_bench_tensorrt で ONNX Runtime 1.30.0 が入っている場合も、上記の pip install で CUDA 12 版に入れ替える。CUDA/cuDNN の DLL は測定コードが ONNX Runtime の preload_dlls で読み込む。TensorRT の DLL は別途確認する。各環境で目的の EP が列挙されることを確認する。ただし EP の列挙だけでは DLL 読み込み成功を意味しない。Hugging Face 認証が必要なら端末で行い、トークンを AI に渡さない。
 
 ## 2. ユーザーが測定する
 
@@ -32,11 +32,11 @@ NVIDIA の CUDA、TensorRT、WebGPU と、Intel の OpenVINO、DirectML、WebGPU
 ~~~powershell
 foreach ($profile in @("wd14_v3", "balanced")) {
     foreach ($batch in @(1, 4)) {
-        foreach ($provider in @("cuda", "tensorrt", "webgpu")) {
+        foreach ($provider in @("cuda", "tensorrt")) {
             $python = ".\.venv_bench_$provider\Scripts\python.exe"
-            $extra = if ($provider -eq "webgpu") { @("--track-nvidia-memory") } else { @() }
-            & $python benchmark_nvidia_ep.py --provider $provider --profile $profile --batch-size $batch --gpu-index 0 @extra --output "benchmarks/nvidia_windows/$($profile)-b$($batch)-$($provider).json"
+            & $python benchmark_nvidia_ep.py --provider $provider --profile $profile --batch-size $batch --gpu-index 0 --output "benchmarks/nvidia_windows/$($profile)-b$($batch)-$($provider).json"
         }
+        & .\.venv_bench_webgpu\Scripts\python.exe benchmark_nvidia_ep.py --provider webgpu --profile $profile --batch-size $batch --gpu-index 0 --track-nvidia-memory --output "benchmarks/nvidia_windows/$($profile)-b$($batch)-webgpu.json"
     }
 }
 py -3.13 summarize_nvidia_ep.py benchmarks/nvidia_windows --providers cuda tensorrt webgpu --reference cuda --output benchmarks/nvidia_windows_summary.json
@@ -55,6 +55,8 @@ foreach ($profile in @("wd14_v3", "balanced")) {
 }
 py -3.13 summarize_nvidia_ep.py benchmarks/intel_windows --providers intel directml webgpu --reference directml --output benchmarks/intel_windows_summary.json
 ~~~
+
+CUDA または TensorRT が失敗したら、出力 JSON とコンソールの DLL エラーを確認し、依存ライブラリを修正してから同条件を再実行する。CPUExecutionProvider だけの結果を GPU 測定に採用しない。
 
 出力 JSON に実行ノードの EP、各回の時間、プロセス RAM、NVIDIA 指定時のみ VRAM 増分が残る。目的 EP が実行ノードに現れない条件は失敗になる。WebGPU の NVIDIA VRAM 増分が観測されなければ --webgpu-device-index を変えて再測定し、GPU 名を記録する。Intel の VRAM は計測しない。失敗条件を成功値で埋めない。
 

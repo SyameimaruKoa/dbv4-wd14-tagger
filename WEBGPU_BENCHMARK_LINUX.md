@@ -11,8 +11,8 @@ for provider in cuda tensorrt webgpu intel; do
     python3.13 -m venv ".venv_bench_$provider"
     ".venv_bench_$provider/bin/python" -m pip install -r requirements.txt psutil
 done
-.venv_bench_cuda/bin/python -m pip install onnxruntime-gpu
-.venv_bench_tensorrt/bin/python -m pip install onnxruntime-gpu 'tensorrt-cu12<11'
+.venv_bench_cuda/bin/python -m pip install 'onnxruntime-gpu[cuda,cudnn]<1.27'
+.venv_bench_tensorrt/bin/python -m pip install 'onnxruntime-gpu[cuda,cudnn]<1.27' 'tensorrt-cu12<11'
 .venv_bench_webgpu/bin/python -m pip install onnxruntime onnxruntime-ep-webgpu
 .venv_bench_intel/bin/python -m pip install onnxruntime-openvino
 for provider in cuda tensorrt webgpu intel; do
@@ -20,7 +20,7 @@ for provider in cuda tensorrt webgpu intel; do
 done
 ~~~
 
-環境の CUDA 世代に合わせて TensorRT のパッケージを調整し、目的 EP が列挙されることを確認する。Hugging Face 認証は端末内で行い、トークンを AI に渡さない。
+CUDA 12 に対応する TensorRT 10 と共有ライブラリを揃える。ドライバーの CUDA 表示だけでは CUDA/cuDNN ランタイムが使えるとは限らない。目的 EP の列挙だけでなく、DLL/共有ライブラリを読み込んでノードが実行されることを結果 JSON で確認する。Hugging Face 認証は端末内で行い、トークンを AI に渡さない。
 
 ## 2. ユーザーが測定する
 

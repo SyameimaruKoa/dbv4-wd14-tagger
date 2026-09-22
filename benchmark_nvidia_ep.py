@@ -86,10 +86,14 @@ def main():
 
     watcher = threading.Thread(target=monitor, daemon=True)
     watcher.start()
+    session = None
+    profile_stopped = False
     try:
         started = time.perf_counter()
         metadata = DBV4Metadata.load(profile, base_dir=str(Path(__file__).resolve().parent))
         metadata_seconds = time.perf_counter() - started
+        if args.provider in ("cuda", "tensorrt") and hasattr(ort, "preload_dlls"):
+            ort.preload_dlls()
         options = ort.SessionOptions()
         options.enable_profiling = True
         if args.provider in ("cuda", "tensorrt", "intel", "directml"):
@@ -166,6 +170,7 @@ def main():
         watcher.join(timeout=2)
         peak_vram = max(samples_vram + [nvidia_memory_mib(args.gpu_index)]) if track_nvidia else None
         profile_path = Path(session.end_profiling())
+        profile_stopped = True
         try:
             events = json.loads(profile_path.read_text(encoding="utf-8"))
             executed = sorted({
@@ -215,6 +220,11 @@ def main():
     finally:
         stop.set()
         watcher.join(timeout=2)
+        if session is not None and not profile_stopped:
+            try:
+                Path(session.end_profiling()).unlink(missing_ok=True)
+            except (OSError, RuntimeError):
+                pass
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     if record["status"] == "ok":
