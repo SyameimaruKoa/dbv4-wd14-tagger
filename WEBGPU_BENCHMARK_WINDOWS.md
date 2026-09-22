@@ -25,6 +25,23 @@ foreach ($name in $packages.Keys) {
 
 既存の .venv_bench_cuda と .venv_bench_tensorrt で ONNX Runtime 1.30.0 が入っている場合も、上記の pip install で CUDA 12 版に入れ替える。CUDA/cuDNN の DLL は測定コードが ONNX Runtime の preload_dlls で読み込む。ONNX Runtime 1.26.0 が読み込み対象に含めていない cuDNN の cudnn_engines_tensor_ir64_9.dll は、仮想環境内にある場合に測定コードが追加で読み込む。TensorRT の DLL は別途確認する。各環境で目的の EP が列挙されることを確認する。ただし EP の列挙だけでは DLL 読み込み成功を意味しない。Hugging Face 認証が必要なら端末で行い、トークンを AI に渡さない。
 
+### TensorRT の DLL がない場合
+
+CUDA が成功しても、TensorRT は別のランタイムを必要とする。nvinfer_10.dll がない場合は NVIDIA の [TensorRT 10 Windows ZIP 導入手順](https://docs.nvidia.com/deeplearning/tensorrt/10.x.x/installing-tensorrt/install-zip.html)に従い、CUDA 12 対応の TensorRT 10 を取得・展開する。ONNX Runtime の仮想環境へ Python binding を入れるだけでは、DLL の検索パスが設定されたとは限らない。展開先を次の $trtRoot に指定し、**同じ PowerShell セッション**で確認してから TensorRT 条件を再実行する。
+
+~~~powershell
+$trtRoot = "C:\path\to\TensorRT-10.x.x.x"
+$trtDll = Get-ChildItem -LiteralPath $trtRoot -Recurse -File -Filter "nvinfer_10.dll" | Select-Object -First 1
+if (-not $trtDll) {
+    throw "nvinfer_10.dll が TensorRT 展開先に見つかりません"
+}
+$env:PATH = "$($trtDll.DirectoryName);$env:PATH"
+$env:TENSORRT_LIB_DIR = $trtDll.DirectoryName
+& .\.venv_bench_tensorrt\Scripts\python.exe -c "import ctypes, os, onnxruntime as ort; ort.preload_dlls(); h=os.add_dll_directory(os.environ['TENSORRT_LIB_DIR']); ctypes.WinDLL(os.path.join(os.environ['TENSORRT_LIB_DIR'], 'nvinfer_10.dll')); print('TensorRT DLL OK')"
+~~~
+
+TensorRT の DLL と CUDA/cuDNN の版が ONNX Runtime と整合することを確認する。TensorRT が使えない間も CUDA と WebGPU の結果は保持し、TensorRT 条件だけ失敗として記録する。
+
 ## 2. ユーザーが測定する
 
 NVIDIA の CUDA、TensorRT、WebGPU と、Intel の OpenVINO、DirectML、WebGPU を別ディレクトリに測る。Intel GPU がない場合は Intel 側を実行せず、その旨を記録する。wd14_v3 と balanced、batch size 1 と 4、warmup 3 回、20 回×3 セットを共通にする。画像は seed 固定の合成 640×480 RGB で、モデル取得・セッション作成・前処理は推論時間から除かれる。
@@ -58,7 +75,7 @@ py -3.13 summarize_nvidia_ep.py benchmarks/intel_windows --providers intel direc
 
 CUDA または TensorRT が失敗したら、出力 JSON とコンソールの DLL エラーを確認し、依存ライブラリを修正してから同条件を再実行する。CPUExecutionProvider だけの結果を GPU 測定に採用しない。
 
-出力 JSON に実行ノードの EP、各回の時間、プロセス RAM、NVIDIA 指定時のみ VRAM 増分が残る。目的 EP が実行ノードに現れない条件は失敗になる。WebGPU の NVIDIA VRAM 増分が観測されなければ --webgpu-device-index を変えて再測定し、GPU 名を記録する。Intel の VRAM は計測しない。失敗条件を成功値で埋めない。
+出力 JSON に実行ノードの EP、各回の時間、プロセス RAM、NVIDIA 指定時のみ VRAM 増分が残る。目的 EP が実行ノードに現れない条件は失敗になる。WebGPU の NVIDIA VRAM 増分が観測されなければ --webgpu-device-index を変えて再測定し、GPU 名を記録する。Intel の VRAM は計測しない。D3D12CreateDevice 警告が出ても、WebGPU の JSON が status=ok で、executed_node_providers に WebGpuExecutionProvider があり、NVIDIA VRAM 増分も観測されれば測定値を保持し、警告を環境メモに残す。実際に使われた Dawn backend は別途確認する。失敗条件を成功値で埋めない。
 
 ## 3. AI に渡すもの
 
