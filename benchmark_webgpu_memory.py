@@ -21,6 +21,9 @@ from PIL import Image
 
 # Keep multi-gigabyte models off systems whose default ~/.cache is tmpfs.
 os.environ.setdefault(
+    "HF_HOME", str(Path.home() / ".local/share/huggingface")
+)
+os.environ.setdefault(
     "HF_HUB_CACHE", str(Path.home() / ".local/share/huggingface/hub")
 )
 os.environ.setdefault(

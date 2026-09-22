@@ -2,6 +2,8 @@
 
 後で BIOS の専用 VRAM を 4 GiB に変更した状態と比較するための基準値。生データは [amd_barcelo_512mb.json](amd_barcelo_512mb.json)、再測定コードは [benchmark_webgpu_memory.py](../benchmark_webgpu_memory.py)。
 
+4 GiB時の測定と比較結果は [amd_barcelo_4gb.md](amd_barcelo_4gb.md) に記録した。
+
 ## 環境と測定条件
 
 - Ubuntu 26.04.1、kernel 7.0.0-31-generic、Ryzen 5 7530U 内蔵 Radeon Graphics（PCI 1002:15e7）、Mesa RADV 26.0.8。

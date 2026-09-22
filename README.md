@@ -420,7 +420,7 @@ batch-size=4、初回warmup 2.89秒、1枚の通常推論176.0 ms/img（再試�
 
 ### Linux AMD Barcelo WebGPU実機確認（2026-09-22）
 
-専用 VRAM 512 MiB 時の全実行可能モデルの VRAM・共有 GPU メモリ・RAM・速度は [測定記録](benchmarks/amd_barcelo_512mb.md) にまとめた。後日 4 GiB 設定で同じスクリプトを再実行して比較する。
+専用 VRAM 512 MiB 時の全実行可能モデルの VRAM・共有 GPU メモリ・RAM・速度は [512 MiB測定記録](benchmarks/amd_barcelo_512mb.md) にまとめた。4 GiB 時の同条件測定と速度比較は [4 GiB測定記録](benchmarks/amd_barcelo_4gb.md) にまとめた。
 
 Ubuntu 26.04.1、kernel 7.0.0-31-generic、Ryzen 5 7530U内蔵 Radeon Graphics（PCI 1002:15e7、Mesa RADV）で、Vulkan 1.4と公式ONNX Runtime WebGPU EP 0.3.0を確認した。`./run_tagger.sh --gpu --model-profile wd14_v3 --force --no-report /path/to/image.png` はBarceloを検出して`venv_webgpu`を構築し、Vulkan経由のWebGPUを自動選択する。他のGPUでも `--webgpu` で明示的に試せる。GPU EPが使えない場合はエラーで停止する。
 
