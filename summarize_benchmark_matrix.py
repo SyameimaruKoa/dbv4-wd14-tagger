@@ -20,7 +20,8 @@ def main():
         "platform", "vendor", "operator_device_name", "providers", "profiles",
         "batches", "warmup", "iterations", "sets"
     )}
-    summary.update({"results": [], "comparisons_to_cpu": [], "incomplete": []})
+    summary.update({"results": [], "comparisons_to_cpu": [], "incomplete": [],
+                    "detected_webgpu_adapters": manifest.get("detected_webgpu_adapters", [])})
     rows = {}
     for source in manifest["results"]:
         path = Path(source)

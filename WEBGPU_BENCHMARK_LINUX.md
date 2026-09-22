@@ -34,7 +34,7 @@ export LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}"
 .venv_bench_intel/bin/python -c 'import openvino as ov; c=ov.Core(); print([(d, c.get_property(d, "FULL_DEVICE_NAME")) for d in c.available_devices])'
 ```
 
-Intel 名の GPU が列挙されないときは Intel 条件を実行しない。WebGPU のデバイス番号は OpenVINO/CUDA/MIGraphX と別体系なので、実際のアダプターをユーザーが確認する。`--device-name` は確認結果の記録であり、WebGPU の物理デバイスを文字列だけで自動確認はできない。
+Intel 名の GPU が列挙されないときは Intel 条件を実行しない。WebGPU のデバイス番号は OpenVINO/CUDA/MIGraphX と別体系。`.venv_bench_webgpu/bin/python probe_webgpu_adapters.py` で実名と番号を表示し、ランナーも製造元を照合する。`--device-name` は確認結果の記録であり、WebGPU の物理デバイスを文字列だけで自動確認はできない。
 
 ## 3. 測定
 

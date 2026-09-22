@@ -60,6 +60,36 @@ def main():
             parser.error(f"unsupported provider(s): {sorted(unknown)}")
         providers = tuple(item for item in providers if item == "cpu" or item in args.providers)
     root = Path(__file__).resolve().parent
+    webgpu_python = root / ".venv_bench_webgpu" / (
+        "Scripts/python.exe" if system == "Windows" else "bin/python"
+    )
+    adapters = []
+    if webgpu_python.is_file():
+        probe = subprocess.run(
+            [str(webgpu_python), str(root / "probe_webgpu_adapters.py"), "--json"],
+            capture_output=True, text=True, check=False,
+        )
+        if probe.returncode == 0:
+            try:
+                adapters = json.loads(probe.stdout)
+            except json.JSONDecodeError:
+                print("WebGPU adapter probe returned non-JSON output", file=sys.stderr)
+        else:
+            print(f"WebGPU adapter probe failed: {probe.stderr.strip()}", file=sys.stderr)
+    if adapters and "webgpu" in providers:
+        if args.webgpu_device_index >= len(adapters) or args.webgpu_device_index < 0:
+            parser.error("WebGPU device index outside discovered adapters")
+        chosen = adapters[args.webgpu_device_index]
+        if args.vendor not in chosen["vendor"].lower():
+            parser.error(f"WebGPU index {args.webgpu_device_index} is {chosen['vendor']} "
+                         f"{chosen['metadata'].get('Description')}; expected {args.vendor}")
+    if system == "Windows" and adapters and "directml" in providers:
+        matching = [item for item in adapters if
+                    item["metadata"].get("DxgiAdapterNumber") == str(args.directml_device_index)]
+        if matching and args.vendor not in matching[0]["vendor"].lower():
+            parser.error(f"DirectML/DXGI index {args.directml_device_index} is "
+                         f"{matching[0]['vendor']} {matching[0]['metadata'].get('Description')}; "
+                         f"expected {args.vendor}")
     if args.output_dir.exists() and any(args.output_dir.iterdir()):
         parser.error("--output-dir must be empty; preserve existing raw results")
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -73,6 +103,7 @@ def main():
         "warmup": args.warmup,
         "iterations": args.iterations,
         "sets": args.sets,
+        "detected_webgpu_adapters": adapters,
         "results": [],
     }
     for profile in args.profiles:

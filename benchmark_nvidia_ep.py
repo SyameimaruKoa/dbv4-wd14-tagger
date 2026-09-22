@@ -104,6 +104,7 @@ def main():
     watcher.start()
     session = None
     profile_stopped = False
+    webgpu_hardware = None
     try:
         started = time.perf_counter()
         metadata = DBV4Metadata.load(profile, base_dir=str(Path(__file__).resolve().parent))
@@ -196,8 +197,21 @@ def main():
             ort.register_execution_provider_library("benchmark_webgpu", webgpu.get_library_path())
             devices = [device for device in ort.get_ep_devices()
                        if device.ep_name == webgpu.get_ep_name()]
-            if args.webgpu_device_index >= len(devices):
+            if args.webgpu_device_index < 0 or args.webgpu_device_index >= len(devices):
                 raise RuntimeError(f"WebGPU device index unavailable: {len(devices)} devices")
+            selected = devices[args.webgpu_device_index].device
+            webgpu_hardware = {
+                "vendor": selected.vendor,
+                "vendor_id": selected.vendor_id,
+                "device_id": selected.device_id,
+                "metadata": dict(selected.metadata),
+            }
+            if args.target_vendor and args.target_vendor not in selected.vendor.lower():
+                raise RuntimeError(
+                    f"WebGPU device {args.webgpu_device_index} is "
+                    f"{selected.vendor} {selected.metadata.get('Description')}; "
+                    f"expected {args.target_vendor}"
+                )
             options.add_provider_for_devices([devices[args.webgpu_device_index]], {})
             started = time.perf_counter()
             session = ort.InferenceSession(metadata.model_path, sess_options=options)
@@ -276,6 +290,7 @@ def main():
             "executed_node_providers": executed,
             "openvino_device": args.openvino_device if args.provider == "intel" else None,
             "openvino_gpu_name": openvino_gpu_name,
+            "webgpu_hardware": webgpu_hardware,
             "target_vendor": args.target_vendor,
             "device_name": openvino_gpu_name if args.provider == "intel" else args.device_name,
         }
