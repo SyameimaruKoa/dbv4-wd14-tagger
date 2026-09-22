@@ -12,6 +12,7 @@ PYTHON_SCRIPT="$SCRIPT_DIR/embed_tags_universal.py"
 # デフォルト値
 USE_GPU=0
 FORCE_TYPE="auto" # auto, nvidia, intel, amd
+WEBGPU_MODE=0
 PY_ARGS=()
 DO_ORGANIZE=0
 DO_TAG=0
@@ -59,6 +60,7 @@ show_help() {
     echo "主なオプション:"
     echo "    -p, --path <path>   処理対象ファイル/フォルダ"
     echo "    -g, --gpu           GPUを使用する（自動判別）"
+    echo "    --webgpu            Vulkan経由のWebGPUを使用する"
     echo "    -I, --force-intel   Intel GPUを強制的に使用する"
     echo "    -N, --force-nvidia  NVIDIA GPUを強制的に使用する"
     echo "    -A, --force-amd     AMD GPUを強制的に使用する"
@@ -109,6 +111,10 @@ detect_gpu_vendor() {
     elif [[ "$lspci_out" == *"intel"* ]]; then
         echo "intel"
     elif [[ "$lspci_out" == *"amd"* ]] || [[ "$lspci_out" == *"advanced micro devices"* ]] || [[ "$lspci_out" == *"radeon"* ]]; then
+        if command -v lspci >/dev/null 2>&1 && lspci -nn | grep -Eiq '1002:15e7'; then
+            echo "amd_webgpu"
+            return
+        fi
         # 内蔵GPUアーキテクチャの互換性チェック
         if command -v rocminfo >/dev/null 2>&1; then
             local arch=$(rocminfo | grep -o "gfx[0-9a-f]\+" | head -n 1)
@@ -177,7 +183,9 @@ setup_env() {
     local venv_name=""
     
     if [ "$is_client" = "1" ]; then
-        if [ -d "$SCRIPT_DIR/venv_gpu" ]; then
+        if [ -d "$SCRIPT_DIR/venv_webgpu" ]; then
+            venv_name="venv_webgpu"
+        elif [ -d "$SCRIPT_DIR/venv_gpu" ]; then
             venv_name="venv_gpu"
         elif [ -d "$SCRIPT_DIR/venv_intel" ]; then
             venv_name="venv_intel"
@@ -196,6 +204,8 @@ setup_env() {
             venv_name="venv_gpu"
         elif [ "$backend" = "intel" ]; then
             venv_name="venv_intel"
+        elif [ "$backend" = "webgpu" ]; then
+            venv_name="venv_webgpu"
         elif [ "$backend" = "amd" ]; then
             venv_name="venv_amd"
         fi
@@ -260,6 +270,8 @@ setup_env() {
         fi
     elif [ "$backend" = "intel" ]; then
         $PIP_CMD install -r "$REQ_FILE" onnxruntime-openvino || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
+    elif [ "$backend" = "webgpu" ]; then
+        $PIP_CMD install -r "$REQ_FILE" onnxruntime onnxruntime-ep-webgpu || { echo "[ERROR] WebGPUライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "amd" ]; then
         # AMD用 ROCm対応パッケージ（onnxruntime-rocm または onnxruntime-migraphx）をインストールするのじゃ
         $PIP_CMD install -r "$REQ_FILE" onnxruntime-rocm -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ 2>/dev/null || \
@@ -319,6 +331,7 @@ while [[ $# -gt 0 ]]; do
         -T|--tags-file) PY_ARGS+=("--tags-file" "$2"); shift 2 ;;
         -q|--thresh) PY_ARGS+=("--thresh" "$2"); shift 2 ;;
         -g|--gpu) USE_GPU=1; shift ;;
+        --webgpu) USE_GPU=1; WEBGPU_MODE=1; shift ;;
         -I|--force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
         -N|--force-nvidia) USE_GPU=1; FORCE_TYPE="nvidia"; shift ;;
         -A|--force-amd) USE_GPU=1; FORCE_TYPE="amd"; shift ;;
@@ -340,7 +353,7 @@ configure_storage_paths
 if [ "$LOGIN_MODE" -eq 1 ]; then
     echo "[INFO] Hugging Faceログインモードを開始します。"
     VENV_DIR=""
-    for venv_name in venv_gpu venv_intel venv_amd venv_std venv_client; do
+    for venv_name in venv_webgpu venv_gpu venv_intel venv_amd venv_std venv_client; do
         if [ -x "$SCRIPT_DIR/$venv_name/bin/hf" ]; then
             VENV_DIR="$SCRIPT_DIR/$venv_name"
             echo "[INFO] 既存の仮想環境を使用します: $venv_name"
@@ -382,7 +395,11 @@ fi
 # GPUモード決定ロジック
 BACKEND_MODE="cpu"
 if [ $USE_GPU -eq 1 ]; then
-    if [ "$FORCE_TYPE" = "intel" ]; then
+    if [ "$WEBGPU_MODE" -eq 1 ]; then
+        echo "[INFO] Vulkan経由のWebGPUモードで実行します。"
+        BACKEND_MODE="webgpu"
+        PY_ARGS+=("--webgpu")
+    elif [ "$FORCE_TYPE" = "intel" ]; then
         echo "[INFO] Intel GPU モードを強制使用します。"
         BACKEND_MODE="intel"
     elif [ "$FORCE_TYPE" = "nvidia" ]; then
@@ -400,6 +417,10 @@ if [ $USE_GPU -eq 1 ]; then
         elif [ "$DETECTED" = "intel" ]; then
             echo "[INFO] Intel GPU を検出しました。OpenVINOモードで実行します。"
             BACKEND_MODE="intel"
+        elif [ "$DETECTED" = "amd_webgpu" ]; then
+            echo "[INFO] AMD Barceloを検出しました。WebGPUモードで実行します。"
+            BACKEND_MODE="webgpu"
+            PY_ARGS+=("--webgpu")
         elif [ "$DETECTED" = "amd" ]; then
             echo "[INFO] AMD GPU を検出しました。ROCmモードで実行します。"
             BACKEND_MODE="amd"

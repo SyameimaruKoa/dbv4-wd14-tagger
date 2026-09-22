@@ -2,6 +2,8 @@
 
 ## 2026-09-22
 
+- Linux AMD Barcelo向けにVulkan経由のWebGPU実行経路を追加。`--gpu`でPCI 1002:15e7を自動選択し、`--webgpu`でも明示指定可能。WD14 V3の実推論・XMP書き込みとONNX RuntimeプロファイルによるWebGPUノード実行を確認。
+
 - Linux/Bashの一時ファイルを`/tmp`へ統一。`~/.cache`がtmpfsの場合、Hugging Faceのモデルキャッシュをディスク上の`~/.local/share/huggingface`へ自動配置し、容量不足を回避する。
 
 ## 2026-09-21

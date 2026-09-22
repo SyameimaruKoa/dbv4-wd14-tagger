@@ -418,6 +418,12 @@ Ubuntu 26.04.1、kernel 7.0.0-31-generic、Core i7-1355U内蔵 Iris Xe（8086:a7
 
 batch-size=4、初回warmup 2.89秒、1枚の通常推論176.0 ms/img（再試行178.1 ms/img）。合成画像1枚の測定値であり、タグ品質や安定した性能の評価ではない。GPU.0指定とOpenVINO EPの実行は確認したが、カーネル単位のGPU使用率は測定していないためCPU fallbackの完全な排除は未確認。`lightweight`はHugging Faceのモデル取得が401（gated repository、未認証）で推論前に停止した。`balanced`、保存scoreでの整理、実画像、Server/Clientの実機疎通は未検証。
 
+### Linux AMD Barcelo WebGPU実機確認（2026-09-22）
+
+Ubuntu 26.04.1、kernel 7.0.0-31-generic、Ryzen 5 7530U内蔵 Radeon Graphics（PCI 1002:15e7、Mesa RADV）で、Vulkan 1.4と公式ONNX Runtime WebGPU EP 0.3.0を確認した。`./run_tagger.sh --gpu --model-profile wd14_v3 --force --no-report /path/to/image.png` はBarceloを検出して`venv_webgpu`を構築し、Vulkan経由のWebGPUを自動選択する。他のGPUでも `--webgpu` で明示的に試せる。GPU EPが使えない場合はエラーで停止する。
+
+16 × 16の単色合成PNGをWD14 V3で処理し、タグとXMPを書き込んだ。active providerは`WebGpuExecutionProvider`と`CPUExecutionProvider`。ONNX RuntimeのプロファイルではWebGPUで1,693ノード、CPUで885ノードが実行された。後者には形状処理などが含まれ、モデル全体がGPU専用になるわけではない。同じ入力に対するCPU出力との差は最大2.98e-6。単発の通常推論は945.7 ms/img。合成画像1枚の値であり、実画像での品質・性能比較やDBV4プロファイルの互換性は未検証。WebGPU EPは[ONNX Runtime公式手順](https://onnxruntime.ai/docs/execution-providers/WebGPU-ExecutionProvider.html)に従って導入する。
+
 DBV4 metadata / preprocessing / input layout / output probability変換の単体テストを実行できる。
 
 ~~~bash

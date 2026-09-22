@@ -453,6 +453,7 @@ def load_runtime_model(
     model_repo: Optional[str] = None,
     model_file: Optional[str] = None,
     tags_file: Optional[str] = None,
+    use_webgpu: bool = False,
 ) -> RuntimeModel:
     profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
     profile = get_model_profile(profile_name, profiles)
@@ -477,6 +478,22 @@ def load_runtime_model(
     providers = build_providers(use_gpu)
     session_options = ort.SessionOptions()
     session_options.log_severity_level = 3
+    if use_webgpu:
+        try:
+            import onnxruntime_ep_webgpu as webgpu_ep
+
+            ort.register_execution_provider_library(
+                "dbv4_webgpu", webgpu_ep.get_library_path()
+            )
+            devices = [
+                device for device in ort.get_ep_devices()
+                if device.ep_name == webgpu_ep.get_ep_name()
+            ]
+            if not devices:
+                raise RuntimeError("WebGPU対応デバイスが見つかりません。")
+            session_options.add_provider_for_devices(devices, {})
+        except (ImportError, AttributeError, RuntimeError) as exc:
+            raise RuntimeError(f"WebGPUプロバイダを初期化できません: {exc}") from exc
     provider_names = {
         item[0] if isinstance(item, tuple) else item
         for item in providers
@@ -490,11 +507,14 @@ def load_runtime_model(
         session_options.enable_mem_pattern = False
         session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
     try:
-        session = ort.InferenceSession(
-            metadata.model_path,
-            sess_options=session_options,
-            providers=providers,
-        )
+        if use_webgpu:
+            session = ort.InferenceSession(metadata.model_path, sess_options=session_options)
+        else:
+            session = ort.InferenceSession(
+                metadata.model_path,
+                sess_options=session_options,
+                providers=providers,
+            )
     except Exception as exc:
         if use_gpu:
             raise RuntimeError(f"DBV4 GPUプロバイダの初期化に失敗しました: {exc}") from exc
@@ -512,7 +532,7 @@ def load_runtime_model(
     print(f"[INFO] アクティブプロバイダ: {active}")
     if use_gpu:
         active_names = {item[0] if isinstance(item, tuple) else item for item in active}
-        candidate_names = {
+        candidate_names = {"WebGpuExecutionProvider"} if use_webgpu else {
             item[0] if isinstance(item, tuple) else item
             for item in providers
             if (item[0] if isinstance(item, tuple) else item) != "CPUExecutionProvider"
@@ -1021,6 +1041,7 @@ def run_server(args: argparse.Namespace) -> None:
         args.model_repo,
         args.model_file,
         args.tags_file,
+        use_webgpu=getattr(args, "webgpu", False),
     )
     TagServerHandler.runtime = runtime
     workers = max(1, int(APP_CONFIG.get("server_workers", 2)))
@@ -1179,6 +1200,7 @@ def process_images(args: argparse.Namespace) -> None:
             args.model_repo,
             args.model_file,
             args.tags_file,
+            use_webgpu=getattr(args, "webgpu", False),
         )
         metadata = runtime.metadata
 
@@ -1586,6 +1608,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="DBV4のtag best_thresholdを上書きする明示的な閾値",
     )
     parser.add_argument("-g", "--gpu", action="store_true", help="GPUを使用する")
+    parser.add_argument("--webgpu", action="store_true", help="WebGPUを使用する")
     parser.add_argument("-b", "--batch-size", type=int, default=4, help="推論バッチサイズ")
     parser.add_argument("-w", "--io-workers", type=int, default=-1, help="画像読込みの並列数（-1=自動）")
     parser.add_argument("-f", "--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
@@ -1621,6 +1644,8 @@ def create_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = create_parser().parse_args()
+    if args.webgpu:
+        args.gpu = True
     if args.gen_config:
         load_config()
         return
