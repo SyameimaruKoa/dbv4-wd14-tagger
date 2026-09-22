@@ -1,29 +1,36 @@
-# Linux セッションへの指示書：NVIDIA GPU で WebGPU と CUDA を比較
+# Linux 引継ぎ：NVIDIA の CUDA と WebGPU を測る
 
-Windows セッションが終わり、そのコミットが push された後、このファイルを Linux 側の新しい AI セッションの最初の指示として渡す。Windows の成果物と同じ branch の最新コミットから開始する。
+Windows の測定結果が commit・push された後、**別の Linux セッション**で開始する。AI は測定を逐次代行せず、ユーザーが [benchmark_nvidia_ep.py](benchmark_nvidia_ep.py) を実行して返した小さな集計結果を解析する。Windows の測定ファイルは変更しない。
 
-## 目的
+## 1. 準備
 
-同じ NVIDIA GPU、同じ ONNX モデル、同じ入力とバッチ条件で、Linux の WebGPU EP（Vulkan）と CUDA EP の推論速度を比較する。結果は `WebGPU / CUDA` の所要時間比と速度低下率で示す。両 OS とも CUDA を比較基準にするが、OS、ドライバー、Dawn backend、ONNX Runtime の差が残るので、Windows と Linux の絶対速度を直接比較して WebGPU 固有の低下率としない。
+`git status --short`、branch、HEAD を確認し、Windows から引き継いだ commit と一致させる。Linux distribution、kernel、NVIDIA GPU、ドライバー、CUDA、Vulkan、Python を記録する。`nvidia-smi` と `vulkaninfo --summary` で対象 GPU を確認し、llvmpipe を対象にしない。CUDA と WebGPU は別仮想環境へ導入する。Python 3.13 が無ければ、ONNX Runtime の wheel がある Python 3.12 を使う。
 
-## 開始時に確認すること
+```bash
+python3.13 -m venv .venv_bench_cuda
+python3.13 -m venv .venv_bench_webgpu
+.venv_bench_cuda/bin/python -m pip install -r requirements.txt onnxruntime-gpu psutil
+.venv_bench_webgpu/bin/python -m pip install -r requirements.txt onnxruntime onnxruntime-ep-webgpu psutil
+```
 
-1. `git status --short`、branch、HEAD、remote を確認する。Windows 側の push 済みコミットと一致させ、既存変更を保持する。`AGENTS.md` があれば読む。
-   AMD Barcelo 512 MiB の [先行測定](benchmarks/amd_barcelo_512mb.md) は別 GPU の参考値として読み、NVIDIA の比率計算には混ぜない。
-2. Linux distribution、kernel、CPU、NVIDIA GPU、ドライバー、CUDA、Vulkan GPU、Python、ONNX Runtime、CUDA EP、WebGPU EP のバージョンを記録する。`nvidia-smi` と `vulkaninfo --summary` で対象 NVIDIA GPU を確認し、llvmpipe 等の software device を測定対象にしない。
-3. Windows セッションが追加した共通ベンチマークコードと `benchmarks/` の測定条件を読む。Windows の生データを変更しない。
+CUDA EP に必要な CUDA/cuDNN ライブラリが不足する場合は環境を修正してから測定する。CUDA EP が active でない結果、WebGPU が NVIDIA 以外の GPU を使った結果は比較から除く。Hugging Face のログインが必要なら端末内で行い、トークンをチャットへ貼らない。
 
-## 測定
+## 2. ユーザーが実行するコマンド
 
-- 共通コードの同じ seed、合成 RGB 640×480 入力、前処理、モデル、batch size、warmup 回数、計測回数、セット数を使う。Windows で成功した `wd14_v3` と `balanced`、batch size 1 と 4 を優先する。アクセス制限や VRAM 不足で実行できない組み合わせは理由を残す。
-- WebGPU は `venv_webgpu` と plugin EP を使い、Vulkan backend が NVIDIA GPU を選んだことを確認する。CUDA は `venv_gpu` の CUDA EP を明示し、TensorRT が有効になっていないことを確認する。CPU のみへ fallback した測定を成功として扱わない。
-- 推論の壁時計時間だけを計時し、セッション作成、初回コンパイル、画像読み込み、前処理、XMP、レポート生成は別計測または対象外にする。セットごとの中央値と p95、全セットの中央値、ms/image、images/s、`低下率 = (WebGPU_ms / CUDA_ms - 1) × 100%` を出す。
-- `nvidia-smi` で測定前・セッション常駐・推論中ピークの VRAM を記録する。WebGPU と CUDA の順番を交互に変え、電源モード、温度、他アプリの負荷をできるだけ一定にする。
-- ONNX Runtime profiling で各 provider に割り当てられたノード数を記録する。CPU fallback の有無、同一入力での WebGPU と CUDA の最大絶対出力差も示す。
+Windows と同じモデル、seed 固定の合成 640×480 RGB 入力、batch size、warmup、反復回数を使う。出力先だけ Linux 用に分ける。
 
-## 検証と報告
+```bash
+for profile in wd14_v3 balanced; do
+    for batch in 1 4; do
+        .venv_bench_cuda/bin/python benchmark_nvidia_ep.py --provider cuda --profile "$profile" --batch-size "$batch" --output "benchmarks/nvidia_linux/${profile}-b${batch}-cuda.json"
+        .venv_bench_webgpu/bin/python benchmark_nvidia_ep.py --provider webgpu --profile "$profile" --batch-size "$batch" --output "benchmarks/nvidia_linux/${profile}-b${batch}-webgpu.json"
+    done
+done
+python3 summarize_nvidia_ep.py benchmarks/nvidia_linux --output benchmarks/nvidia_linux_summary.json
+```
 
-1. `./run_tagger.sh --webgpu --model-profile wd14_v3 --force --no-report <コピーした検証画像>` と CUDA 経路の実推論を確認する。原本画像は変更しない。WebGPU 用 CLI と共通ベンチマークの結果が矛盾した場合は原因を調べる。
-2. Linux の環境、測定条件、生データ、集計、失敗と制約を `benchmarks/` 下の別ファイルへ保存する。Windows の表と並べて示してよいが、OS をまたいだ絶対速度差を WebGPU 固有の低下率として扱わない。
-3. 必要な修正だけ行い、`bash -n run_tagger.sh`、全 unit test、Python の `py_compile`、`git diff --check`、変更した実行経路の再試験を行う。
-4. README と changelog に Linux 結果の参照先を追記し、コミットして通常 push する。force push はしない。最終報告に環境、各 EP の実測 provider、profile 別の比率、出力差、CPU fallback、テスト結果、未検証項目、コミット SHA を含める。
+WebGPU で NVIDIA の VRAM 増分が観測されなければ、`--webgpu-device-index 1` などで GPU を切り替えて同じ条件を再測定する。CPU fallback のみの成功扱いはしない。
+
+## 3. AI に渡すもの
+
+`benchmarks/nvidia_linux_summary.json` と、`incomplete` の条件の JSON またはコンソールエラーを渡す。AI は同一 OS 内の WebGPU/CUDA 比を解析し、Windows と Linux の結果を並べて、ドライバー・Dawn backend・温度・電源状態の違いを明示する。絶対速度の OS 間差を WebGPU 固有の損失とみなさない。必要な生データだけ追加で確認し、Linux 用結果を commit・通常 push する。
