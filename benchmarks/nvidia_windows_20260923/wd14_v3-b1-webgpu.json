@@ -1,0 +1,147 @@
+{
+  "status": "ok",
+  "provider_requested": "webgpu",
+  "provider_active": [
+    "WebGpuExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "profile": "wd14_v3",
+  "repo_id": "SmilingWolf/wd-swinv2-tagger-v3",
+  "metadata_version": "1eefe14281d9f129",
+  "model_path": "C:\\Users\\kouki\\.cache\\huggingface\\hub\\models--SmilingWolf--wd-swinv2-tagger-v3\\snapshots\\627aef95638667ddcaa3ac8ae625e88ea5b02f51\\model.onnx",
+  "batch_size": 1,
+  "input_shape": [
+    "batch_size",
+    448,
+    448,
+    3
+  ],
+  "output_shape": [
+    1,
+    10861
+  ],
+  "seed": 20260922,
+  "image_size": [
+    640,
+    480
+  ],
+  "warmup": 3,
+  "iterations_per_set": 20,
+  "sets": 3,
+  "raw_ms_per_image": [
+    [
+      213.47570000034466,
+      216.13600000000588,
+      215.1757000001453,
+      214.0298000003895,
+      216.37079999982234,
+      214.677699999811,
+      216.28820000023552,
+      215.2072999997472,
+      215.86999999999534,
+      213.2207999993625,
+      214.85549999943032,
+      216.23320000071544,
+      214.67219999976805,
+      216.00430000034976,
+      213.32210000036866,
+      217.48469999965891,
+      213.15289999984088,
+      215.1317999996536,
+      216.16520000043238,
+      213.29100000002654
+    ],
+    [
+      216.75240000058693,
+      213.48459999990155,
+      217.0189999997092,
+      214.01930000047287,
+      213.3226999994804,
+      217.6283999997395,
+      213.09019999989687,
+      216.15750000000844,
+      214.67540000048757,
+      215.82149999994726,
+      214.80070000052365,
+      213.15709999998944,
+      216.39869999944494,
+      215.03429999938817,
+      216.06619999965915,
+      214.53490000021702,
+      216.11289999964356,
+      213.34160000060365,
+      214.54090000042925,
+      216.17429999969318
+    ],
+    [
+      214.730700000473,
+      215.55460000035964,
+      213.29850000074657,
+      217.40800000043237,
+      213.03210000041872,
+      214.47729999999865,
+      215.5413000000408,
+      213.4011999996801,
+      217.5625999998374,
+      213.66009999928792,
+      216.05449999970006,
+      214.90390000053594,
+      214.1366999994716,
+      216.883100000814,
+      213.6381000000256,
+      216.43390000008367,
+      214.4988000000012,
+      216.52110000013636,
+      214.45010000024922,
+      214.77130000039324
+    ]
+  ],
+  "set_median_ms": [
+    215.15374999989945,
+    214.9174999999559,
+    214.75100000043312
+  ],
+  "set_p95_ms": [
+    216.42649499981417,
+    217.0494699997107,
+    217.41573000040262
+  ],
+  "median_ms_per_image": 214.9174999999559,
+  "baseline_vram_mib": 934.0,
+  "peak_vram_mib": 1802.0,
+  "vram_increment_mib": 868.0,
+  "baseline_rss_mib": 70.5390625,
+  "peak_rss_mib": 766.91796875,
+  "metadata_seconds": 1.196927200000573,
+  "session_seconds": 2.5585540000001856,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.15",
+  "onnxruntime": "1.30.0",
+  "webgpu_plugin": "0.3.0",
+  "gpu_index": 0,
+  "directml_device_index": null,
+  "webgpu_device_index": 2,
+  "nvidia_gpu_memory_observed": true,
+  "executed_node_providers": [
+    "CPUExecutionProvider",
+    "WebGpuExecutionProvider"
+  ],
+  "openvino_device": null,
+  "openvino_gpu_name": null,
+  "webgpu_hardware": {
+    "vendor": "NVIDIA",
+    "vendor_id": 4318,
+    "device_id": 7952,
+    "metadata": {
+      "Description": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "Discrete": "1",
+      "DxgiAdapterNumber": "0",
+      "DxgiHighPerformanceIndex": "0",
+      "DxgiVideoMemory": "8006 MB",
+      "LUID": "82677"
+    }
+  },
+  "tensorrt_lib_dir": null,
+  "target_vendor": "nvidia",
+  "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design"
+}

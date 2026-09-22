@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "provider_requested": "directml",
+  "profile": "balanced",
+  "batch_size": 1,
+  "target_vendor": "nvidia",
+  "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+  "error": "RuntimeError: requested DmlExecutionProvider, active providers are ['CPUExecutionProvider']",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "onnxruntime": "1.24.4"
+}

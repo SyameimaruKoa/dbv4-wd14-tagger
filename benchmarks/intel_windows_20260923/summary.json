@@ -1,0 +1,294 @@
+{
+  "platform": "Windows",
+  "vendor": "intel",
+  "operator_device_name": "Intel UHD Graphics 630",
+  "providers": [
+    "cpu",
+    "intel",
+    "directml",
+    "webgpu"
+  ],
+  "profiles": [
+    "wd14_v3",
+    "balanced"
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "warmup": 3,
+  "iterations": 20,
+  "sets": 3,
+  "results": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 1121.1811000002854,
+      "peak_rss_mib": 1252.09375,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "directml",
+      "ms_per_image": 2447.168050000073,
+      "peak_rss_mib": 1498.7265625,
+      "vram_increment_mib": null,
+      "device_name": "Intel UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "DmlExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 213.81615000018428,
+      "peak_rss_mib": 716.77734375,
+      "vram_increment_mib": null,
+      "device_name": "Intel UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 1044.6288750000576,
+      "peak_rss_mib": 1879.88671875,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "directml",
+      "ms_per_image": 2330.246599999896,
+      "peak_rss_mib": 2577.5390625,
+      "vram_increment_mib": null,
+      "device_name": "Intel UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "DmlExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 193.56816250012798,
+      "peak_rss_mib": 781.94140625,
+      "vram_increment_mib": null,
+      "device_name": "Intel UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 980.3688999995757,
+      "peak_rss_mib": 1045.83984375,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 197.01534999967407,
+      "peak_rss_mib": 708.12890625,
+      "vram_increment_mib": null,
+      "device_name": "Intel UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 930.7435250000253,
+      "peak_rss_mib": 1369.3671875,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 181.35901250002462,
+      "peak_rss_mib": 603.265625,
+      "vram_increment_mib": null,
+      "device_name": "Intel UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    }
+  ],
+  "comparisons_to_cpu": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "directml",
+      "gpu_ms_per_image": 2447.168050000073,
+      "cpu_ms_per_image": 1121.1811000002854,
+      "speedup_over_cpu": 0.458
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 213.81615000018428,
+      "cpu_ms_per_image": 1121.1811000002854,
+      "speedup_over_cpu": 5.244
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "directml",
+      "gpu_ms_per_image": 2330.246599999896,
+      "cpu_ms_per_image": 1044.6288750000576,
+      "speedup_over_cpu": 0.448
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 193.56816250012798,
+      "cpu_ms_per_image": 1044.6288750000576,
+      "speedup_over_cpu": 5.397
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 197.01534999967407,
+      "cpu_ms_per_image": 980.3688999995757,
+      "speedup_over_cpu": 4.976
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 181.35901250002462,
+      "cpu_ms_per_image": 930.7435250000253,
+      "speedup_over_cpu": 5.132
+    }
+  ],
+  "incomplete": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "intel",
+      "reason": "RuntimeError: OpenVINO GPU.0 is NVIDIA GeForce RTX 2070 with Max-Q Design (dGPU); an Intel GPU is required for the Intel benchmark"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "intel",
+      "reason": "RuntimeError: OpenVINO GPU.0 is NVIDIA GeForce RTX 2070 with Max-Q Design (dGPU); an Intel GPU is required for the Intel benchmark"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "intel",
+      "reason": "RuntimeError: OpenVINO GPU.0 is NVIDIA GeForce RTX 2070 with Max-Q Design (dGPU); an Intel GPU is required for the Intel benchmark"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "directml",
+      "reason": "RuntimeError: requested DmlExecutionProvider, active providers are ['CPUExecutionProvider']"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "intel",
+      "reason": "RuntimeError: OpenVINO GPU.0 is NVIDIA GeForce RTX 2070 with Max-Q Design (dGPU); an Intel GPU is required for the Intel benchmark"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "directml",
+      "reason": "RuntimeError: requested DmlExecutionProvider, active providers are ['CPUExecutionProvider']"
+    }
+  ],
+  "detected_webgpu_adapters": [
+    {
+      "webgpu_index": 0,
+      "vendor": "Intel Corporation",
+      "vendor_id": 32902,
+      "device_id": 16027,
+      "metadata": {
+        "Description": "Intel(R) UHD Graphics 630",
+        "DxgiAdapterNumber": "3",
+        "DxgiHighPerformanceIndex": "4",
+        "DxgiVideoMemory": "128 MB",
+        "LUID": "118080"
+      }
+    },
+    {
+      "webgpu_index": 1,
+      "vendor": "Intel Corporation",
+      "vendor_id": 32902,
+      "device_id": 16027,
+      "metadata": {
+        "Description": "Intel(R) UHD Graphics 630",
+        "Discrete": "0",
+        "DxgiAdapterNumber": "1",
+        "DxgiHighPerformanceIndex": "1",
+        "DxgiVideoMemory": "128 MB",
+        "LUID": "81653"
+      }
+    },
+    {
+      "webgpu_index": 2,
+      "vendor": "NVIDIA",
+      "vendor_id": 4318,
+      "device_id": 7952,
+      "metadata": {
+        "Description": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+        "Discrete": "1",
+        "DxgiAdapterNumber": "0",
+        "DxgiHighPerformanceIndex": "0",
+        "DxgiVideoMemory": "8006 MB",
+        "LUID": "82677"
+      }
+    },
+    {
+      "webgpu_index": 3,
+      "vendor": "Intel Corporation",
+      "vendor_id": 32902,
+      "device_id": 16027,
+      "metadata": {
+        "Description": "Intel(R) UHD Graphics 630",
+        "DxgiAdapterNumber": "2",
+        "DxgiHighPerformanceIndex": "3",
+        "DxgiVideoMemory": "128 MB",
+        "LUID": "121367"
+      }
+    }
+  ]
+}

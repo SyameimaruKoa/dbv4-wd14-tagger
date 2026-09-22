@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "provider_requested": "intel",
+  "profile": "balanced",
+  "batch_size": 1,
+  "target_vendor": "intel",
+  "device_name": "Intel UHD Graphics 630",
+  "error": "RuntimeError: OpenVINO GPU.0 is NVIDIA GeForce RTX 2070 with Max-Q Design (dGPU); an Intel GPU is required for the Intel benchmark",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "onnxruntime": "1.24.1"
+}
