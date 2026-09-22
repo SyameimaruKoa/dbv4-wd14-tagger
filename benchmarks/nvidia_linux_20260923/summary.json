@@ -119,6 +119,106 @@
         "CPUExecutionProvider",
         "WebGpuExecutionProvider"
       ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 593.1025750001027,
+      "peak_rss_mib": 1040.48828125,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cuda",
+      "ms_per_image": 58.16131050005424,
+      "peak_rss_mib": 1222.21875,
+      "vram_increment_mib": 1146.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "tensorrt",
+      "ms_per_image": 46.05831349954315,
+      "peak_rss_mib": 3150.1875,
+      "vram_increment_mib": 954.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 120.07600249989991,
+      "peak_rss_mib": 658.3203125,
+      "vram_increment_mib": 687.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 702.7854087499463,
+      "peak_rss_mib": 1360.75390625,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cuda",
+      "ms_per_image": 57.966190249885585,
+      "peak_rss_mib": 1211.4765625,
+      "vram_increment_mib": 1146.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "tensorrt",
+      "ms_per_image": 43.6737171249888,
+      "peak_rss_mib": 3188.66015625,
+      "vram_increment_mib": 1204.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 110.63482562508398,
+      "peak_rss_mib": 669.47265625,
+      "vram_increment_mib": 1103.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
     }
   ],
   "comparisons_to_cpu": [
@@ -169,58 +269,57 @@
       "gpu_ms_per_image": 115.29197449999629,
       "cpu_ms_per_image": 767.276949374974,
       "speedup_over_cpu": 6.655
-    }
-  ],
-  "incomplete": [
-    {
-      "profile": "balanced",
-      "batch_size": 1,
-      "provider": "cpu",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb4f-5299cd826375b26578b7f3f6;8ae82075-77ca-4b8b-ba67-5e5284e25cca)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
     },
     {
       "profile": "balanced",
       "batch_size": 1,
       "provider": "cuda",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb50-2bcf77ba1b4f2b037edeef37;c3188023-0400-452c-a939-7eddf398c2e9)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "gpu_ms_per_image": 58.16131050005424,
+      "cpu_ms_per_image": 593.1025750001027,
+      "speedup_over_cpu": 10.198
     },
     {
       "profile": "balanced",
       "batch_size": 1,
       "provider": "tensorrt",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb50-5778e4af6a7e10243c411e1e;f436785f-21ae-4fc3-a465-3a3d66c4af5b)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "gpu_ms_per_image": 46.05831349954315,
+      "cpu_ms_per_image": 593.1025750001027,
+      "speedup_over_cpu": 12.877
     },
     {
       "profile": "balanced",
       "batch_size": 1,
       "provider": "webgpu",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb51-516131056eab237c1436e53f;e479d1c3-b097-4ab8-908b-f4290c2e18d3)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
-    },
-    {
-      "profile": "balanced",
-      "batch_size": 4,
-      "provider": "cpu",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb52-6da93c12399bcac83168da27;150cfa8a-79b1-4694-bfb5-62a39f81b5e4)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "gpu_ms_per_image": 120.07600249989991,
+      "cpu_ms_per_image": 593.1025750001027,
+      "speedup_over_cpu": 4.939
     },
     {
       "profile": "balanced",
       "batch_size": 4,
       "provider": "cuda",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb52-1c27bf76706b7ff33a0c3c63;dc3bfd2e-83bd-4299-bfd3-ee3779984bfc)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "gpu_ms_per_image": 57.966190249885585,
+      "cpu_ms_per_image": 702.7854087499463,
+      "speedup_over_cpu": 12.124
     },
     {
       "profile": "balanced",
       "batch_size": 4,
       "provider": "tensorrt",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb53-53612ba50102c03323eca433;c141097a-a37f-401a-b784-e46d70b5d22d)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "gpu_ms_per_image": 43.6737171249888,
+      "cpu_ms_per_image": 702.7854087499463,
+      "speedup_over_cpu": 16.092
     },
     {
       "profile": "balanced",
       "batch_size": 4,
       "provider": "webgpu",
-      "reason": "GatedRepoError: 401 Client Error. (Request ID: Root=1-6ab2cb54-04b0576c0026cc60760ae4f0;1e36cd28-ecb8-41c4-addb-787153aab728)\n\nCannot access gated repo for url https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx.\nAccess to model animetimm/caformer_b36.dbv4-full is restricted. You must have access to it and be authenticated to access it. Please log in."
+      "gpu_ms_per_image": 110.63482562508398,
+      "cpu_ms_per_image": 702.7854087499463,
+      "speedup_over_cpu": 6.352
     }
   ],
+  "incomplete": [],
   "detected_webgpu_adapters": [
     {
       "webgpu_index": 0,
