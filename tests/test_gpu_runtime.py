@@ -189,7 +189,7 @@ class GPUInitializationTests(unittest.TestCase):
         ):
             options = gpu.tensorrt_provider_options(2)
             self.assertEqual(options['device_id'], '2')
-            self.assertEqual(options['trt_engine_cache_enable'], '1')
+            self.assertEqual(options['trt_engine_cache_enable'], 'True')
             self.assertEqual(Path(options['trt_engine_cache_path']), Path(directory).resolve())
 
     def test_windows_openvino_keeps_dll_search_path(self):

@@ -98,7 +98,7 @@ class DBV4MetadataTests(unittest.TestCase):
             self.assertEqual(client_metadata.label_count, 5)
 
     def test_split_model_and_metadata_repositories_with_external_weights(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as data_directory:
             self._make_metadata(directory)
             with open(os.path.join(directory, "model.onnx_data"), "wb") as f:
                 f.write(b"external-weights")
@@ -114,7 +114,9 @@ class DBV4MetadataTests(unittest.TestCase):
                 "thresholds_file": "thresholds.csv",
             }
 
-            with patch("dbv4.resolve_model_artifact", wraps=resolve_model_artifact) as resolver:
+            with patch.dict(os.environ, {"DBV4_DATA_DIR": data_directory}), patch(
+                "dbv4.resolve_model_artifact", wraps=resolve_model_artifact
+            ) as resolver:
                 metadata = DBV4Metadata.load(profile, base_dir=directory)
 
             repositories_by_file = {
@@ -134,6 +136,10 @@ class DBV4MetadataTests(unittest.TestCase):
                 "animetimm/convnextv2_huge.dbv4-full",
             )
             self.assertNotEqual(metadata.model_path, os.path.join(directory, "model.onnx"))
+            self.assertEqual(
+                os.path.commonpath([metadata.model_path, data_directory]),
+                data_directory,
+            )
             self.assertTrue(os.path.isfile(metadata.model_path))
             self.assertTrue(
                 os.path.isfile(os.path.join(os.path.dirname(metadata.model_path), "model.onnx_data"))

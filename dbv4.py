@@ -168,7 +168,7 @@ def materialize_external_onnx_bundle(
     if not external_paths:
         return model_path
     cache_base = os.path.abspath(
-        base_dir or os.environ.get("DBV4_DATA_DIR") or os.getcwd()
+        os.environ.get("DBV4_DATA_DIR") or base_dir or os.getcwd()
     )
     snapshot_name = os.path.basename(os.path.dirname(model_path))
     bundle_key = hashlib.sha256(

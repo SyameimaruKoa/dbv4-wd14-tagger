@@ -147,7 +147,7 @@ def tensorrt_provider_options(gpu_index):
     cache_dir.mkdir(parents=True, exist_ok=True)
     return {
         "device_id": str(gpu_index),
-        "trt_engine_cache_enable": "1",
+        "trt_engine_cache_enable": "True",
         "trt_engine_cache_path": str(cache_dir),
     }
 
