@@ -438,6 +438,6 @@ DBV4モデル自体のライセンスはモデルごとに異なるため、使�
 - AMD ROCm / MIGraphX
 - Server / Client
 - Batch inference
-- Nintendo Switch / ARM64向け既存クライアント経路
+- Nintendo Switch / ARM64向け既存クライアント経路（Switch本体でのGPU推論の実機調査は [Issue #18](https://github.com/SyameimaruKoa/dbv4-wd14-tagger/issues/18) を参照）
 - XMP / ExifTool
 - HTML report
