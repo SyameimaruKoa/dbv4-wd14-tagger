@@ -209,6 +209,16 @@ param (
 
     [switch]$Login,
 
+    [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu')]
+    [string]$Provider,
+    [switch]$WebGpu,
+    [ValidateRange(0,2147483647)][int]$GpuIndex = 0,
+    [ValidateRange(0,2147483647)][int]$DirectMlDeviceIndex = 0,
+    [ValidateRange(0,2147483647)][int]$WebGpuDeviceIndex,
+    [ValidateSet('nvidia','intel','amd')][string]$TargetVendor,
+    [string]$OpenVinoDevice,
+    [string]$TensorRtLibDir,
+
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$RemainingArgs
 )
@@ -247,6 +257,9 @@ function Show-Help {
     Write-Host "    -NoRecordRatio (-k)   メタデータへのスコア記録を無効化"
     Write-Host "    -Help (-h, --help)    このヘルプを表示"
     Write-Host "    -Login               Hugging Faceへログインして終了"
+    Write-Host "    -Provider NAME       cpu/cuda/tensorrt/intel/directml/webgpu"
+    Write-Host "    -GpuIndex N / -DirectMlDeviceIndex N / -WebGpuDeviceIndex N"
+    Write-Host "    -TargetVendor NAME / -OpenVinoDevice GPU.N / -TensorRtLibDir DIR"
     Write-Host "    -RatingThresh (-d)    旧CLI互換: 非General rating判定閾値"
     Write-Host "    -IgnoreSensitive (-i) 旧CLI互換: SensitiveをGeneralとして扱う"
     Write-Host ""
@@ -287,7 +300,8 @@ if ($PSVersionTable.PSVersion.Major -ge 6) {
 }
 
 function Prepare-Environment {
-    param ([bool]$UseGpu, [bool]$IsClient)
+    param ([bool]$UseGpu, [bool]$IsClient, [string]$SelectedProvider)
+    $ExtraPackages = @()
     
     if ($IsClient) {
         if (Test-Path (Join-Path $ScriptDir "venv_gpu")) {
@@ -307,7 +321,19 @@ function Prepare-Environment {
         }
     }
     else {
-        if ($IsWindowsOS -and $UseGpu) {
+        if ($SelectedProvider) {
+            $EnvName = $SelectedProvider
+            $TargetVenv = Join-Path $ScriptDir "venv_$SelectedProvider"
+            switch ($SelectedProvider) {
+                'cpu' { $OnnxPackage = 'onnxruntime' }
+                'cuda' { $OnnxPackage = 'onnxruntime-gpu[cuda,cudnn]<1.27' }
+                'tensorrt' { $OnnxPackage = 'onnxruntime-gpu[cuda,cudnn]<1.27' }
+                'intel' { $OnnxPackage = 'onnxruntime-openvino==1.24.1'; $ExtraPackages = @('openvino==2025.4.1') }
+                'webgpu' { $OnnxPackage = 'onnxruntime'; $ExtraPackages = @('onnxruntime-ep-webgpu') }
+                'directml' { $OnnxPackage = 'onnxruntime-directml'; $TargetVenv = Join-Path $ScriptDir 'venv_gpu' }
+            }
+        }
+        elseif ($IsWindowsOS -and $UseGpu) {
             $EnvName = "GPU (DirectML)"
             $TargetVenv = Join-Path $ScriptDir "venv_gpu"
             $OnnxPackage = "onnxruntime-directml"
@@ -352,6 +378,7 @@ function Prepare-Environment {
         }
         catch {}
         & $PyCmd -m venv $TargetVenv
+        if ($LASTEXITCODE -ne 0) { throw "仮想環境の作成に失敗しました。" }
     }
     
     if ($IsWindowsOS) {
@@ -368,12 +395,13 @@ function Prepare-Environment {
     Write-Host "  -> ライブラリの確認・インストールを行います..." -ForegroundColor Yellow
     $ReqFile = Join-Path $ScriptDir "requirements.txt"
     if ($OnnxPackage) {
-        & $PipEx install -r $ReqFile $OnnxPackage -q | Out-Null
+        & $PipEx install -r $ReqFile $OnnxPackage @ExtraPackages -q | Out-Null
     }
     else {
         & $PipEx install -r $ReqFile -q | Out-Null
     }
     
+    if ($LASTEXITCODE -ne 0) { throw "依存パッケージのインストールに失敗しました。" }
     return $PyEx
 }
 #endregion
@@ -383,7 +411,7 @@ function Prepare-Environment {
 if ($Login -or ($RemainingArgs -contains '--login')) {
     $HfExecutable = $null
     $VenvPython = $null
-    foreach ($VenvName in @('venv_gpu', 'venv_std', 'venv_client', 'venv_webgpu', 'venv_intel', 'venv_amd')) {
+    foreach ($VenvName in @('venv_gpu', 'venv_std', 'venv_client', 'venv_webgpu', 'venv_intel', 'venv_amd', 'venv_cuda', 'venv_tensorrt', 'venv_cpu')) {
         $Candidate = Join-Path $ScriptDir "$VenvName/Scripts/hf.exe"
         if (Test-Path $Candidate) {
             $HfExecutable = $Candidate
@@ -420,8 +448,18 @@ if ($PSBoundParameters.Count -eq 0 -and (-not $RemainingArgs)) {
     exit
 }
 
-# 環境準備
-$VenvPython = Prepare-Environment -UseGpu $Gpu -IsClient $Client
+# Explicit selection must agree with the environment that is installed.
+if ($WebGpu) {
+    if ($Provider -and $Provider -ne 'webgpu') { throw '-WebGpu conflicts with -Provider' }
+    $Provider = 'webgpu'
+}
+if ($Provider) { $Gpu = $Provider -ne 'cpu' }
+if ($Gpu -and -not $Provider) { $Provider = 'directml' }
+if (-not $IsWindowsOS -and $Provider) { throw 'Linuxではrun_tagger.shを使用してください。' }
+if ($Provider -eq 'directml' -and $TargetVendor -and -not $Client) {
+    $ProbePython = Prepare-Environment -UseGpu $true -IsClient $false -SelectedProvider 'webgpu'
+}
+$VenvPython = Prepare-Environment -UseGpu $Gpu -IsClient $Client -SelectedProvider $Provider
 
 # Python引数構築
 $PyArgs = @($PythonScript)
@@ -455,6 +493,12 @@ if ($NoRecursive) { $PyArgs += "--no-recursive" }
 # その他パラメータ
 if ($PSBoundParameters.ContainsKey("Thresh")) { $PyArgs += ("--thresh", $Thresh) }
 if ($Gpu) { $PyArgs += "--gpu" }
+if ($Provider) { $PyArgs += @('--provider', $Provider) }
+$PyArgs += @('--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex")
+if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $PyArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
+if ($TargetVendor) { $PyArgs += @('--target-vendor', $TargetVendor) }
+if ($OpenVinoDevice) { $PyArgs += @('--openvino-device', $OpenVinoDevice) }
+if ($TensorRtLibDir) { $PyArgs += @('--tensorrt-lib-dir', $TensorRtLibDir) }
 if ($PSBoundParameters.ContainsKey('BatchSize')) { $PyArgs += ("--batch-size", $BatchSize) }
 if ($PSBoundParameters.ContainsKey('IoWorkers')) { $PyArgs += ("--io-workers", $IoWorkers) }
 if ($PSBoundParameters.ContainsKey('ModelProfile')) { $PyArgs += ("--model-profile", $ModelProfile) }
@@ -479,5 +523,6 @@ if ($Path) { $PyArgs += $Path }
 # 実行
 Write-Host "[INFO] Pythonスクリプトを実行..." -ForegroundColor Green
 & $VenvPython @PyArgs
+exit $LASTEXITCODE
 
 #endregion

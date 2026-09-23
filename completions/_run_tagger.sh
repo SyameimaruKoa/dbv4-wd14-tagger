@@ -14,6 +14,14 @@ _dbv4_wd14_tagger() {
     )
 
     _arguments -s -S \
+        '--provider[実行EP]:provider:(cpu cuda tensorrt intel webgpu migraphx)' \
+        '--webgpu[WebGPUを使用]' \
+        '--gpu-index[CUDA/TensorRT/MIGraphXの番号]:index:' \
+        '--directml-device-index[DirectML DXGI番号]:index:' \
+        '--webgpu-device-index[WebGPU番号]:index:' \
+        '--target-vendor[GPU製造元を検証]:vendor:(nvidia intel amd)' \
+        '--openvino-device[Intel GPU指定]:device:' \
+        '--tensorrt-lib-dir[TensorRT 10ライブラリ場所]:directory:_files -/' \
         '(-p --path)'{-p,--path}'[処理対象ファイル/フォルダ]:path:_files' \
         '(-g --gpu)'{-g,--gpu}'[GPUを使用する（自動判別）]' \
         '(-I --force-intel)'{-I,--force-intel}'[Intel GPUを強制使用]' \

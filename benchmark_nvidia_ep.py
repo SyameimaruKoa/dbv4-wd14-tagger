@@ -5,13 +5,10 @@ and WEBGPU_BENCHMARK_LINUX.md. This script does not change user images.
 """
 
 import argparse
-import ctypes
 import json
-import os
 import platform
 import statistics
 import subprocess
-import sys
 import threading
 import time
 from importlib.metadata import version
@@ -29,7 +26,10 @@ from dbv4 import (
     adapt_input_layout,
     select_output_name,
 )
-from webgpu_vendor import vendor_name
+from gpu_runtime import (
+    prepare_tensorrt, prepare_cuda,
+    prepare_openvino, configure_directml, configure_webgpu, executed_providers,
+)
 
 
 def percentile(values, fraction):
@@ -47,101 +47,6 @@ def nvidia_memory_mib(index):
     )
     return float(output.strip().splitlines()[0])
 
-
-
-def prepare_tensorrt_windows(explicit_dir):
-    """Load TensorRT and its ORT bridge before session creation on Windows."""
-    name = "nvinfer_10.dll"
-    if hasattr(ort, "preload_dlls"):
-        ort.preload_dlls()
-    candidates = []
-    if explicit_dir:
-        candidates.append(Path(explicit_dir))
-    elif os.environ.get("TENSORRT_LIB_DIR"):
-        candidates.append(Path(os.environ["TENSORRT_LIB_DIR"]))
-    else:
-        candidates.extend(Path.home().glob("Downloads/TensorRT-*/bin"))
-        candidates.extend(Path(part) for part in os.environ.get("PATH", "").split(os.pathsep)
-                          if part)
-    matches = []
-    for candidate in candidates:
-        directory = candidate.resolve()
-        if (directory / name).is_file() and directory not in matches:
-            matches.append(directory)
-    if not matches:
-        raise RuntimeError(
-            "TensorRT 10 runtime missing: nvinfer_10.dll not found. "
-            "Pass --tensorrt-lib-dir with the TensorRT bin directory or set TENSORRT_LIB_DIR."
-        )
-    if len(matches) > 1 and not explicit_dir and not os.environ.get("TENSORRT_LIB_DIR"):
-        raise RuntimeError(
-            f"Multiple TensorRT runtimes found: {matches}; choose --tensorrt-lib-dir"
-        )
-    directory = matches[0]
-    directory_handle = os.add_dll_directory(str(directory))
-    os.environ["PATH"] = str(directory) + os.pathsep + os.environ.get("PATH", "")
-    try:
-        runtime_handle = ctypes.WinDLL(str(directory / name))
-        provider_dll = Path(ort.__file__).resolve().parent / "capi" / "onnxruntime_providers_tensorrt.dll"
-        provider_handle = ctypes.WinDLL(str(provider_dll))
-    except OSError as exc:
-        directory_handle.close()
-        raise RuntimeError(f"TensorRT DLL preflight failed in {directory}: {exc}") from exc
-    return directory, (directory_handle, runtime_handle, provider_handle)
-
-
-def find_tensorrt_linux_dir(explicit_dir):
-    """Find TensorRT 10 in an explicit, pip-venv, or system library directory."""
-    name = "libnvinfer.so.10"
-    if explicit_dir:
-        candidates = [Path(explicit_dir)]
-    elif os.environ.get("TENSORRT_LIB_DIR"):
-        candidates = [Path(os.environ["TENSORRT_LIB_DIR"])]
-    else:
-        candidates = []
-        venv = Path(sys.prefix)
-        for pattern in ("lib/python*/site-packages/tensorrt*_libs",
-                        "lib/python*/site-packages/tensorrt*_libs/lib",
-                        "lib/python*/site-packages/tensorrt_libs"):
-            candidates.extend(venv.glob(pattern))
-        candidates.extend(Path(part) for part in
-                          os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep) if part)
-        candidates.extend((Path("/usr/lib/x86_64-linux-gnu"),
-                           Path("/usr/lib/aarch64-linux-gnu"), Path("/usr/local/lib")))
-    matches = []
-    for candidate in candidates:
-        directory = candidate.resolve()
-        if (directory / name).is_file() and directory not in matches:
-            matches.append(directory)
-    if len(matches) > 1 and not explicit_dir and not os.environ.get("TENSORRT_LIB_DIR"):
-        raise RuntimeError(
-            f"Multiple TensorRT 10 runtimes found: {matches}; choose --tensorrt-lib-dir"
-        )
-    return matches[0] if matches else None
-
-
-def prepare_tensorrt_linux(explicit_dir):
-    directory = find_tensorrt_linux_dir(explicit_dir)
-    if (explicit_dir or os.environ.get("TENSORRT_LIB_DIR")) and directory is None:
-        raise RuntimeError(
-            "TensorRT 10 runtime missing in selected directory: libnvinfer.so.10"
-        )
-    source = str(directory / "libnvinfer.so.10") if directory else "libnvinfer.so.10"
-    try:
-        runtime_handle = ctypes.CDLL(source, mode=ctypes.RTLD_GLOBAL)
-        plugin_handle = None
-        if directory and (directory / "libnvinfer_plugin.so.10").is_file():
-            plugin_handle = ctypes.CDLL(
-                str(directory / "libnvinfer_plugin.so.10"), mode=ctypes.RTLD_GLOBAL
-            )
-        provider_so = Path(ort.__file__).resolve().parent / "capi" / "libonnxruntime_providers_tensorrt.so"
-        provider_handle = ctypes.CDLL(str(provider_so), mode=ctypes.RTLD_GLOBAL)
-    except OSError as exc:
-        raise RuntimeError(
-            f"TensorRT Linux preflight failed ({source}). Set --tensorrt-lib-dir "
-            f"or install matching tensorrt-cu12 libraries: {exc}"
-        ) from exc
-    return directory, (runtime_handle, plugin_handle, provider_handle)
 
 
 def main():
@@ -206,78 +111,23 @@ def main():
     profile_stopped = False
     webgpu_hardware = None
     tensorrt_lib_dir = None
-    tensorrt_handles = None
     try:
         if args.provider == "tensorrt":
-            if hasattr(ort, "preload_dlls"):
-                ort.preload_dlls()
-            if platform.system() == "Windows":
-                tensorrt_lib_dir, tensorrt_handles = prepare_tensorrt_windows(
-                    args.tensorrt_lib_dir
-                )
-            elif platform.system() == "Linux":
-                tensorrt_lib_dir, tensorrt_handles = prepare_tensorrt_linux(
-                    args.tensorrt_lib_dir
-                )
+            tensorrt_lib_dir = prepare_tensorrt(args.tensorrt_lib_dir)
         started = time.perf_counter()
         metadata = DBV4Metadata.load(profile, base_dir=str(Path(__file__).resolve().parent))
         metadata_seconds = time.perf_counter() - started
-        dll_directory_handle = None
-        tensor_ir_handle = None
-        if args.provider in ("cuda", "tensorrt") and hasattr(ort, "preload_dlls"):
-            ort.preload_dlls()
-            if platform.system() == "Windows":
-                cudnn_bin = (Path(ort.__file__).resolve().parent.parent
-                             / "nvidia" / "cudnn" / "bin")
-                if cudnn_bin.is_dir():
-                    dll_directory_handle = os.add_dll_directory(str(cudnn_bin))
-                    os.environ["PATH"] = str(cudnn_bin) + os.pathsep + os.environ.get("PATH", "")
-                    tensor_ir = cudnn_bin / "cudnn_engines_tensor_ir64_9.dll"
-                    if tensor_ir.is_file():
-                        tensor_ir_handle = ctypes.WinDLL(str(tensor_ir))
-        if args.provider == "intel" and platform.system() == "Windows":
-            openvino_libs = (Path(ort.__file__).resolve().parent.parent
-                             / "openvino" / "libs")
-            openvino_dll = openvino_libs / "openvino.dll"
-            if openvino_dll.is_file():
-                dll_directory_handle = os.add_dll_directory(str(openvino_libs))
-                os.environ["PATH"] = str(openvino_libs) + os.pathsep + os.environ.get("PATH", "")
-                openvino_handle = ctypes.WinDLL(str(openvino_dll))
-            else:
-                try:
-                    openvino_handle = ctypes.WinDLL("openvino.dll")
-                except OSError as exc:
-                    raise RuntimeError(
-                        "OpenVINO runtime missing; install openvino==2025.4.1 "
-                        "in the Intel benchmark environment"
-                    ) from exc
+        runtime_handles = []
+        if args.provider in ("cuda", "tensorrt"):
+            runtime_handles.extend(prepare_cuda())
         openvino_gpu_name = None
         if args.provider == "intel":
-            if not args.openvino_device.upper().startswith("GPU"):
-                raise RuntimeError("Intel benchmark requires an OpenVINO GPU device")
-            device_query = (
-                "import openvino as ov, sys; "
-                "print(ov.Core().get_property(sys.argv[1], 'FULL_DEVICE_NAME'))"
-            )
-            openvino_gpu_name = subprocess.check_output(
-                [sys.executable, "-c", device_query, args.openvino_device],
-                text=True, timeout=30,
-            ).strip()
-            if "intel" not in openvino_gpu_name.lower():
-                raise RuntimeError(
-                    f"OpenVINO {args.openvino_device} is {openvino_gpu_name}; "
-                    "an Intel GPU is required for the Intel benchmark"
-                )
+            openvino_gpu_name = prepare_openvino(args.openvino_device)
         options = ort.SessionOptions()
         options.enable_profiling = True
         if args.provider in ("cpu", "cuda", "tensorrt", "intel", "directml", "migraphx"):
             if args.provider == "directml":
-                options.enable_mem_pattern = False
-                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-                # ORT 1.24.4's default graph optimizer can detach the CaFormer
-                # graph output ("logits") before DirectML partitions the graph.
-                # Keep the original graph so DML can create and run the session.
-                options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+                configure_directml(options)
             available = ort.get_available_providers()
             names = {
                 "cuda": "CUDAExecutionProvider",
@@ -312,32 +162,11 @@ def main():
             session = ort.InferenceSession(metadata.model_path, sess_options=options,
                                            providers=providers)
         else:
-            import onnxruntime_ep_webgpu as webgpu
-
-            ort.register_execution_provider_library("benchmark_webgpu", webgpu.get_library_path())
-            devices = [device for device in ort.get_ep_devices()
-                       if device.ep_name == webgpu.get_ep_name()]
-            if args.webgpu_device_index < 0 or args.webgpu_device_index >= len(devices):
-                raise RuntimeError(f"WebGPU device index unavailable: {len(devices)} devices")
-            selected = devices[args.webgpu_device_index].device
-            selected_vendor = vendor_name(selected.vendor, selected.vendor_id)
-            webgpu_hardware = {
-                "vendor": selected_vendor,
-                "vendor_id": selected.vendor_id,
-                "device_id": selected.device_id,
-                "metadata": dict(selected.metadata),
-            }
-            if args.target_vendor and args.target_vendor not in selected_vendor:
-                raise RuntimeError(
-                    f"WebGPU device {args.webgpu_device_index} is "
-                    f"{selected_vendor or 'unknown vendor'} "
-                    f"{selected.metadata.get('Description')}; "
-                    f"expected {args.target_vendor}"
-                )
-            options.add_provider_for_devices([devices[args.webgpu_device_index]], {})
+            webgpu_hardware = configure_webgpu(
+                options, args.webgpu_device_index, args.target_vendor)
             started = time.perf_counter()
             session = ort.InferenceSession(metadata.model_path, sess_options=options)
-            expected_provider = webgpu.get_ep_name()
+            expected_provider = "WebGpuExecutionProvider"
         session_seconds = time.perf_counter() - started
         session.disable_fallback()
         active = session.get_providers()
@@ -373,13 +202,7 @@ def main():
         profile_path = Path(session.end_profiling())
         profile_stopped = True
         try:
-            events = json.loads(profile_path.read_text(encoding="utf-8"))
-            executed = sorted({
-                event.get("args", {}).get("provider")
-                for event in events
-                if event.get("cat") == "Node"
-                and event.get("args", {}).get("provider")
-            })
+            executed = executed_providers(profile_path)
         finally:
             profile_path.unlink(missing_ok=True)
         if expected_provider not in executed:

@@ -12,6 +12,8 @@ PYTHON_SCRIPT="$SCRIPT_DIR/embed_tags_universal.py"
 # デフォルト値
 USE_GPU=0
 FORCE_TYPE="auto" # auto, nvidia, intel, amd
+PROVIDER=""
+TENSORRT_LIB_DIR_ARG=""
 WEBGPU_MODE=0
 PY_ARGS=()
 DO_ORGANIZE=0
@@ -62,6 +64,12 @@ show_help() {
     echo "    -p, --path <path>   処理対象ファイル/フォルダ"
     echo "    -g, --gpu           GPUを使用する（自動判別）"
     echo "    --webgpu            Vulkan経由のWebGPUを使用する"
+    echo "    --provider NAME     cpu/cuda/tensorrt/intel/webgpu/migraphxを明示"
+    echo "    --gpu-index N       CUDA/TensorRT/MIGraphXのデバイス番号"
+    echo "    --webgpu-device-index N  WebGPUのデバイス番号"
+    echo "    --target-vendor NAME     nvidia/intel/amdを検証"
+    echo "    --openvino-device GPU.N  Intel GPUの指定"
+    echo "    --tensorrt-lib-dir DIR   TensorRT 10のライブラリ場所"
     echo "    -I, --force-intel   Intel GPUを強制的に使用する"
     echo "    -N, --force-nvidia  NVIDIA GPUを強制的に使用する"
     echo "    -A, --force-amd     AMD GPUを強制的に使用する"
@@ -257,27 +265,25 @@ setup_env() {
             $PIP_CMD install -r "$REQ_FILE" onnxruntime-gpu 2>/dev/null || \
             $PIP_CMD install -r "$REQ_FILE" onnxruntime || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
         else
-            local cuda_ver=$(detect_cuda_major)
-            local ort_pkg="onnxruntime-gpu"
-            local nvidia_pkgs="nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-cudnn-cu12 nvidia-curand-cu12 nvidia-cufft-cu12 nvidia-nvjitlink-cu12 tensorrt-cu12<11"
-            if [ "$cuda_ver" -ge 13 ]; then
-                ort_pkg="onnxruntime-gpu"
-            elif [ "$cuda_ver" -eq 12 ]; then
-                ort_pkg="onnxruntime-gpu<1.27.0"
-            else
-                ort_pkg="onnxruntime-gpu<1.17.0"
+            # Match the CUDA 12 / ORT combination validated by the benchmark.
+            local nvidia_pkgs=('onnxruntime-gpu[cuda,cudnn]<1.27')
+            if [ "$PROVIDER" != "cuda" ]; then
+                nvidia_pkgs+=('tensorrt-cu12<11')
             fi
-            $PIP_CMD install -r "$REQ_FILE" "$ort_pkg" $nvidia_pkgs || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
+            $PIP_CMD install -r "$REQ_FILE" "${nvidia_pkgs[@]}" || { echo "[ERROR] NVIDIAライブラリのインストールに失敗しました。"; exit 1; }
         fi
     elif [ "$backend" = "intel" ]; then
-        $PIP_CMD install -r "$REQ_FILE" onnxruntime-openvino || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
+        $PIP_CMD install -r "$REQ_FILE" 'onnxruntime-openvino==1.24.1' 'openvino==2025.4.1' || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "webgpu" ]; then
         $PIP_CMD install -r "$REQ_FILE" onnxruntime onnxruntime-ep-webgpu || { echo "[ERROR] WebGPUライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "amd" ]; then
         # AMD用 ROCm対応パッケージ（onnxruntime-rocm または onnxruntime-migraphx）をインストールするのじゃ
-        $PIP_CMD install -r "$REQ_FILE" onnxruntime-rocm -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ 2>/dev/null || \
-        $PIP_CMD install -r "$REQ_FILE" onnxruntime-migraphx -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
-        
+        if [ "$PROVIDER" = "migraphx" ]; then
+            $PIP_CMD install -r "$REQ_FILE" onnxruntime-migraphx -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ || exit 1
+        else
+            $PIP_CMD install -r "$REQ_FILE" onnxruntime-rocm -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ 2>/dev/null || \
+            $PIP_CMD install -r "$REQ_FILE" onnxruntime-migraphx -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
+        fi
         # Ubuntu等の新しいLinux環境では、実行可能スタックのフラグが原因でロードエラーになるため解除するのじゃ
         SO_FILE=$(find "$VENV_DIR" -name "onnxruntime_pybind11_state.so" | head -n 1)
         if [ -n "$SO_FILE" ]; then
@@ -314,6 +320,12 @@ fi
 
 # 引数解析
 while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --provider|--gpu-index|--directml-device-index|--webgpu-device-index|--target-vendor|--openvino-device|--tensorrt-lib-dir)
+            if [ "$#" -lt 2 ] || [[ "$2" == --* ]]; then
+                echo "[ERROR] $1には値が必要です。"; exit 1
+            fi ;;
+    esac
     case $1 in
         -S|--server) PY_ARGS+=("--mode" "server"); shift ;;
         -K|--client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
@@ -332,6 +344,20 @@ while [[ $# -gt 0 ]]; do
         -T|--tags-file) PY_ARGS+=("--tags-file" "$2"); shift 2 ;;
         -q|--thresh) PY_ARGS+=("--thresh" "$2"); shift 2 ;;
         -g|--gpu) USE_GPU=1; shift ;;
+        --provider)
+            PROVIDER="$2"; PY_ARGS+=("--provider" "$2"); USE_GPU=1
+            case "$2" in
+                cpu) USE_GPU=0 ;;
+                cuda|tensorrt) FORCE_TYPE="nvidia" ;;
+                intel) FORCE_TYPE="intel" ;;
+                webgpu) WEBGPU_MODE=1 ;;
+                migraphx) FORCE_TYPE="amd" ;;
+                *) echo "[ERROR] Linux provider: cpu/cuda/tensorrt/intel/webgpu/migraphx"; exit 1 ;;
+            esac
+            shift 2 ;;
+        --tensorrt-lib-dir) TENSORRT_LIB_DIR_ARG="$2"; PY_ARGS+=("$1" "$2"); shift 2 ;;
+        --gpu-index|--directml-device-index|--webgpu-device-index|--target-vendor|--openvino-device)
+            PY_ARGS+=("$1" "$2"); shift 2 ;;
         --webgpu) USE_GPU=1; WEBGPU_MODE=1; shift ;;
         -I|--force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
         -N|--force-nvidia) USE_GPU=1; FORCE_TYPE="nvidia"; shift ;;
@@ -393,6 +419,13 @@ if [ $DO_ORGANIZE -eq 1 ] || [ $DO_PIXIV -eq 1 ]; then
     fi
 fi
 
+# Reject incompatible selections before installing an environment.
+if [ "$WEBGPU_MODE" = "1" ] && [ -n "$PROVIDER" ] && [ "$PROVIDER" != "webgpu" ]; then
+    echo "[ERROR] --webgpuと--providerが矛盾しています。"; exit 1
+fi
+if [ "$PROVIDER" = "cpu" ]; then
+    USE_GPU=0
+fi
 # GPUモード決定ロジック
 BACKEND_MODE="cpu"
 if [ $USE_GPU -eq 1 ]; then
@@ -433,7 +466,13 @@ if [ $USE_GPU -eq 1 ]; then
             BACKEND_MODE="cpu"
         fi
     fi
-    # Python側には --gpu フラグを渡す（Python側でプロバイダを総当たりさせるため）
+    if [ -z "$PROVIDER" ] && [ "$BACKEND_MODE" = "intel" ]; then
+        PY_ARGS+=("--provider" "intel")
+    fi
+    if [ -z "$PROVIDER" ] && [ "${DETECTED:-}" = "amd_webgpu" ]; then
+        PY_ARGS+=("--target-vendor" "amd")
+    fi
+    # Explicit providers are checked in Python; GPU failures must not become CPU success.
     if [ "$BACKEND_MODE" != "cpu" ]; then
         PY_ARGS+=("--gpu")
     fi
@@ -446,7 +485,17 @@ fi
 
 setup_env "$BACKEND_MODE" "$IS_CLIENT"
 
+if [ -n "$TENSORRT_LIB_DIR_ARG" ]; then
+    export TENSORRT_LIB_DIR="$TENSORRT_LIB_DIR_ARG"
+fi
+if [ "$BACKEND_MODE" = "intel" ] && [ "$IS_CLIENT" != "1" ]; then
+    OPENVINO_LIBS=$("$VENV_DIR/bin/python" -c 'import importlib.util, pathlib; print(pathlib.Path(importlib.util.find_spec("openvino").origin).parent / "libs")') || exit 1
+    export LD_LIBRARY_PATH="$OPENVINO_LIBS:${LD_LIBRARY_PATH:-}"
+fi
 if [ "$BACKEND_MODE" = "nvidia" ]; then
+    if [ -n "${TENSORRT_LIB_DIR:-}" ]; then
+        export LD_LIBRARY_PATH="$TENSORRT_LIB_DIR:${LD_LIBRARY_PATH:-}"
+    fi
     EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64", "/usr/lib/aarch64-linux-gnu/tegra"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("nvidia" in root or "tensorrt" in root) and any(f.endswith(".so") or ".so." in f for f in files)]; print(":".join(list(dict.fromkeys([p for p in paths if os.path.exists(p)]))))' 2>/dev/null)
     if [ -n "$EXTRA_LD_PATHS" ]; then
         export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
@@ -536,5 +585,10 @@ print(":".join(list(dict.fromkeys([p for p in paths if p and os.path.exists(p)])
     echo "[INFO] AMD iGPU/APU コアダンプ回避設定を適用しました: HSA_ENABLE_SDMA=0"
 fi
 
+if [ "$BACKEND_MODE" = "amd" ] && [ "$IS_CLIENT" != "1" ]; then
+    "$VENV_DIR/bin/python" -c 'import onnxruntime as ort, sys; p=ort.get_available_providers(); print("[INFO] AMD providers:", p); sys.exit(0 if any(x in p for x in ("MIGraphXExecutionProvider", "ROCMExecutionProvider")) else 1)' || {
+        echo "[ERROR] AMD ONNX Runtimeをロードできません。GPU/ROCmに適合するwheelを確認してください。"; exit 1;
+    }
+fi
 echo "[INFO] Pythonスクリプトを実行 ($BACKEND_MODE)..."
 "$VENV_DIR/bin/python" "$PYTHON_SCRIPT" "${PY_ARGS[@]}"
