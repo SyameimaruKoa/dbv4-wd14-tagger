@@ -42,6 +42,13 @@ class GPUInitializationTests(unittest.TestCase):
             gpu.configure_webgpu(options, None, 'intel')
             options.add_provider_for_devices.assert_called_once_with([devices[1]], {})
 
+    def test_webgpu_auto_selects_first_duplicate_vendor_match(self):
+        devices = [adapter(0x8086, '1'), adapter(0x8086, '3'), adapter(0x10DE, '0')]
+        with patch.object(gpu, 'webgpu_devices', return_value=devices):
+            options = MagicMock()
+            gpu.configure_webgpu(options, None, 'intel')
+            options.add_provider_for_devices.assert_called_once_with([devices[0]], {})
+
     def test_directml_checks_dxgi_index_not_webgpu_index(self):
         records = [dict(vendor='', vendor_id=0x8086, metadata={'DxgiAdapterNumber':'3'}),
                    dict(vendor='', vendor_id=0x10DE, metadata={'DxgiAdapterNumber':'0'})]

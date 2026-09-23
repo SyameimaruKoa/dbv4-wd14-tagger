@@ -60,6 +60,8 @@ DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`と�
 
 GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。
 
+Windowsで`-Gpu`だけを指定した場合は、専用かつ効率のよい実行経路を優先し、NVIDIAはTensorRT→CUDA、AMDはDirectML、IntelはOpenVINOを最初に確認する。利用できない場合は、DirectML、WebGPU、CPUの順に実行前の事前確認を行ってフォールバックする。AMDには専用ONNX Runtime経路がないためDirectMLが第一候補となる。WebGPUはDirectMLより後の最終GPUフォールバック、または`-Provider webgpu`による明示指定に限って使用する。`-Provider`を指定すれば選択を固定でき、自動フォールバックしない。CPU、Client、CUDA、TensorRT、Intel、DirectML、WebGPUはそれぞれ独立した`venv_*`を使い、別バックエンドのONNX Runtimeを同じ仮想環境へ混在させない。LinuxでもNVIDIAの自動選択はTensorRTを優先し、`--provider cuda`を明示すればCUDAだけを導入する。
+
 ### 将来向け1B級
 
 `future_1b`には`animetimm/vit_giantopt_patch16_siglip_384.dbv4-full`を予約した。公式値は1.2B parameters、2.3 TFLOPs、512角、Macro@Best F1 0.607で、ultraの0.611に近い。ただし2026-09-21時点の公式repoには4,734,142,376 bytesの`model.safetensors`とPyTorch重みしかなく、`model.onnx`は存在しない。このプロジェクトはONNX Runtimeを使うため、現在は理由を表示して停止する。公式ONNXまたは検証済み変換版が公開された時点で取得元と外部データ構成を確定し、16GB以上のGPUで実測して有効化する。

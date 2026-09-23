@@ -233,7 +233,7 @@ function Show-Help {
     Write-Host ""
     Write-Host "主なオプション:" -ForegroundColor Yellow
     Write-Host "    -Path (-p) <path>     処理対象ファイル/フォルダ"
-    Write-Host "    -Gpu (-g)             GPUを使用する（Windows: DirectML）"
+    Write-Host "    -Gpu (-g)             GPUを使用する（TensorRT/CUDA等→DirectML→WebGPUの順で自動選択）"
     Write-Host "    -Organize (-o)        フォルダ整理のみ行う（タグ付けOFF）"
     Write-Host "    -Tag (-t)             タグ付けも行う（-Organize併用時）"
     Write-Host "    -Pixiv (-x)           Pixiv整理モード（末端フォルダ単位で全画像を一括移動）"
@@ -322,21 +322,9 @@ function Prepare-Environment {
     $ExtraPackages = @()
     
     if ($IsClient) {
-        if (Test-Path (Join-Path $ScriptDir "venv_gpu")) {
-            $EnvName = "Client (流用 venv_gpu)"
-            $TargetVenv = Join-Path $ScriptDir "venv_gpu"
-            $OnnxPackage = "onnxruntime-directml"
-        }
-        elseif (Test-Path (Join-Path $ScriptDir "venv_std")) {
-            $EnvName = "Client (流用 venv_std)"
-            $TargetVenv = Join-Path $ScriptDir "venv_std"
-            $OnnxPackage = "onnxruntime"
-        }
-        else {
-            $EnvName = "Client (軽量)"
-            $TargetVenv = Join-Path $ScriptDir "venv_client"
-            $OnnxPackage = ""
-        }
+        $EnvName = "Client (軽量)"
+        $TargetVenv = Join-Path $ScriptDir "venv_client"
+        $OnnxPackage = ""
     }
     else {
         if ($SelectedProvider) {
@@ -351,17 +339,12 @@ function Prepare-Environment {
                 }
                 'intel' { $OnnxPackage = 'onnxruntime-openvino==1.24.1'; $ExtraPackages = @('openvino==2025.4.1') }
                 'webgpu' { $OnnxPackage = 'onnxruntime'; $ExtraPackages = @('onnxruntime-ep-webgpu') }
-                'directml' { $OnnxPackage = 'onnxruntime-directml'; $TargetVenv = Join-Path $ScriptDir 'venv_gpu' }
+                'directml' { $OnnxPackage = 'onnxruntime-directml' }
             }
         }
         elseif ($IsWindowsOS -and $UseGpu) {
             $EnvName = "GPU (DirectML)"
-            $TargetVenv = Join-Path $ScriptDir "venv_gpu"
-            $OnnxPackage = "onnxruntime-directml"
-        }
-        elseif (-not $UseGpu -and (Test-Path (Join-Path $ScriptDir "venv_gpu"))) {
-            $EnvName = "CPU (流用 venv_gpu)"
-            $TargetVenv = Join-Path $ScriptDir "venv_gpu"
+            $TargetVenv = Join-Path $ScriptDir "venv_directml"
             $OnnxPackage = "onnxruntime-directml"
         }
         else {
@@ -425,6 +408,64 @@ function Prepare-Environment {
     if ($LASTEXITCODE -ne 0) { throw "依存パッケージのインストールに失敗しました。" }
     return $PyEx
 }
+
+function Resolve-AutoProvider {
+    $Names = @()
+    try {
+        $Names = @(Get-CimInstance Win32_VideoController -ErrorAction Stop | ForEach-Object { $_.Name })
+    }
+    catch {
+        $Names = @(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Video\*\0000' `
+            -ErrorAction SilentlyContinue | ForEach-Object { $_.DriverDesc } | Where-Object { $_ })
+        if (-not $Names) {
+            Write-Warning "GPU製造元を取得できないため、互換性を優先してDirectMLを使用します。"
+            return @{ Candidates = @('directml', 'webgpu', 'cpu'); Vendor = $null }
+        }
+    }
+
+    $JoinedNames = $Names -join ' / '
+    if ($Names | Where-Object { $_ -match 'NVIDIA' }) {
+        Write-Host "[INFO] NVIDIA GPUを検出しました。TensorRTを最優先で確認します: $JoinedNames" -ForegroundColor Cyan
+        return @{ Candidates = @('tensorrt', 'cuda', 'directml', 'webgpu', 'cpu'); Vendor = 'nvidia' }
+    }
+    if ($Names | Where-Object { $_ -match 'AMD|Radeon|Advanced Micro Devices' }) {
+        Write-Host "[INFO] AMD GPUを検出しました。DirectMLを自動選択します: $JoinedNames" -ForegroundColor Cyan
+        return @{ Candidates = @('directml', 'webgpu', 'cpu'); Vendor = 'amd' }
+    }
+    if ($Names | Where-Object { $_ -match 'Intel' }) {
+        Write-Host "[INFO] Intel GPUを検出しました。OpenVINOを自動選択します: $JoinedNames" -ForegroundColor Cyan
+        return @{ Candidates = @('intel', 'directml', 'webgpu', 'cpu'); Vendor = 'intel' }
+    }
+
+    Write-Warning "対応GPUを識別できないため、互換性を優先してDirectMLを使用します: $JoinedNames"
+    return @{ Candidates = @('directml', 'webgpu', 'cpu'); Vendor = $null }
+}
+
+function Test-ProviderAvailability {
+    param ([string]$PythonExecutable, [string]$SelectedProvider, [string]$Vendor)
+
+    switch ($SelectedProvider) {
+        'cpu' { return $true }
+        'cuda' {
+            & $PythonExecutable -c "import onnxruntime as ort,sys; sys.exit(0 if 'CUDAExecutionProvider' in ort.get_available_providers() else 1)" 2>$null | Out-Null
+        }
+        'tensorrt' {
+            & $PythonExecutable -c "import gpu_runtime,onnxruntime as ort,sys; gpu_runtime.prepare_tensorrt(); sys.exit(0 if 'TensorrtExecutionProvider' in ort.get_available_providers() else 1)" 2>$null | Out-Null
+        }
+        'intel' {
+            $Device = if ($OpenVinoDevice) { $OpenVinoDevice } else { 'GPU' }
+            & $PythonExecutable -c "import gpu_runtime,sys; gpu_runtime.prepare_openvino(sys.argv[1])" $Device 2>$null | Out-Null
+        }
+        'directml' {
+            & $PythonExecutable -c "import onnxruntime as ort,sys; sys.exit(0 if 'DmlExecutionProvider' in ort.get_available_providers() else 1)" 2>$null | Out-Null
+        }
+        'webgpu' {
+            & $PythonExecutable -c "import gpu_runtime,onnxruntime as ort,sys; gpu_runtime.configure_webgpu(ort.SessionOptions(),None,sys.argv[1] or None)" $Vendor 2>$null | Out-Null
+        }
+        default { return $false }
+    }
+    return $LASTEXITCODE -eq 0
+}
 #endregion
 
 #region Main Logic
@@ -475,12 +516,40 @@ if ($WebGpu) {
     $Provider = 'webgpu'
 }
 if ($Provider) { $Gpu = $Provider -ne 'cpu' }
-if ($Gpu -and -not $Provider) { $Provider = 'directml' }
+$AutoProviderSelection = $Gpu -and -not $Provider
+if ($AutoProviderSelection) {
+    $AutoSelection = Resolve-AutoProvider
+}
 if (-not $IsWindowsOS -and $Provider) { throw 'Linuxではrun_tagger.shを使用してください。' }
 if ($Provider -eq 'directml' -and $TargetVendor -and -not $Client) {
     $ProbePython = Prepare-Environment -UseGpu $true -IsClient $false -SelectedProvider 'webgpu'
 }
-$VenvPython = Prepare-Environment -UseGpu $Gpu -IsClient $Client -SelectedProvider $Provider
+if ($AutoProviderSelection) {
+    $VenvPython = $null
+    foreach ($Candidate in $AutoSelection.Candidates) {
+        Write-Host "[INFO] 実行プロバイダーを確認します: $Candidate" -ForegroundColor Cyan
+        try {
+            $CandidatePython = Prepare-Environment -UseGpu ($Candidate -ne 'cpu') -IsClient $false -SelectedProvider $Candidate
+            $CandidateVendor = if ($Candidate -eq 'webgpu') { $AutoSelection.Vendor } else { $null }
+            if (Test-ProviderAvailability -PythonExecutable $CandidatePython -SelectedProvider $Candidate -Vendor $CandidateVendor) {
+                $Provider = $Candidate
+                $Gpu = $Candidate -ne 'cpu'
+                $VenvPython = $CandidatePython
+                if ($Candidate -eq 'webgpu' -and $CandidateVendor) { $TargetVendor = $CandidateVendor }
+                Write-Host "[INFO] 自動選択しました: $Candidate" -ForegroundColor Green
+                break
+            }
+            Write-Warning "${Candidate}を利用できないため、次の候補を確認します。"
+        }
+        catch {
+            Write-Warning "${Candidate}の環境を準備できませんでした: $($_.Exception.Message)"
+        }
+    }
+    if (-not $VenvPython) { throw '利用可能な実行プロバイダーがありません。' }
+}
+else {
+    $VenvPython = Prepare-Environment -UseGpu $Gpu -IsClient $Client -SelectedProvider $Provider
+}
 
 # Python引数構築
 $PyArgs = @($PythonScript)

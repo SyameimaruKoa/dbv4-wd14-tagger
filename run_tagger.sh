@@ -262,7 +262,7 @@ setup_env() {
         else
             # Match the CUDA 12 / ORT combination validated by the benchmark.
             local nvidia_pkgs=('onnxruntime-gpu[cuda,cudnn]<1.27')
-            if [ "$PROVIDER" != "cuda" ]; then
+            if [ "$PROVIDER" = "tensorrt" ]; then
                 nvidia_pkgs+=('tensorrt-cu12<11')
             fi
             $PIP_CMD install -r "$REQ_FILE" "${nvidia_pkgs[@]}" || { echo "[ERROR] NVIDIAライブラリのインストールに失敗しました。"; exit 1; }
@@ -441,8 +441,10 @@ if [ $USE_GPU -eq 1 ]; then
         # 自動判別
         DETECTED=$(detect_gpu_vendor)
         if [ "$DETECTED" = "nvidia" ]; then
-            echo "[INFO] NVIDIA GPU を検出しました。CUDAモードで実行します。"
+            echo "[INFO] NVIDIA GPU を検出しました。TensorRTモードを優先します。"
             BACKEND_MODE="nvidia"
+            PROVIDER="tensorrt"
+            PY_ARGS+=("--provider" "tensorrt")
         elif [ "$DETECTED" = "intel" ]; then
             echo "[INFO] Intel GPU を検出しました。OpenVINOモードで実行します。"
             BACKEND_MODE="intel"

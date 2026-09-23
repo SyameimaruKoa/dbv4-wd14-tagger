@@ -199,9 +199,15 @@ def configure_webgpu(options, index=None, target_vendor=None):
     matches = [i for i, d in enumerate(devices)
                if not target_vendor or vendor_name(d.device.vendor, d.device.vendor_id) == target_vendor]
     if index is None:
-        if len(matches) != 1:
+        if target_vendor and matches:
+            # Some drivers expose the same physical GPU through more than one
+            # WebGPU backend.  Vendor-constrained auto selection remains safe;
+            # an explicit index is available when a particular backend matters.
+            index = matches[0]
+        elif len(matches) != 1:
             raise RuntimeError(f"WebGPU selection is ambiguous or unavailable ({matches}); specify --webgpu-device-index")
-        index = matches[0]
+        else:
+            index = matches[0]
     if index < 0 or index >= len(devices):
         raise RuntimeError(f"WebGPU device index unavailable: {index}; {len(devices)} devices")
     d = devices[index].device
