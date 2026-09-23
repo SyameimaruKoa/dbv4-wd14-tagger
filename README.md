@@ -56,28 +56,9 @@ DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`と�
 | compact_manual | 30.4M | 384 × 384 | 0.510 | lightweightの0.511とほぼ同等でONNXが約36%小さい |
 | medium_manual | 63.5M | 448 × 448 | 0.532 | lightweightより高精度でbalancedより小さい中間候補 |
 
-### DirectMLのVRAM目安
+### ベンチマーク結果
 
-RTX 2070 Max-Q 8GB、DirectML、batch-size=4、合成640 × 480 RGB画像、3回推論での統一実測値。`nvidia-smi`を100ms間隔で監視し、測定前との差をモデル実行による増分とした。
-
-| Profile | 入力解像度 | 測定前 | 常駐／ピーク | ピーク増分 | 推論時間 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| lightweight | 448 × 448 | 843 MiB | 1,614／1,614 MiB | 771 MiB | 120.3 ms/img |
-| balanced | 384 × 384 | 852 MiB | 2,051／2,051 MiB | 1,199 MiB | 458.8 ms/img |
-| high | 448 × 448 | 847 MiB | 3,616／3,618 MiB | 2,771 MiB | 1,273.9 ms/img |
-| ultra | 512 × 512 | 840 MiB | 6,570／6,583 MiB | 5,743 MiB | 1,735.3 ms/img |
-| wd14_v3 | 448 × 448 | 1,087 MiB | 2,970／2,973 MiB | 1,886 MiB | 442.3 ms/img |
-
-| 測定待ちProfile | 入力解像度 | 状態 | 暫定VRAM目安 |
-| --- | ---: | --- | ---: |
-| compact_manual | 384 × 384 | 管理者承認待ち | 約1～1.5GB（推定） |
-| medium_manual | 448 × 448 | 管理者承認待ち | 約1.5～2.5GB（推定） |
-| future_1b | 512 × 512 | ONNX未公開・RTX 2070では実行不可見込み | 未測定 |
-
-> [!WARNING]
-> VRAM使用量はGPU、DirectML／ONNX Runtimeのバージョン、ドライバー、batch-size、同時使用中のアプリによって変動する。ultraのピーク増分は5,743MiBだったため、8GB未満のGPUでは推奨しない。メモリ不足時は`-BatchSize 1`または`-BatchSize 2`を指定する。ただしbatch-sizeを下げてもモデル重み自体の常駐分は減らない。
-
-承認待ち2プロファイルの値は、Hugging Faceで確認したFP32 ONNX容量、パラメータ数、公式入力解像度、および実測済みモデルから見積もった概算である。承認後は`benchmark_model_vram.py compact_manual`と`benchmark_model_vram.py medium_manual`で同じ条件を測定できる。
+GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。
 
 ### 将来向け1B級
 
@@ -85,7 +66,7 @@ RTX 2070 Max-Q 8GB、DirectML、batch-size=4、合成640 × 480 RGB画像、3回
 
 ### highプロファイルの位置付け
 
-`high`のEVA02は公式Macro@Best F1が0.599で、balancedの0.581より高い一方、統一条件のDirectML実測では1,273.9 ms/imgとなり、ultraの1,735.3 ms/imgに近い。そのため新規利用には非推奨とし、既存configと比較試験の互換性のため定義だけを保持する。
+`high`のEVA02は公式Macro@Best F1が0.599で、balancedの0.581より高い一方、[過去のDirectML実測](benchmarks/legacy_results.md)では処理時間がultraに近い。そのため新規利用には非推奨とし、既存configと比較試験の互換性のため定義だけを保持する。
 
 2026-09-21時点で公開済みDBV4を再調査したが、適切な代替はなかった。例えばConvFormer B36は181.5 GFLOPs・Macro@Best F1 0.574で、balancedの132.2 GFLOPs・0.581に両面で劣る。SwinV2 BaseもMacro@Best F1 0.575でbalanced未満、ViT GiantOptは2.3 TFLOPs・1.2B parametersでultraより重い。速度と精度の中間を埋める新モデルが公開されるまでは、`balanced`または精度最優先の`ultra`を選ぶ。
 
@@ -241,6 +222,12 @@ compinit
 
 ## Windows / PowerShell
 
+### ポータブルな保存先
+
+ランチャーが作成する認証情報、モデル、キャッシュ、TensorRT engine、pipキャッシュ、仮想環境はすべてこのリポジトリフォルダ内へ保存する。Hugging Faceのtokenは `.dbv4/huggingface/token` に一度保存され、CPU・CUDA・TensorRTなど別の仮想環境から共通利用される。仮想環境を作り直しても再ログインは不要であり、リポジトリフォルダを削除すれば関連データも削除される。
+
+`.dbv4/`、`.dbv4_models/`、`venv_*` はGit管理外である。tokenを含む `.dbv4/` を共有・コミットしないこと。
+
 初回セットアップ：
 
 ~~~powershell
@@ -283,9 +270,19 @@ compinit
 .\run_tagger.ps1 -Client -HostIP "192.168.1.10" -Path "C:\Images" -Organize
 ~~~
 
+### TensorRT
+
+WindowsとLinuxのTensorRTプロバイダーは、初回実行時に公式PyPIのCUDA 12用 `tensorrt-cu12` を `venv_tensorrt` へ自動導入する。NVIDIAドライバーはOS側に必要だが、Python依存関係、TensorRTランタイム、engine cacheはリポジトリ内に保存される。
+
+~~~powershell
+.\run_tagger.ps1 -Provider tensorrt -GpuIndex 0 -Path "C:\Images"
+~~~
+
+PyPI版を使用できない場合は、[NVIDIA TensorRT 10ダウンロード](https://developer.nvidia.com/tensorrt/download/10x)からWindows CUDA 12版ZIPを取得して利用条件へ同意し、展開後の `TensorRT-10.x.x.x` フォルダを `.dbv4/runtime/` に配置する。ランチャーは `.dbv4/runtime/TensorRT-*/bin/nvinfer_10.dll` を自動検出する。任意の場所へ置く場合だけ `-TensorRtLibDir` を指定する。詳細は[NVIDIA公式Windows ZIP導入手順](https://docs.nvidia.com/deeplearning/tensorrt/10.16.0/installing-tensorrt/install-zip.html)を参照。
+
 ## Linux / Bash
 
-`run_tagger.sh`の一時ファイルは`/tmp`を使う。`~/.cache`が容量の小さいtmpfsの場合、Hugging Faceのモデルキャッシュは自動的に`~/.local/share/huggingface`へ保存する。既存の`HF_HUB_CACHE`・`HF_XET_CACHE`指定は優先される。モデルキャッシュは再利用するデータであり、`/tmp`には置かない。
+`run_tagger.sh`の一時ファイルは`/tmp`を使う。認証情報、モデル、pipキャッシュ、TensorRT engine cacheはWindowsと同様にリポジトリ内の`.dbv4/`へ保存する。
 
 初回セットアップ：
 
@@ -299,10 +296,12 @@ Hugging Faceのgated modelを利用する前のログイン：
 ./run_tagger.sh --login
 ~~~
 
+Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
+
 `ultra`はONNX本体の公開リポジトリとは別に、タグと前処理データを`animetimm/convnextv2_huge.dbv4-full`から取得する。利用前に[モデルページ](https://huggingface.co/animetimm/convnextv2_huge.dbv4-full)で利用条件に同意し、同意したアカウントで`--login`を実行する。401が出る場合は、そのアカウントにアクセス権があるか確認する。
 `ultra`などのアクセス確認で401が返った場合は、モデルページを開いて再ログインを促し、同じ実行内でアクセスを再確認する。利用条件への同意や管理者承認がまだ完了していない場合は、案内を表示して停止する。
 
-既存のGPU／CPU仮想環境から`hf`を利用できる環境を再利用し、環境が一つもない場合だけCPU環境を作成する。ブラウザで作成したread権限のtokenを入力すると、認証情報はHugging Face標準の保存先へ保存され、ログイン後は推論を実行せず終了する。
+既存のGPU／CPU仮想環境から`hf`を利用できる環境を再利用し、環境が一つもない場合だけCPU環境を作成する。ブラウザで作成したread権限のtokenを入力すると、認証情報は`.dbv4/huggingface/token`へ保存され、ログイン後は推論を実行せず終了する。
 
 通常実行：
 
@@ -412,11 +411,7 @@ Serverは複数Clientの要求を既定で2件まで並列処理する。`config
 
 ## テスト
 
-### Linux Intel GPU実機確認（2026-09-21）
-
-Ubuntu 26.04.1、kernel 7.0.0-31-generic、Core i7-1355U内蔵 Iris Xe（8086:a7a1）、Python 3.13.15、onnxruntime-openvino 1.24.1で、`/dev/dri/renderD128`とIntel OpenCL platformを確認した。`openvino_gpu_device`は`GPU.0`。`--force-intel --model-profile wd14_v3`で合成PNGを処理し、active providerは`OpenVINOExecutionProvider`と`CPUExecutionProvider`、OpenVINO debugログはモデル全体の対応と推論成功を報告した。入力はNHWC `[batch_size, 448, 448, 3]`、ラベルは10,861件。ExifToolでXMP Subject書き込みを確認した。通常ログではOpenVINO内部診断は表示されなかった。
-
-batch-size=4、初回warmup 2.89秒、1枚の通常推論176.0 ms/img（再試行178.1 ms/img）。合成画像1枚の測定値であり、タグ品質や安定した性能の評価ではない。GPU.0指定とOpenVINO EPの実行は確認したが、カーネル単位のGPU使用率は測定していないためCPU fallbackの完全な排除は未確認。`lightweight`はHugging Faceのモデル取得が401（gated repository、未認証）で推論前に停止した。`balanced`、保存scoreでの整理、実画像、Server/Clientの実機疎通は未検証。
+実機測定・性能比較・失敗条件は [ベンチマーク結果](BENCHMARKS.md) に集約した。過去のIntel／AMD動作確認は [旧測定記録](benchmarks/legacy_results.md) を参照。
 
 DBV4 metadata / preprocessing / input layout / output probability変換の単体テストを実行できる。
 
@@ -424,7 +419,7 @@ DBV4 metadata / preprocessing / input layout / output probability変換の単体
 python -m unittest discover -s tests -p "test_*.py"
 ~~~
 
-実モデルのCPU/GPU速度比較やR-15/R-17キャリブレーションは、実行環境ごとのベンチマーク工程として別途評価する。
+実モデルのCPU/GPU速度比較は [ベンチマーク結果](BENCHMARKS.md) を参照。R-15/R-17キャリブレーションは別途評価する。
 
 ## ライセンス
 

@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "provider_requested": "directml",
+  "profile": "balanced",
+  "batch_size": 4,
+  "target_vendor": "intel",
+  "device_name": "Intel UHD Graphics 630",
+  "error": "RuntimeError: requested DmlExecutionProvider, active providers are ['CPUExecutionProvider']",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "onnxruntime": "1.24.4"
+}

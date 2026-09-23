@@ -1,0 +1,144 @@
+{
+  "status": "ok",
+  "provider_requested": "webgpu",
+  "provider_active": [
+    "WebGpuExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "profile": "balanced",
+  "repo_id": "animetimm/caformer_b36.dbv4-full",
+  "metadata_version": "8c7ba23eaed2d01d",
+  "model_path": "/home/komeiziaya/.cache/huggingface/hub/models--animetimm--caformer_b36.dbv4-full/snapshots/aac0699c88553d50eb673b41a81d8222936b22b2/model.onnx",
+  "batch_size": 4,
+  "input_shape": [
+    "batch",
+    3,
+    "height",
+    "width"
+  ],
+  "output_shape": [
+    4,
+    12476
+  ],
+  "seed": 20260922,
+  "image_size": [
+    640,
+    480
+  ],
+  "warmup": 3,
+  "iterations_per_set": 20,
+  "sets": 3,
+  "raw_ms_per_image": [
+    [
+      110.01813925008719,
+      110.09683125007541,
+      110.23274699982721,
+      109.955910249937,
+      110.48397374997876,
+      110.06700350003484,
+      110.23962374997609,
+      110.28781575009816,
+      110.12774625010024,
+      110.32360675017117,
+      110.37232800003949,
+      110.28063224989637,
+      110.60814024995125,
+      110.19775999989179,
+      110.58012174999021,
+      110.40946675007035,
+      110.41844550004498,
+      110.29866774993025,
+      110.16170125003555,
+      110.34078425018379
+    ],
+    [
+      110.38316849999319,
+      110.35925650003264,
+      110.43866950012671,
+      110.2863639998759,
+      110.60925775018404,
+      110.80932949994349,
+      110.66312074990492,
+      110.42190100010885,
+      110.46548424997127,
+      110.73734549995606,
+      110.60820200009402,
+      110.7467765000365,
+      110.9477219999917,
+      110.59057400007077,
+      110.8084127499751,
+      110.53423024986841,
+      110.72041724992232,
+      111.2265465001201,
+      110.66039349998391,
+      110.95518550018824
+    ],
+    [
+      110.78648925013113,
+      110.67076824997457,
+      110.99782549990778,
+      111.0608305000369,
+      110.6088787500994,
+      111.17321400001856,
+      110.9098904998973,
+      111.06219199996303,
+      111.03316300000188,
+      110.67770799991195,
+      111.56356074980067,
+      110.84242474998973,
+      110.96726924984068,
+      111.0566392499095,
+      111.05360874989856,
+      111.14295399988805,
+      111.08089250001285,
+      111.15288300015891,
+      111.21332250013438,
+      110.7508727500317
+    ]
+  ],
+  "set_median_ms": [
+    110.28422399999727,
+    110.63482562508398,
+    111.04338587495022
+  ],
+  "set_p95_ms": [
+    110.58152267498826,
+    110.96875355018483,
+    111.2308344126177
+  ],
+  "median_ms_per_image": 110.63482562508398,
+  "baseline_vram_mib": 34.0,
+  "peak_vram_mib": 1137.0,
+  "vram_increment_mib": 1103.0,
+  "baseline_rss_mib": 70.72265625,
+  "peak_rss_mib": 669.47265625,
+  "metadata_seconds": 1.177079613999922,
+  "session_seconds": 1.7751785039999959,
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "python": "3.13.15",
+  "onnxruntime": "1.30.0",
+  "webgpu_plugin": "0.4.0",
+  "gpu_index": 0,
+  "directml_device_index": null,
+  "webgpu_device_index": 0,
+  "nvidia_gpu_memory_observed": true,
+  "executed_node_providers": [
+    "CPUExecutionProvider",
+    "WebGpuExecutionProvider"
+  ],
+  "openvino_device": null,
+  "openvino_gpu_name": null,
+  "webgpu_hardware": {
+    "vendor": "nvidia",
+    "vendor_id": 4318,
+    "device_id": 7952,
+    "metadata": {
+      "Discrete": "1",
+      "card_idx": "0",
+      "pci_bus_id": "0000:01:00.0"
+    }
+  },
+  "tensorrt_lib_dir": null,
+  "target_vendor": "nvidia",
+  "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design"
+}

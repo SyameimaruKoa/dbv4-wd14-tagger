@@ -1,0 +1,30 @@
+{
+  "reference": "directml",
+  "providers": [
+    "intel",
+    "directml",
+    "webgpu"
+  ],
+  "results": [],
+  "comparisons": [],
+  "incomplete": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "intel",
+      "reason": "Fail: [ONNXRuntimeError] : 1 : FAIL : Exception during initialization: C:\\dev\\packaging\\ort-rel-1.24.1\\onnxruntime\\core\\providers\\openvino\\backends\\basic_backend.cc:136 __cdecl onnxruntime::openvino_ep::BasicBackend::BasicBackend(class std::unique_ptr<struct onnx::ModelProto,struct std::default_delete<struct onnx::ModelProto> > &,struct onnxruntime::openvino_ep::SessionContext &,const struct onnxruntime::openvino_ep::SubGraphContext &,class onnxruntime::openvino_ep::SharedContext &,class std::unique_ptr<struct onnxruntime::openvino_ep::ModelBlobWrapper,struct std::default_delete<struct onnxruntime::openvino_ep::ModelBlobWrapper> > &) C:\\dev\\packaging\\ort-rel-1.24.1\\onnxruntime\\core\\providers\\openvino\\ov_interface.cc:28 class onnxruntime::openvino_ep::OVExeNetwork __cdecl onnxruntime::openvino_ep::OvExceptionBoundary<false,class onnxruntime::openvino_ep::OVCore::CompileModel::<lambda_1>,const class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >&>(class onnxruntime::openvino_ep::OVCore::CompileModel::<lambda_1> &&,struct std::basic_format_string<char,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &> &&,const class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > &) [OpenVINO-EP] Exception while Loading Network for graph OpenVINOExecutionProvider_OpenVINO-EP-subgraph_1_0: Exception from src\\inference\\src\\cpp\\core.cpp:117:\nException from src\\inference\\src\\dev\\plugin.cpp:53:\nCheck 'false' failed at src\\plugins\\intel_gpu\\src\\plugin\\program_builder.cpp:163:\n[GPU] ProgramBuilder build failed!\nProgram build failed(0_part_2):\nptxas error   : Entry function 'permute_tile_8x8_4x4_15052227883184159158_0_0__sa' uses too much shared data (0xc020 bytes, 0xc000 max)\n\n\n\n\n\n\n\n"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "directml",
+      "reason": "missing"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "reason": "missing"
+    }
+  ]
+}

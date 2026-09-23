@@ -1,6 +1,17 @@
 # 実装履歴
 
+## 2026-09-23
+
+- ベンチマークで追加したCUDA/cuDNN・TensorRT・OpenVINOの初期化、WebGPUのデバイス選択、DirectMLの設定を`gpu_runtime.py`へ共通化し、通常推論とServerへ適用。明示したEPが利用不可の場合や起動検証でノードを実行しない場合は停止する。
+- Bash／PowerShellへEP・GPU番号・TensorRTライブラリ場所の指定を追加。CUDA 12とOpenVINOの依存パッケージを測定時の構成に合わせ、MIGraphXのロード検証、Windowsの終了コード伝播と環境分離を追加。
+
 ## 2026-09-22
+
+- AMD Barceloの専用VRAMを4 GiBへ変更して取得可能な5モデルを再測定。512 MiB時との速度・VRAM・GTT・RAM比較を`benchmarks/amd_barcelo_4gb.md`へ記録。再起動で消えていたHugging Face認証情報がtmpfsではなくディスクへ保存されるようLinux起動経路を修正。
+
+- Ryzen 5 7530U内蔵 Radeon Graphicsの専用VRAM 512 MiB設定で、取得可能な5モデルのWebGPU推論速度、専用VRAM、GTT、プロセスRAMを測定。生データと4 GiB再測定用スクリプトを`benchmarks/`へ保存。承認待ち2モデルとONNX未公開1モデルは理由を記録。
+
+- Linux AMD Barcelo向けにVulkan経由のWebGPU実行経路を追加。`--gpu`でPCI 1002:15e7を自動選択し、`--webgpu`でも明示指定可能。WD14 V3の実推論・XMP書き込みとONNX RuntimeプロファイルによるWebGPUノード実行を確認。
 
 - Linux/Bashの一時ファイルを`/tmp`へ統一。`~/.cache`がtmpfsの場合、Hugging Faceのモデルキャッシュをディスク上の`~/.local/share/huggingface`へ自動配置し、容量不足を回避する。
 

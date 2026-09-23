@@ -1,5 +1,4 @@
 import argparse
-import ctypes
 import csv
 import datetime
 import glob
@@ -12,6 +11,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
@@ -24,6 +24,8 @@ from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+import gpu_runtime
 
 import numpy as np
 import onnxruntime as ort
@@ -280,7 +282,9 @@ class ExifToolWrapper:
                 ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                # ExifToolの診断出力をコマンド結果へ混ぜない。stderrをstdoutへ
+                # 結合すると、Perlのlocale警告などが既存タグとして解釈される。
+                stderr=None,
                 startupinfo=startupinfo,
             )
             self.running = True
@@ -366,36 +370,62 @@ class ExifToolWrapper:
 et_wrapper = ExifToolWrapper()
 
 
-def build_providers(use_gpu: bool) -> List[Any]:
-    if not use_gpu:
+def build_providers(use_gpu: bool, provider=None, gpu_index=0,
+                    directml_device_index=0, openvino_device=None,
+                    tensorrt_lib_dir=None, target_vendor=None) -> List[Any]:
+    names = {"cpu": "CPUExecutionProvider", "cuda": "CUDAExecutionProvider",
+             "tensorrt": "TensorrtExecutionProvider", "intel": "OpenVINOExecutionProvider",
+             "directml": "DmlExecutionProvider", "migraphx": "MIGraphXExecutionProvider"}
+    if provider == "webgpu":
+        return []
+    if provider == "cpu" or (not use_gpu and not provider):
         return ["CPUExecutionProvider"]
+    if min(gpu_index, directml_device_index) < 0:
+        raise ValueError("GPU device indices must be non-negative")
     available = ort.get_available_providers()
-    candidates: List[Any] = []
-    if IS_WINDOWS:
-        candidates = [
-            "DmlExecutionProvider",
-            "TensorrtExecutionProvider",
-            "CUDAExecutionProvider",
-        ]
-    elif IS_LINUX:
-        candidates = [
-            ("OpenVINOExecutionProvider", {"device_type": APP_CONFIG.get("openvino_gpu_device", "GPU.0")}),
-            "TensorrtExecutionProvider",
-            "CUDAExecutionProvider",
-            "ROCMExecutionProvider",
-            "MIGraphXExecutionProvider",
-        ]
-    providers: List[Any] = []
-    for candidate in candidates:
-        name = candidate[0] if isinstance(candidate, tuple) else candidate
-        if name == "TensorrtExecutionProvider":
-            library_name = "nvinfer_10.dll" if IS_WINDOWS else "libnvinfer.so.10"
-            try:
-                ctypes.CDLL(library_name)
-            except OSError:
-                continue
-        if name in available:
-            providers.append(candidate)
+    if provider:
+        candidates = [names[provider]]
+    elif IS_WINDOWS:
+        candidates = [names["directml"], names["tensorrt"], names["cuda"], names["intel"]]
+    else:
+        candidates = [names["intel"], names["tensorrt"], names["cuda"],
+                      "ROCMExecutionProvider", names["migraphx"]]
+    providers = []
+    for name in candidates:
+        if name not in available:
+            if provider:
+                raise RuntimeError(f"{name} unavailable: {available}")
+            continue
+        try:
+            options = {"device_id": str(gpu_index)}
+            if name == names["tensorrt"]:
+                gpu_runtime.prepare_tensorrt(tensorrt_lib_dir)
+                options = gpu_runtime.tensorrt_provider_options(gpu_index)
+            elif name == names["cuda"]:
+                gpu_runtime.prepare_cuda()
+            elif name == names["intel"]:
+                device = openvino_device or APP_CONFIG.get("openvino_gpu_device", "GPU.0")
+                actual_name = gpu_runtime.prepare_openvino(device)
+                print(f"[INFO] OpenVINO {device}: {actual_name}")
+                options = {"device_type": device}
+            elif name == names["directml"]:
+                gpu_runtime.validate_directml(directml_device_index, target_vendor)
+                options = {"device_id": str(directml_device_index)}
+            if target_vendor and name in (names["cuda"], names["tensorrt"]) and target_vendor != "nvidia":
+                raise RuntimeError("CUDA/TensorRT require target vendor nvidia")
+            if target_vendor and name == names["intel"] and target_vendor != "intel":
+                raise RuntimeError("OpenVINO requires target vendor intel")
+            if target_vendor and name in (names["migraphx"], "ROCMExecutionProvider") and target_vendor != "amd":
+                raise RuntimeError("ROCm/MIGraphX require target vendor amd")
+            providers.append((name, options))
+            if provider == "tensorrt" and names["cuda"] in available:
+                providers.append((names["cuda"], {"device_id": str(gpu_index)}))
+        except (RuntimeError, OSError) as exc:
+            if provider:
+                raise
+            print(f"[WARN] {name}を使用できません: {exc}")
+    if not providers:
+        raise RuntimeError("GPUプロバイダーを初期化できませんでした。")
     providers.append("CPUExecutionProvider")
     return providers
 
@@ -453,7 +483,20 @@ def load_runtime_model(
     model_repo: Optional[str] = None,
     model_file: Optional[str] = None,
     tags_file: Optional[str] = None,
+    use_webgpu: bool = False,
+    provider: Optional[str] = None,
+    gpu_index: int = 0,
+    directml_device_index: int = 0,
+    webgpu_device_index: Optional[int] = None,
+    openvino_device: Optional[str] = None,
+    tensorrt_lib_dir: Optional[str] = None,
+    target_vendor: Optional[str] = None,
 ) -> RuntimeModel:
+    if use_webgpu and provider not in (None, "webgpu"):
+        raise ValueError("--webgpu conflicts with --provider")
+    provider = "webgpu" if use_webgpu else provider
+    use_webgpu = provider == "webgpu"
+    use_gpu = provider != "cpu" and (use_gpu or provider is not None)
     profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
     profile = get_model_profile(profile_name, profiles)
     if not profile.get("available", True):
@@ -474,35 +517,42 @@ def load_runtime_model(
         load_model=True,
     )
     preprocessor = DBV4Preprocessor.from_metadata(metadata)
-    providers = build_providers(use_gpu)
+    providers = build_providers(
+        use_gpu, provider, gpu_index, directml_device_index, openvino_device,
+        tensorrt_lib_dir, target_vendor)
     session_options = ort.SessionOptions()
     session_options.log_severity_level = 3
-    provider_names = {
-        item[0] if isinstance(item, tuple) else item
-        for item in providers
-    }
+    if use_webgpu:
+        hardware = gpu_runtime.configure_webgpu(session_options, webgpu_device_index, target_vendor)
+        print(f"[INFO] WebGPU選択デバイス: {hardware}")
+    provider_names = {item[0] if isinstance(item, tuple) else item for item in providers}
     if "DmlExecutionProvider" in provider_names:
-        # DirectML requires sequential execution and memory patterns disabled.
-        # DBV4 CAFormer also fails during ORT's graph rewrite with the default
-        # ORT_ENABLE_ALL ("logits" output disappears), so let DirectML consume
-        # the original graph with only ORT's mandatory transformations.
-        session_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-        session_options.enable_mem_pattern = False
-        session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+        gpu_runtime.configure_directml(session_options)
+    # A short startup probe verifies actual node execution, then profiling stops.
+    profile_dir = tempfile.TemporaryDirectory(prefix="dbv4-gpu-") if use_gpu else None
+    if profile_dir:
+        session_options.enable_profiling = True
+        session_options.profile_file_prefix = os.path.join(profile_dir.name, "ort")
     try:
-        session = ort.InferenceSession(
-            metadata.model_path,
-            sess_options=session_options,
-            providers=providers,
-        )
+        if use_webgpu:
+            session = ort.InferenceSession(metadata.model_path, sess_options=session_options)
+        else:
+            session = ort.InferenceSession(
+                metadata.model_path,
+                sess_options=session_options,
+                providers=providers,
+            )
     except Exception as exc:
         if use_gpu:
+            if profile_dir:
+                profile_dir.cleanup()
             raise RuntimeError(f"DBV4 GPUプロバイダの初期化に失敗しました: {exc}") from exc
         session = ort.InferenceSession(
             metadata.model_path,
             sess_options=session_options,
             providers=["CPUExecutionProvider"],
         )
+    session.disable_fallback()
     active = session.get_providers()
     family_label = "WD14 V3" if metadata.family == "wd14_v3" else "DBV4"
     print(f"[INFO] {family_label}モデル: {metadata.repo_id} ({metadata.profile_name})")
@@ -510,16 +560,36 @@ def load_runtime_model(
     print(f"[INFO] metadata version: {metadata.metadata_version}")
     print(f"[INFO] 入力 shape: {session.get_inputs()[0].shape}")
     print(f"[INFO] アクティブプロバイダ: {active}")
+    runtime = RuntimeModel(metadata, preprocessor, session)
     if use_gpu:
-        active_names = {item[0] if isinstance(item, tuple) else item for item in active}
-        candidate_names = {
-            item[0] if isinstance(item, tuple) else item
-            for item in providers
-            if (item[0] if isinstance(item, tuple) else item) != "CPUExecutionProvider"
-        }
-        if not active_names.intersection(candidate_names):
-            raise RuntimeError("DBV4モデルでGPU Execution Providerを有効化できませんでした。")
-    return RuntimeModel(metadata, preprocessor, session)
+        expected = {"WebGpuExecutionProvider"} if use_webgpu else {
+            item[0] if isinstance(item, tuple) else item for item in providers
+            if (item[0] if isinstance(item, tuple) else item) != "CPUExecutionProvider"}
+        if provider == "tensorrt":
+            expected = {"TensorrtExecutionProvider"}
+        stopped = False
+        try:
+            if not expected.intersection(active):
+                raise RuntimeError(f"Requested GPU EP unavailable: expected={expected}, active={active}")
+            runtime.predict_images([Image.new("RGB", (640, 480), (127, 63, 191))]
+                                   * (runtime.batch_limit or 1))
+            path = session.end_profiling()
+            stopped = True
+            executed = gpu_runtime.executed_providers(path)
+            if not expected.intersection(executed):
+                raise RuntimeError(f"Requested GPU EP executed no nodes: {executed}")
+            print(f"[INFO] 起動検証で実行されたEP: {executed}")
+        finally:
+            if not stopped:
+                session.end_profiling()
+            profile_dir.cleanup()
+    return runtime
+
+
+def runtime_cli_options(args):
+    return {name: getattr(args, name, None) for name in (
+        "provider", "webgpu_device_index", "openvino_device", "tensorrt_lib_dir", "target_vendor")
+    } | {name: getattr(args, name, 0) for name in ("gpu_index", "directml_device_index")}
 
 
 def ensure_profile_access(profile_name: str, profile: Dict[str, Any]) -> None:
@@ -1021,6 +1091,8 @@ def run_server(args: argparse.Namespace) -> None:
         args.model_repo,
         args.model_file,
         args.tags_file,
+        use_webgpu=getattr(args, "webgpu", False),
+        **runtime_cli_options(args),
     )
     TagServerHandler.runtime = runtime
     workers = max(1, int(APP_CONFIG.get("server_workers", 2)))
@@ -1179,6 +1251,8 @@ def process_images(args: argparse.Namespace) -> None:
             args.model_repo,
             args.model_file,
             args.tags_file,
+            use_webgpu=getattr(args, "webgpu", False),
+            **runtime_cli_options(args),
         )
         metadata = runtime.metadata
 
@@ -1586,6 +1660,14 @@ def create_parser() -> argparse.ArgumentParser:
         help="DBV4のtag best_thresholdを上書きする明示的な閾値",
     )
     parser.add_argument("-g", "--gpu", action="store_true", help="GPUを使用する")
+    parser.add_argument("--webgpu", action="store_true", help="WebGPUを使用する")
+    parser.add_argument("--provider", choices=["cpu", "cuda", "tensorrt", "intel", "directml", "webgpu", "migraphx"], help="実行EPを明示（利用不可時は停止）")
+    parser.add_argument("--gpu-index", type=int, default=0)
+    parser.add_argument("--directml-device-index", type=int, default=0)
+    parser.add_argument("--webgpu-device-index", type=int)
+    parser.add_argument("--target-vendor", choices=["nvidia", "intel", "amd"])
+    parser.add_argument("--openvino-device", help="Intel実機名を検証するGPU.N")
+    parser.add_argument("--tensorrt-lib-dir", help="TensorRT 10ライブラリディレクトリ")
     parser.add_argument("-b", "--batch-size", type=int, default=4, help="推論バッチサイズ")
     parser.add_argument("-w", "--io-workers", type=int, default=-1, help="画像読込みの並列数（-1=自動）")
     parser.add_argument("-f", "--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
@@ -1621,6 +1703,12 @@ def create_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = create_parser().parse_args()
+    if args.webgpu and args.provider not in (None, "webgpu"):
+        raise SystemExit("[ERROR] --webgpu conflicts with --provider")
+    if args.provider == "cpu":
+        args.gpu = False
+    elif args.webgpu or args.provider:
+        args.gpu = True
     if args.gen_config:
         load_config()
         return

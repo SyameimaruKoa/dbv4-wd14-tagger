@@ -1,0 +1,147 @@
+{
+  "status": "ok",
+  "provider_requested": "webgpu",
+  "provider_active": [
+    "WebGpuExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "profile": "balanced",
+  "repo_id": "animetimm/caformer_b36.dbv4-full",
+  "metadata_version": "8c7ba23eaed2d01d",
+  "model_path": "C:\\Users\\kouki\\.cache\\huggingface\\hub\\models--animetimm--caformer_b36.dbv4-full\\snapshots\\aac0699c88553d50eb673b41a81d8222936b22b2\\model.onnx",
+  "batch_size": 4,
+  "input_shape": [
+    "batch",
+    3,
+    "height",
+    "width"
+  ],
+  "output_shape": [
+    4,
+    12476
+  ],
+  "seed": 20260922,
+  "image_size": [
+    640,
+    480
+  ],
+  "warmup": 3,
+  "iterations_per_set": 20,
+  "sets": 3,
+  "raw_ms_per_image": [
+    [
+      741.8416000000434,
+      731.3863750000564,
+      758.7718500000165,
+      746.4076750000004,
+      729.1500249999672,
+      727.9950000000781,
+      731.8012750000662,
+      907.8367250000383,
+      877.7961000000687,
+      951.3190249999752,
+      802.7183750000404,
+      807.438374999947,
+      746.0475000000315,
+      764.4774000000325,
+      753.0372249999573,
+      737.2436750000588,
+      737.4502750000147,
+      721.2355499999603,
+      826.1623249999275,
+      813.7231250000241
+    ],
+    [
+      820.3080999999202,
+      805.5045500000233,
+      727.847049999923,
+      798.2742250000001,
+      902.0298000000366,
+      901.0364499999923,
+      763.652474999958,
+      996.706574999962,
+      963.0662749999601,
+      893.0493750000323,
+      812.8280250000444,
+      837.0540749999691,
+      866.8916750000335,
+      875.1944250000179,
+      815.5134500000258,
+      855.3687249999484,
+      821.7608249999557,
+      780.906425000012,
+      718.3235249999598,
+      789.7076749999314
+    ],
+    [
+      752.2022499999821,
+      776.2672750000092,
+      729.3313500000522,
+      713.1109250000236,
+      721.0200250000298,
+      738.9415999999756,
+      736.7437999999993,
+      718.1808249999904,
+      713.2688749999261,
+      711.9012750000593,
+      717.3110500000348,
+      733.9994000000161,
+      725.939574999984,
+      718.596424999987,
+      718.0300500000385,
+      718.2624499999974,
+      717.9044250000288,
+      711.796525000068,
+      711.3382499999261,
+      716.0990249999486
+    ]
+  ],
+  "set_median_ms": [
+    749.7224499999788,
+    821.034462499938,
+    718.2216374999939
+  ],
+  "set_p95_ms": [
+    910.0108400000352,
+    964.7482899999602,
+    753.4055012499834
+  ],
+  "median_ms_per_image": 749.7224499999788,
+  "baseline_vram_mib": null,
+  "peak_vram_mib": null,
+  "vram_increment_mib": null,
+  "baseline_rss_mib": 68.49609375,
+  "peak_rss_mib": 601.94921875,
+  "metadata_seconds": 1.306500899999719,
+  "session_seconds": 2.837466399999812,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.15",
+  "onnxruntime": "1.30.0",
+  "webgpu_plugin": "0.4.0",
+  "gpu_index": 0,
+  "directml_device_index": null,
+  "webgpu_device_index": 0,
+  "nvidia_gpu_memory_observed": null,
+  "executed_node_providers": [
+    "CPUExecutionProvider",
+    "WebGpuExecutionProvider"
+  ],
+  "openvino_device": null,
+  "openvino_gpu_name": null,
+  "webgpu_hardware": {
+    "vendor": "amd",
+    "vendor_id": 4098,
+    "device_id": 5607,
+    "metadata": {
+      "Description": "AMD Radeon (TM) Graphics",
+      "Discrete": "0",
+      "DxgiAdapterNumber": "0",
+      "DxgiHighPerformanceIndex": "0",
+      "DxgiVideoMemory": "4079 MB",
+      "LUID": "82644"
+    }
+  },
+  "tensorrt_lib_dir": null,
+  "target_vendor": "amd",
+  "device_name": "AMD Radeon Graphics"
+}

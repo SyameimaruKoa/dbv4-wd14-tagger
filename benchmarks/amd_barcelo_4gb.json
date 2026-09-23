@@ -1,0 +1,376 @@
+{
+  "gpu_vram_total_mib": 4096.0,
+  "gpu_gtt_total_mib": 5897.2,
+  "system_ram_total_mib": 11794.4,
+  "environment": {
+    "measured_at": "2026-09-22T20:21:31+09:00",
+    "system": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.13.15",
+    "onnxruntime": "1.30.0",
+    "onnxruntime_ep_webgpu": "0.3.0",
+    "gpu_pci_device": "0x15e7"
+  },
+  "conditions": "Linux AMD WebGPU; RGB 640x480 solid color (127,63,191); batch=1; warmup=3; 10 measured iterations; 50ms memory sampling",
+  "results": [
+    {
+      "profile": "lightweight",
+      "provider": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "model_repo": "animetimm/mobilenetv4_conv_aa_large.dbv4-full",
+      "input_shape": [
+        "batch",
+        3,
+        "height",
+        "width"
+      ],
+      "batch_size": 1,
+      "warmup_iterations": 3,
+      "measured_iterations": 10,
+      "load_seconds": 12.485,
+      "after_load": {
+        "vram_used_mib": 732.80078125,
+        "gtt_used_mib": 92.6640625,
+        "rss_mib": 315.0,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 0.0,
+        "system_mem_available_mib": 5922.1015625
+      },
+      "inference_only_ms": [
+        74.598,
+        74.53,
+        74.454,
+        73.813,
+        74.057,
+        74.285,
+        73.782,
+        73.767,
+        74.013,
+        74.359
+      ],
+      "end_to_end_ms": [
+        84.274,
+        83.646,
+        85.003,
+        83.212,
+        85.06,
+        84.461,
+        85.022,
+        84.785,
+        85.79,
+        85.164
+      ],
+      "inference_only_median_ms": 74.171,
+      "end_to_end_median_ms": 84.894,
+      "status": "ok",
+      "before": {
+        "vram_used_mib": 463.69921875,
+        "gtt_used_mib": 89.328125,
+        "system_swap_used_mib": 0.0,
+        "system_mem_available_mib": 6199.34375
+      },
+      "peak": {
+        "vram_used_mib": 764.515625,
+        "gtt_used_mib": 94.765625,
+        "rss_mib": 393.6015625,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 0.0,
+        "system_mem_available_mib": 5839.1796875
+      },
+      "vram_peak_increment_mib": 300.8,
+      "gtt_peak_increment_mib": 5.4,
+      "vram_peak_pct_total": 18.7,
+      "gtt_peak_pct_total": 1.6,
+      "rss_peak_pct_ram": 3.3
+    },
+    {
+      "profile": "balanced",
+      "provider": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "model_repo": "animetimm/caformer_b36.dbv4-full",
+      "input_shape": [
+        "batch",
+        3,
+        "height",
+        "width"
+      ],
+      "batch_size": 1,
+      "warmup_iterations": 3,
+      "measured_iterations": 10,
+      "load_seconds": 25.343,
+      "after_load": {
+        "vram_used_mib": 1027.12109375,
+        "gtt_used_mib": 92.5703125,
+        "rss_mib": 780.30859375,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 0.0,
+        "system_mem_available_mib": 5466.46484375
+      },
+      "inference_only_ms": [
+        610.889,
+        619.928,
+        632.749,
+        636.369,
+        633.009,
+        613.158,
+        612.965,
+        615.188,
+        617.325,
+        617.746
+      ],
+      "end_to_end_ms": [
+        642.037,
+        636.389,
+        657.611,
+        648.379,
+        642.402,
+        634.114,
+        628.595,
+        631.51,
+        630.469,
+        645.143
+      ],
+      "inference_only_median_ms": 617.535,
+      "end_to_end_median_ms": 639.213,
+      "status": "ok",
+      "before": {
+        "vram_used_mib": 463.69921875,
+        "gtt_used_mib": 87.328125,
+        "system_swap_used_mib": 0.0,
+        "system_mem_available_mib": 6148.48828125
+      },
+      "peak": {
+        "vram_used_mib": 1116.2109375,
+        "gtt_used_mib": 98.80859375,
+        "rss_mib": 936.31640625,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 0.0,
+        "system_mem_available_mib": 5312.6484375
+      },
+      "vram_peak_increment_mib": 652.5,
+      "gtt_peak_increment_mib": 11.5,
+      "vram_peak_pct_total": 27.3,
+      "gtt_peak_pct_total": 1.7,
+      "rss_peak_pct_ram": 7.9
+    },
+    {
+      "profile": "high",
+      "provider": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "model_repo": "animetimm/eva02_large_patch14_448.dbv4-full",
+      "input_shape": [
+        "batch",
+        3,
+        "height",
+        "width"
+      ],
+      "batch_size": 1,
+      "warmup_iterations": 3,
+      "measured_iterations": 10,
+      "load_seconds": 51.392,
+      "after_load": {
+        "vram_used_mib": 1685.83984375,
+        "gtt_used_mib": 91.7578125,
+        "rss_mib": 2150.9140625,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 3.890625,
+        "system_mem_available_mib": 4132.71875
+      },
+      "inference_only_ms": [
+        3645.133,
+        3631.038,
+        3625.845,
+        3646.008,
+        3629.451,
+        3650.969,
+        3642.471,
+        3630.018,
+        3693.059,
+        3635.606
+      ],
+      "end_to_end_ms": [
+        3644.394,
+        3654.572,
+        3655.476,
+        3658.451,
+        3652.151,
+        3660.057,
+        3675.48,
+        3662.316,
+        3650.441,
+        3663.315
+      ],
+      "inference_only_median_ms": 3639.038,
+      "end_to_end_median_ms": 3656.963,
+      "status": "ok",
+      "before": {
+        "vram_used_mib": 463.7109375,
+        "gtt_used_mib": 89.328125,
+        "system_swap_used_mib": 0.0,
+        "system_mem_available_mib": 6136.05859375
+      },
+      "peak": {
+        "vram_used_mib": 2145.52734375,
+        "gtt_used_mib": 110.80859375,
+        "rss_mib": 2196.203125,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 3.890625,
+        "system_mem_available_mib": 4085.140625
+      },
+      "vram_peak_increment_mib": 1681.8,
+      "gtt_peak_increment_mib": 21.5,
+      "vram_peak_pct_total": 52.4,
+      "gtt_peak_pct_total": 1.9,
+      "rss_peak_pct_ram": 18.6
+    },
+    {
+      "profile": "ultra",
+      "provider": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "model_repo": "itterative/convnextv2_huge.dbv4-full-onnx",
+      "input_shape": [
+        "batch_size",
+        "num_channels",
+        "height",
+        "width"
+      ],
+      "batch_size": 1,
+      "warmup_iterations": 3,
+      "measured_iterations": 10,
+      "load_seconds": 4.265,
+      "after_load": {
+        "vram_used_mib": 3226.57421875,
+        "gtt_used_mib": 94.7578125,
+        "rss_mib": 170.12109375,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 5.17578125,
+        "system_mem_available_mib": 6144.57421875
+      },
+      "inference_only_ms": [
+        5247.811,
+        5199.871,
+        5203.594,
+        5186.208,
+        5188.605,
+        5178.57,
+        5195.384,
+        5188.226,
+        5238.727,
+        5193.204
+      ],
+      "end_to_end_ms": [
+        5268.436,
+        5225.916,
+        5269.149,
+        5216.304,
+        5211.467,
+        5212.142,
+        5226.282,
+        5249.502,
+        5244.357,
+        5209.472
+      ],
+      "inference_only_median_ms": 5194.294,
+      "end_to_end_median_ms": 5226.099,
+      "status": "ok",
+      "before": {
+        "vram_used_mib": 557.16015625,
+        "gtt_used_mib": 95.328125,
+        "system_swap_used_mib": 3.890625,
+        "system_mem_available_mib": 6200.0703125
+      },
+      "peak": {
+        "vram_used_mib": 3926.67578125,
+        "gtt_used_mib": 161.05859375,
+        "rss_mib": 257.8125,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 5.17578125,
+        "system_mem_available_mib": 5997.66796875
+      },
+      "vram_peak_increment_mib": 3369.5,
+      "gtt_peak_increment_mib": 65.7,
+      "vram_peak_pct_total": 95.9,
+      "gtt_peak_pct_total": 2.7,
+      "rss_peak_pct_ram": 2.2
+    },
+    {
+      "profile": "wd14_v3",
+      "provider": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "model_repo": "SmilingWolf/wd-swinv2-tagger-v3",
+      "input_shape": [
+        "batch_size",
+        448,
+        448,
+        3
+      ],
+      "batch_size": 1,
+      "warmup_iterations": 3,
+      "measured_iterations": 10,
+      "load_seconds": 2.421,
+      "after_load": {
+        "vram_used_mib": 934.5859375,
+        "gtt_used_mib": 97.7578125,
+        "rss_mib": 556.515625,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 5.17578125,
+        "system_mem_available_mib": 5686.5234375
+      },
+      "inference_only_ms": [
+        836.974,
+        804.923,
+        804.433,
+        799.872,
+        804.174,
+        803.683,
+        801.708,
+        801.388,
+        804.544,
+        804.756
+      ],
+      "end_to_end_ms": [
+        818.855,
+        819.381,
+        821.693,
+        820.498,
+        817.848,
+        815.387,
+        825.714,
+        818.765,
+        818.142,
+        820.076
+      ],
+      "inference_only_median_ms": 804.303,
+      "end_to_end_median_ms": 819.118,
+      "status": "ok",
+      "before": {
+        "vram_used_mib": 476.33984375,
+        "gtt_used_mib": 97.328125,
+        "system_swap_used_mib": 5.17578125,
+        "system_mem_available_mib": 6148.515625
+      },
+      "peak": {
+        "vram_used_mib": 1425.296875,
+        "gtt_used_mib": 100.80078125,
+        "rss_mib": 646.01953125,
+        "process_swap_mib": 0.0,
+        "system_swap_used_mib": 5.17578125,
+        "system_mem_available_mib": 5608.25390625
+      },
+      "vram_peak_increment_mib": 949.0,
+      "gtt_peak_increment_mib": 3.5,
+      "vram_peak_pct_total": 34.8,
+      "gtt_peak_pct_total": 1.7,
+      "rss_peak_pct_ram": 5.5
+    }
+  ]
+}

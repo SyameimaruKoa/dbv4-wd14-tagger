@@ -19,6 +19,17 @@ from dbv4 import DBV4Metadata
 
 
 class RuntimeCompatibilityTests(unittest.TestCase):
+    def test_exiftool_diagnostics_are_not_merged_into_tag_output(self):
+        process = MagicMock()
+        wrapper = app.ExifToolWrapper("exiftool")
+
+        with patch.object(app.subprocess, "Popen", return_value=process) as popen:
+            wrapper.start()
+
+        self.assertIsNone(popen.call_args.kwargs["stderr"])
+        self.assertIsNot(popen.call_args.kwargs["stderr"], app.subprocess.STDOUT)
+        wrapper.stop()
+
     @staticmethod
     def _metadata():
         labels = ("general", "sensitive", "questionable", "explicit", "tag_a")
@@ -94,10 +105,11 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             patch.object(app, "IS_WINDOWS", False),
             patch.object(app, "IS_LINUX", True),
             patch.object(app.ort, "get_available_providers", return_value=available),
-            patch.object(app.ctypes, "CDLL", side_effect=OSError("missing")),
+            patch.object(app.gpu_runtime, "prepare_tensorrt", side_effect=RuntimeError("missing")),
+            patch.object(app.gpu_runtime, "prepare_cuda"),
         ):
             providers = app.build_providers(True)
-        self.assertEqual(providers, ["CUDAExecutionProvider", "CPUExecutionProvider"])
+        self.assertEqual(providers, [("CUDAExecutionProvider", {"device_id": "0"}), "CPUExecutionProvider"])
 
     def test_build_providers_uses_tensorrt_when_runtime_is_loadable(self):
         available = ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
@@ -105,12 +117,17 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             patch.object(app, "IS_WINDOWS", False),
             patch.object(app, "IS_LINUX", True),
             patch.object(app.ort, "get_available_providers", return_value=available),
-            patch.object(app.ctypes, "CDLL"),
+            patch.object(app.gpu_runtime, "prepare_tensorrt"),
+            patch.object(app.gpu_runtime, "prepare_cuda"),
         ):
             providers = app.build_providers(True)
         self.assertEqual(
             providers,
-            ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"],
+            [
+                ("TensorrtExecutionProvider", app.gpu_runtime.tensorrt_provider_options(0)),
+                ("CUDAExecutionProvider", {"device_id": "0"}),
+                "CPUExecutionProvider",
+            ],
         )
 
     def test_manual_approval_profiles_are_available(self):

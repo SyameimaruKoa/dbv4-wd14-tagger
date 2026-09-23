@@ -1,0 +1,58 @@
+{
+  "platform": "Linux",
+  "vendor": "intel",
+  "operator_device_name": "Intel(R) UHD Graphics 630",
+  "providers": [
+    "cpu",
+    "intel",
+    "webgpu"
+  ],
+  "profiles": [
+    "wd14_v3",
+    "balanced"
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "warmup": 3,
+  "iterations": 20,
+  "sets": 3,
+  "detected_webgpu_adapters": [
+    {
+      "webgpu_index": 0,
+      "vendor": "nvidia",
+      "vendor_id": 4318,
+      "device_id": 7952,
+      "metadata": {
+        "Discrete": "1",
+        "card_idx": "0",
+        "pci_bus_id": "0000:01:00.0"
+      }
+    },
+    {
+      "webgpu_index": 1,
+      "vendor": "intel",
+      "vendor_id": 32902,
+      "device_id": 16027,
+      "metadata": {
+        "card_idx": "1",
+        "pci_bus_id": "0000:00:02.0"
+      }
+    }
+  ],
+  "results": [
+    "benchmarks/intel_linux_20260923/wd14_v3-b1-cpu.json",
+    "benchmarks/intel_linux_20260923/wd14_v3-b1-intel.json",
+    "benchmarks/intel_linux_20260923/wd14_v3-b1-webgpu.json",
+    "benchmarks/intel_linux_20260923/wd14_v3-b4-cpu.json",
+    "benchmarks/intel_linux_20260923/wd14_v3-b4-intel.json",
+    "benchmarks/intel_linux_20260923/wd14_v3-b4-webgpu.json",
+    "benchmarks/intel_linux_20260923/balanced-b1-cpu.json",
+    "benchmarks/intel_linux_20260923/balanced-b1-intel.json",
+    "benchmarks/intel_linux_20260923/balanced-b1-webgpu.json",
+    "benchmarks/intel_linux_20260923/balanced-b4-cpu.json",
+    "benchmarks/intel_linux_20260923/balanced-b4-intel.json",
+    "benchmarks/intel_linux_20260923/balanced-b4-webgpu.json"
+  ]
+}

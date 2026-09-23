@@ -1,0 +1,143 @@
+{
+  "status": "ok",
+  "provider_requested": "webgpu",
+  "provider_active": [
+    "WebGpuExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "profile": "wd14_v3",
+  "repo_id": "SmilingWolf/wd-swinv2-tagger-v3",
+  "metadata_version": "1eefe14281d9f129",
+  "model_path": "/home/komeiziaya/.cache/huggingface/hub/models--SmilingWolf--wd-swinv2-tagger-v3/snapshots/627aef95638667ddcaa3ac8ae625e88ea5b02f51/model.onnx",
+  "batch_size": 4,
+  "input_shape": [
+    "batch_size",
+    448,
+    448,
+    3
+  ],
+  "output_shape": [
+    4,
+    10861
+  ],
+  "seed": 20260922,
+  "image_size": [
+    640,
+    480
+  ],
+  "warmup": 3,
+  "iterations_per_set": 20,
+  "sets": 3,
+  "raw_ms_per_image": [
+    [
+      113.21802449992902,
+      112.82592600002772,
+      113.65916825002387,
+      112.7063977500029,
+      116.95291674993769,
+      126.49709350000649,
+      126.60839974989813,
+      121.72771600000942,
+      113.85845049994714,
+      113.07322075003867,
+      113.43280574999426,
+      113.48139049994188,
+      113.83577349999996,
+      113.29854999996769,
+      112.959437750078,
+      113.98999400000775,
+      113.55447200003255,
+      114.4816657500769,
+      113.70015850002346,
+      114.5118279999906
+    ],
+    [
+      113.74897999996847,
+      114.11455049994856,
+      113.79649075001907,
+      114.10957599991889,
+      114.29341599989584,
+      113.94874899997376,
+      114.49933024994152,
+      113.96164824998323,
+      114.59520100004283,
+      113.65649424999447,
+      114.99925800001165,
+      114.24891349997779,
+      114.7918075000689,
+      113.96317149990409,
+      114.590163999992,
+      114.51017324998247,
+      114.1786509999747,
+      114.88120374997379,
+      114.0316407499995,
+      115.00504775005993
+    ],
+    [
+      114.49453174998325,
+      115.43741700006649,
+      114.38681174990961,
+      115.28889475005144,
+      114.41326224996828,
+      114.60797325003114,
+      114.7263269999712,
+      115.08383049999793,
+      114.79528024995034,
+      114.16461199996775,
+      115.39590074994521,
+      114.78016525006751,
+      115.45383300006051,
+      114.96807675007403,
+      115.65807375006898,
+      114.70396125002935,
+      115.85122300004969,
+      115.10677399996894,
+      114.93743799996992,
+      115.1218740000104
+    ]
+  ],
+  "set_median_ms": [
+    113.67966337502367,
+    114.21378224997625,
+    114.95275737502197
+  ],
+  "set_p95_ms": [
+    126.50265881250107,
+    114.99954748751406,
+    115.66773121256801
+  ],
+  "median_ms_per_image": 114.21378224997625,
+  "baseline_vram_mib": null,
+  "peak_vram_mib": null,
+  "vram_increment_mib": null,
+  "baseline_rss_mib": 70.71875,
+  "peak_rss_mib": 660.80859375,
+  "metadata_seconds": 0.8742545099999006,
+  "session_seconds": 1.973538924999957,
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "python": "3.13.15",
+  "onnxruntime": "1.30.0",
+  "webgpu_plugin": "0.4.0",
+  "gpu_index": 0,
+  "directml_device_index": null,
+  "webgpu_device_index": 1,
+  "nvidia_gpu_memory_observed": null,
+  "executed_node_providers": [
+    "CPUExecutionProvider",
+    "WebGpuExecutionProvider"
+  ],
+  "openvino_device": null,
+  "openvino_gpu_name": null,
+  "webgpu_hardware": {
+    "vendor": "intel",
+    "vendor_id": 32902,
+    "device_id": 16027,
+    "metadata": {
+      "card_idx": "1",
+      "pci_bus_id": "0000:00:02.0"
+    }
+  },
+  "tensorrt_lib_dir": null,
+  "target_vendor": "intel",
+  "device_name": "Intel(R) UHD Graphics 630"
+}

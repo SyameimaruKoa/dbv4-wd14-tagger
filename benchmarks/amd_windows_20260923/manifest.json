@@ -1,0 +1,77 @@
+{
+  "platform": "Windows",
+  "vendor": "amd",
+  "operator_device_name": "AMD Radeon Graphics",
+  "providers": [
+    "cpu",
+    "directml",
+    "webgpu"
+  ],
+  "profiles": [
+    "wd14_v3",
+    "balanced"
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "warmup": 3,
+  "iterations": 20,
+  "sets": 3,
+  "detected_webgpu_adapters": [
+    {
+      "webgpu_index": 0,
+      "vendor": "amd",
+      "vendor_id": 4098,
+      "device_id": 5607,
+      "metadata": {
+        "Description": "AMD Radeon (TM) Graphics",
+        "Discrete": "0",
+        "DxgiAdapterNumber": "0",
+        "DxgiHighPerformanceIndex": "0",
+        "DxgiVideoMemory": "4079 MB",
+        "LUID": "82644"
+      }
+    },
+    {
+      "webgpu_index": 1,
+      "vendor": "amd",
+      "vendor_id": 4098,
+      "device_id": 5607,
+      "metadata": {
+        "Description": "AMD Radeon (TM) Graphics",
+        "DxgiAdapterNumber": "1",
+        "DxgiHighPerformanceIndex": "2",
+        "DxgiVideoMemory": "4079 MB",
+        "LUID": "131193"
+      }
+    },
+    {
+      "webgpu_index": 2,
+      "vendor": "amd",
+      "vendor_id": 4098,
+      "device_id": 5607,
+      "metadata": {
+        "Description": "AMD Radeon (TM) Graphics",
+        "DxgiAdapterNumber": "2",
+        "DxgiHighPerformanceIndex": "3",
+        "DxgiVideoMemory": "4079 MB",
+        "LUID": "128220"
+      }
+    }
+  ],
+  "results": [
+    "benchmarks\\amd_windows_20260923\\wd14_v3-b1-cpu.json",
+    "benchmarks\\amd_windows_20260923\\wd14_v3-b1-directml.json",
+    "benchmarks\\amd_windows_20260923\\wd14_v3-b1-webgpu.json",
+    "benchmarks\\amd_windows_20260923\\wd14_v3-b4-cpu.json",
+    "benchmarks\\amd_windows_20260923\\wd14_v3-b4-directml.json",
+    "benchmarks\\amd_windows_20260923\\wd14_v3-b4-webgpu.json",
+    "benchmarks\\amd_windows_20260923\\balanced-b1-cpu.json",
+    "benchmarks\\amd_windows_20260923\\balanced-b1-directml.json",
+    "benchmarks\\amd_windows_20260923\\balanced-b1-webgpu.json",
+    "benchmarks\\amd_windows_20260923\\balanced-b4-cpu.json",
+    "benchmarks\\amd_windows_20260923\\balanced-b4-directml.json",
+    "benchmarks\\amd_windows_20260923\\balanced-b4-webgpu.json"
+  ]
+}

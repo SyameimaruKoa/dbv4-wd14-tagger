@@ -1,0 +1,346 @@
+{
+  "platform": "Linux",
+  "vendor": "nvidia",
+  "operator_device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+  "providers": [
+    "cpu",
+    "cuda",
+    "tensorrt",
+    "webgpu"
+  ],
+  "profiles": [
+    "wd14_v3",
+    "balanced"
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "warmup": 3,
+  "iterations": 20,
+  "sets": 3,
+  "results": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 728.8893225000947,
+      "peak_rss_mib": 1236.5703125,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "cuda",
+      "ms_per_image": 66.88727649998327,
+      "peak_rss_mib": 1258.53515625,
+      "vram_increment_mib": 1147.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "tensorrt",
+      "ms_per_image": 42.36930749993917,
+      "peak_rss_mib": 3345.4921875,
+      "vram_increment_mib": 909.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 124.20282899995527,
+      "peak_rss_mib": 690.62109375,
+      "vram_increment_mib": 841.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 767.276949374974,
+      "peak_rss_mib": 1863.10546875,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "cuda",
+      "ms_per_image": 62.31046062498535,
+      "peak_rss_mib": 1260.76171875,
+      "vram_increment_mib": 1147.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "tensorrt",
+      "ms_per_image": 39.48738437497923,
+      "peak_rss_mib": 3331.25390625,
+      "vram_increment_mib": 1323.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 115.29197449999629,
+      "peak_rss_mib": 662.16796875,
+      "vram_increment_mib": 1832.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 593.1025750001027,
+      "peak_rss_mib": 1040.48828125,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cuda",
+      "ms_per_image": 58.16131050005424,
+      "peak_rss_mib": 1222.21875,
+      "vram_increment_mib": 1146.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "tensorrt",
+      "ms_per_image": 46.05831349954315,
+      "peak_rss_mib": 3150.1875,
+      "vram_increment_mib": 954.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 120.07600249989991,
+      "peak_rss_mib": 658.3203125,
+      "vram_increment_mib": 687.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 702.7854087499463,
+      "peak_rss_mib": 1360.75390625,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cuda",
+      "ms_per_image": 57.966190249885585,
+      "peak_rss_mib": 1211.4765625,
+      "vram_increment_mib": 1146.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "tensorrt",
+      "ms_per_image": 43.6737171249888,
+      "peak_rss_mib": 3188.66015625,
+      "vram_increment_mib": 1204.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 110.63482562508398,
+      "peak_rss_mib": 669.47265625,
+      "vram_increment_mib": 1103.0,
+      "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    }
+  ],
+  "comparisons_to_cpu": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "cuda",
+      "gpu_ms_per_image": 66.88727649998327,
+      "cpu_ms_per_image": 728.8893225000947,
+      "speedup_over_cpu": 10.897
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "tensorrt",
+      "gpu_ms_per_image": 42.36930749993917,
+      "cpu_ms_per_image": 728.8893225000947,
+      "speedup_over_cpu": 17.203
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 124.20282899995527,
+      "cpu_ms_per_image": 728.8893225000947,
+      "speedup_over_cpu": 5.869
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "cuda",
+      "gpu_ms_per_image": 62.31046062498535,
+      "cpu_ms_per_image": 767.276949374974,
+      "speedup_over_cpu": 12.314
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "tensorrt",
+      "gpu_ms_per_image": 39.48738437497923,
+      "cpu_ms_per_image": 767.276949374974,
+      "speedup_over_cpu": 19.431
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 115.29197449999629,
+      "cpu_ms_per_image": 767.276949374974,
+      "speedup_over_cpu": 6.655
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cuda",
+      "gpu_ms_per_image": 58.16131050005424,
+      "cpu_ms_per_image": 593.1025750001027,
+      "speedup_over_cpu": 10.198
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "tensorrt",
+      "gpu_ms_per_image": 46.05831349954315,
+      "cpu_ms_per_image": 593.1025750001027,
+      "speedup_over_cpu": 12.877
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 120.07600249989991,
+      "cpu_ms_per_image": 593.1025750001027,
+      "speedup_over_cpu": 4.939
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cuda",
+      "gpu_ms_per_image": 57.966190249885585,
+      "cpu_ms_per_image": 702.7854087499463,
+      "speedup_over_cpu": 12.124
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "tensorrt",
+      "gpu_ms_per_image": 43.6737171249888,
+      "cpu_ms_per_image": 702.7854087499463,
+      "speedup_over_cpu": 16.092
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 110.63482562508398,
+      "cpu_ms_per_image": 702.7854087499463,
+      "speedup_over_cpu": 6.352
+    }
+  ],
+  "incomplete": [],
+  "detected_webgpu_adapters": [
+    {
+      "webgpu_index": 0,
+      "vendor": "nvidia",
+      "vendor_id": 4318,
+      "device_id": 7952,
+      "metadata": {
+        "Discrete": "1",
+        "card_idx": "0",
+        "pci_bus_id": "0000:01:00.0"
+      }
+    },
+    {
+      "webgpu_index": 1,
+      "vendor": "intel",
+      "vendor_id": 32902,
+      "device_id": 16027,
+      "metadata": {
+        "card_idx": "1",
+        "pci_bus_id": "0000:00:02.0"
+      }
+    }
+  ]
+}

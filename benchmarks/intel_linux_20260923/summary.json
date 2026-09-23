@@ -1,0 +1,261 @@
+{
+  "platform": "Linux",
+  "vendor": "intel",
+  "operator_device_name": "Intel(R) UHD Graphics 630",
+  "providers": [
+    "cpu",
+    "intel",
+    "webgpu"
+  ],
+  "profiles": [
+    "wd14_v3",
+    "balanced"
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "warmup": 3,
+  "iterations": 20,
+  "sets": 3,
+  "results": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 727.8107570000429,
+      "peak_rss_mib": 1236.953125,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "intel",
+      "ms_per_image": 512.5402850001137,
+      "peak_rss_mib": 2080.56640625,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630 (iGPU)",
+      "executed_node_providers": [
+        "OpenVINOExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 122.25109299993164,
+      "peak_rss_mib": 653.6484375,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 796.231665500045,
+      "peak_rss_mib": 1863.26953125,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "intel",
+      "ms_per_image": 518.305985624977,
+      "peak_rss_mib": 1700.34375,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630 (iGPU)",
+      "executed_node_providers": [
+        "OpenVINOExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 114.21378224997625,
+      "peak_rss_mib": 660.80859375,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 853.9085660002002,
+      "peak_rss_mib": 1071.171875,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "intel",
+      "ms_per_image": 800.1867610000772,
+      "peak_rss_mib": 1924.47265625,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630 (iGPU)",
+      "executed_node_providers": [
+        "OpenVINOExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 118.26448449983218,
+      "peak_rss_mib": 699.1796875,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 938.4902681250082,
+      "peak_rss_mib": 1360.67578125,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "intel",
+      "ms_per_image": 780.84243225004,
+      "peak_rss_mib": 1550.22265625,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630 (iGPU)",
+      "executed_node_providers": [
+        "OpenVINOExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 109.03937587499968,
+      "peak_rss_mib": 698.70703125,
+      "vram_increment_mib": null,
+      "device_name": "Intel(R) UHD Graphics 630",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    }
+  ],
+  "comparisons_to_cpu": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "intel",
+      "gpu_ms_per_image": 512.5402850001137,
+      "cpu_ms_per_image": 727.8107570000429,
+      "speedup_over_cpu": 1.42
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 122.25109299993164,
+      "cpu_ms_per_image": 727.8107570000429,
+      "speedup_over_cpu": 5.953
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "intel",
+      "gpu_ms_per_image": 518.305985624977,
+      "cpu_ms_per_image": 796.231665500045,
+      "speedup_over_cpu": 1.536
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 114.21378224997625,
+      "cpu_ms_per_image": 796.231665500045,
+      "speedup_over_cpu": 6.971
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "intel",
+      "gpu_ms_per_image": 800.1867610000772,
+      "cpu_ms_per_image": 853.9085660002002,
+      "speedup_over_cpu": 1.067
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 118.26448449983218,
+      "cpu_ms_per_image": 853.9085660002002,
+      "speedup_over_cpu": 7.22
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "intel",
+      "gpu_ms_per_image": 780.84243225004,
+      "cpu_ms_per_image": 938.4902681250082,
+      "speedup_over_cpu": 1.202
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 109.03937587499968,
+      "cpu_ms_per_image": 938.4902681250082,
+      "speedup_over_cpu": 8.607
+    }
+  ],
+  "incomplete": [],
+  "detected_webgpu_adapters": [
+    {
+      "webgpu_index": 0,
+      "vendor": "nvidia",
+      "vendor_id": 4318,
+      "device_id": 7952,
+      "metadata": {
+        "Discrete": "1",
+        "card_idx": "0",
+        "pci_bus_id": "0000:01:00.0"
+      }
+    },
+    {
+      "webgpu_index": 1,
+      "vendor": "intel",
+      "vendor_id": 32902,
+      "device_id": 16027,
+      "metadata": {
+        "card_idx": "1",
+        "pci_bus_id": "0000:00:02.0"
+      }
+    }
+  ]
+}

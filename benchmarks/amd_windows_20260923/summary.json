@@ -1,0 +1,284 @@
+{
+  "platform": "Windows",
+  "vendor": "amd",
+  "operator_device_name": "AMD Radeon Graphics",
+  "providers": [
+    "cpu",
+    "directml",
+    "webgpu"
+  ],
+  "profiles": [
+    "wd14_v3",
+    "balanced"
+  ],
+  "batches": [
+    1,
+    4
+  ],
+  "warmup": 3,
+  "iterations": 20,
+  "sets": 3,
+  "results": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 1015.1916500001334,
+      "peak_rss_mib": 1265.62109375,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "directml",
+      "ms_per_image": 635.6385499996122,
+      "peak_rss_mib": 745.65625,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "DmlExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 984.1284999999971,
+      "peak_rss_mib": 782.87890625,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 1145.1959125000144,
+      "peak_rss_mib": 1878.36328125,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "directml",
+      "ms_per_image": 626.3835000000313,
+      "peak_rss_mib": 633.62890625,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "DmlExecutionProvider"
+      ]
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 937.0361500000399,
+      "peak_rss_mib": 708.0859375,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cpu",
+      "ms_per_image": 808.5821000001943,
+      "peak_rss_mib": 1060.875,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "directml",
+      "ms_per_image": 562.4581500005661,
+      "peak_rss_mib": 636.76953125,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "DmlExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 736.1648999999488,
+      "peak_rss_mib": 718.78515625,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cpu",
+      "ms_per_image": 1063.7460500000202,
+      "peak_rss_mib": 1367.1484375,
+      "vram_increment_mib": null,
+      "device_name": null,
+      "executed_node_providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "directml",
+      "ms_per_image": 576.6596750000872,
+      "peak_rss_mib": 601.125,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "DmlExecutionProvider"
+      ]
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 749.7224499999788,
+      "peak_rss_mib": 601.94921875,
+      "vram_increment_mib": null,
+      "device_name": "AMD Radeon Graphics",
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ]
+    }
+  ],
+  "comparisons_to_cpu": [
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "directml",
+      "gpu_ms_per_image": 635.6385499996122,
+      "cpu_ms_per_image": 1015.1916500001334,
+      "speedup_over_cpu": 1.597
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 984.1284999999971,
+      "cpu_ms_per_image": 1015.1916500001334,
+      "speedup_over_cpu": 1.032
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "directml",
+      "gpu_ms_per_image": 626.3835000000313,
+      "cpu_ms_per_image": 1145.1959125000144,
+      "speedup_over_cpu": 1.828
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 937.0361500000399,
+      "cpu_ms_per_image": 1145.1959125000144,
+      "speedup_over_cpu": 1.222
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "directml",
+      "gpu_ms_per_image": 562.4581500005661,
+      "cpu_ms_per_image": 808.5821000001943,
+      "speedup_over_cpu": 1.438
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 736.1648999999488,
+      "cpu_ms_per_image": 808.5821000001943,
+      "speedup_over_cpu": 1.098
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "directml",
+      "gpu_ms_per_image": 576.6596750000872,
+      "cpu_ms_per_image": 1063.7460500000202,
+      "speedup_over_cpu": 1.845
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "gpu_ms_per_image": 749.7224499999788,
+      "cpu_ms_per_image": 1063.7460500000202,
+      "speedup_over_cpu": 1.419
+    }
+  ],
+  "incomplete": [],
+  "detected_webgpu_adapters": [
+    {
+      "webgpu_index": 0,
+      "vendor": "amd",
+      "vendor_id": 4098,
+      "device_id": 5607,
+      "metadata": {
+        "Description": "AMD Radeon (TM) Graphics",
+        "Discrete": "0",
+        "DxgiAdapterNumber": "0",
+        "DxgiHighPerformanceIndex": "0",
+        "DxgiVideoMemory": "4079 MB",
+        "LUID": "82644"
+      }
+    },
+    {
+      "webgpu_index": 1,
+      "vendor": "amd",
+      "vendor_id": 4098,
+      "device_id": 5607,
+      "metadata": {
+        "Description": "AMD Radeon (TM) Graphics",
+        "DxgiAdapterNumber": "1",
+        "DxgiHighPerformanceIndex": "2",
+        "DxgiVideoMemory": "4079 MB",
+        "LUID": "131193"
+      }
+    },
+    {
+      "webgpu_index": 2,
+      "vendor": "amd",
+      "vendor_id": 4098,
+      "device_id": 5607,
+      "metadata": {
+        "Description": "AMD Radeon (TM) Graphics",
+        "DxgiAdapterNumber": "2",
+        "DxgiHighPerformanceIndex": "3",
+        "DxgiVideoMemory": "4079 MB",
+        "LUID": "128220"
+      }
+    }
+  ]
+}

@@ -1,0 +1,365 @@
+{
+  "reference": "cuda",
+  "providers": [
+    "cuda",
+    "tensorrt",
+    "webgpu"
+  ],
+  "results": [
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "cuda",
+      "ms_per_image": 78.833,
+      "vram_increment_mib": 1129.0,
+      "peak_rss_mib": 1023.06640625,
+      "active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "tensorrt",
+      "ms_per_image": 61.159,
+      "vram_increment_mib": 985.0,
+      "peak_rss_mib": 3077.5234375,
+      "active": [
+        "TensorrtExecutionProvider",
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 202.415,
+      "vram_increment_mib": 714.0,
+      "peak_rss_mib": 689.484375,
+      "active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ],
+      "onnxruntime": "1.30.0"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "cuda",
+      "ms_per_image": 71.936,
+      "vram_increment_mib": 1142.0,
+      "peak_rss_mib": 1014.39453125,
+      "active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "tensorrt",
+      "ms_per_image": 55.615,
+      "vram_increment_mib": 1228.0,
+      "peak_rss_mib": 3077.44140625,
+      "active": [
+        "TensorrtExecutionProvider",
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 182.17,
+      "vram_increment_mib": 1133.0,
+      "peak_rss_mib": 729.25390625,
+      "active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ],
+      "onnxruntime": "1.30.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "cuda",
+      "ms_per_image": 85.446,
+      "vram_increment_mib": 1133.0,
+      "peak_rss_mib": 1049.34375,
+      "active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "tensorrt",
+      "ms_per_image": 53.898,
+      "vram_increment_mib": 938.0,
+      "peak_rss_mib": 2861.390625,
+      "active": [
+        "TensorrtExecutionProvider",
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "provider": "webgpu",
+      "ms_per_image": 215.305,
+      "vram_increment_mib": 867.0,
+      "peak_rss_mib": 743.87890625,
+      "active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ],
+      "onnxruntime": "1.30.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "cuda",
+      "ms_per_image": 74.8,
+      "vram_increment_mib": 1127.0,
+      "peak_rss_mib": 1059.42578125,
+      "active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "CUDAExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "tensorrt",
+      "ms_per_image": 46.933,
+      "vram_increment_mib": 1353.0,
+      "peak_rss_mib": 2910.82421875,
+      "active": [
+        "TensorrtExecutionProvider",
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "TensorrtExecutionProvider"
+      ],
+      "onnxruntime": "1.26.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "provider": "webgpu",
+      "ms_per_image": 195.604,
+      "vram_increment_mib": 1874.0,
+      "peak_rss_mib": 780.27734375,
+      "active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "executed_node_providers": [
+        "CPUExecutionProvider",
+        "WebGpuExecutionProvider"
+      ],
+      "onnxruntime": "1.30.0"
+    }
+  ],
+  "comparisons": [
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "reference": "cuda",
+      "provider": "tensorrt",
+      "reference_ms_per_image": 78.833,
+      "provider_ms_per_image": 61.159,
+      "ratio": 0.776,
+      "slowdown_pct": -22.4
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 1,
+      "reference": "cuda",
+      "provider": "webgpu",
+      "reference_ms_per_image": 78.833,
+      "provider_ms_per_image": 202.415,
+      "ratio": 2.568,
+      "slowdown_pct": 156.8,
+      "cuda_ms_per_image": 78.833,
+      "webgpu_ms_per_image": 202.415,
+      "webgpu_over_cuda_ratio": 2.568,
+      "webgpu_slowdown_pct": 156.8,
+      "cuda_vram_increment_mib": 1129.0,
+      "webgpu_vram_increment_mib": 714.0,
+      "webgpu_nvidia_memory_observed": true,
+      "cuda_active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "webgpu_active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "cuda_version": "1.26.0",
+      "webgpu_version": "1.30.0"
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "reference": "cuda",
+      "provider": "tensorrt",
+      "reference_ms_per_image": 71.936,
+      "provider_ms_per_image": 55.615,
+      "ratio": 0.773,
+      "slowdown_pct": -22.7
+    },
+    {
+      "profile": "balanced",
+      "batch_size": 4,
+      "reference": "cuda",
+      "provider": "webgpu",
+      "reference_ms_per_image": 71.936,
+      "provider_ms_per_image": 182.17,
+      "ratio": 2.532,
+      "slowdown_pct": 153.2,
+      "cuda_ms_per_image": 71.936,
+      "webgpu_ms_per_image": 182.17,
+      "webgpu_over_cuda_ratio": 2.532,
+      "webgpu_slowdown_pct": 153.2,
+      "cuda_vram_increment_mib": 1142.0,
+      "webgpu_vram_increment_mib": 1133.0,
+      "webgpu_nvidia_memory_observed": true,
+      "cuda_active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "webgpu_active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "cuda_version": "1.26.0",
+      "webgpu_version": "1.30.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "reference": "cuda",
+      "provider": "tensorrt",
+      "reference_ms_per_image": 85.446,
+      "provider_ms_per_image": 53.898,
+      "ratio": 0.631,
+      "slowdown_pct": -36.9
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 1,
+      "reference": "cuda",
+      "provider": "webgpu",
+      "reference_ms_per_image": 85.446,
+      "provider_ms_per_image": 215.305,
+      "ratio": 2.52,
+      "slowdown_pct": 152.0,
+      "cuda_ms_per_image": 85.446,
+      "webgpu_ms_per_image": 215.305,
+      "webgpu_over_cuda_ratio": 2.52,
+      "webgpu_slowdown_pct": 152.0,
+      "cuda_vram_increment_mib": 1133.0,
+      "webgpu_vram_increment_mib": 867.0,
+      "webgpu_nvidia_memory_observed": true,
+      "cuda_active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "webgpu_active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "cuda_version": "1.26.0",
+      "webgpu_version": "1.30.0"
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "reference": "cuda",
+      "provider": "tensorrt",
+      "reference_ms_per_image": 74.8,
+      "provider_ms_per_image": 46.933,
+      "ratio": 0.627,
+      "slowdown_pct": -37.3
+    },
+    {
+      "profile": "wd14_v3",
+      "batch_size": 4,
+      "reference": "cuda",
+      "provider": "webgpu",
+      "reference_ms_per_image": 74.8,
+      "provider_ms_per_image": 195.604,
+      "ratio": 2.615,
+      "slowdown_pct": 161.5,
+      "cuda_ms_per_image": 74.8,
+      "webgpu_ms_per_image": 195.604,
+      "webgpu_over_cuda_ratio": 2.615,
+      "webgpu_slowdown_pct": 161.5,
+      "cuda_vram_increment_mib": 1127.0,
+      "webgpu_vram_increment_mib": 1874.0,
+      "webgpu_nvidia_memory_observed": true,
+      "cuda_active": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "webgpu_active": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "cuda_version": "1.26.0",
+      "webgpu_version": "1.30.0"
+    }
+  ],
+  "incomplete": []
+}

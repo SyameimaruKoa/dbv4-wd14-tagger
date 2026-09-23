@@ -1,0 +1,147 @@
+{
+  "status": "ok",
+  "provider_requested": "webgpu",
+  "provider_active": [
+    "WebGpuExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "profile": "balanced",
+  "repo_id": "animetimm/caformer_b36.dbv4-full",
+  "metadata_version": "8c7ba23eaed2d01d",
+  "model_path": "C:\\Users\\kouki\\.cache\\huggingface\\hub\\models--animetimm--caformer_b36.dbv4-full\\snapshots\\aac0699c88553d50eb673b41a81d8222936b22b2\\model.onnx",
+  "batch_size": 1,
+  "input_shape": [
+    "batch",
+    3,
+    "height",
+    "width"
+  ],
+  "output_shape": [
+    1,
+    12476
+  ],
+  "seed": 20260922,
+  "image_size": [
+    640,
+    480
+  ],
+  "warmup": 3,
+  "iterations_per_set": 20,
+  "sets": 3,
+  "raw_ms_per_image": [
+    [
+      199.74679999995715,
+      196.84800000050018,
+      198.46810000035475,
+      199.07150000017282,
+      196.5460000001258,
+      200.4954000003636,
+      197.77659999999742,
+      196.5251999999964,
+      201.07170000028418,
+      196.60619999922346,
+      199.7280999994473,
+      197.9163999994853,
+      196.45519999994576,
+      199.38570000067557,
+      198.1595000006564,
+      199.36200000029203,
+      196.39699999970617,
+      197.85849999971106,
+      198.15100000050734,
+      198.1364000002941
+    ],
+    [
+      198.4812000000602,
+      196.60120000025927,
+      198.18490000034217,
+      199.12050000039017,
+      196.38759999998,
+      201.04189999983646,
+      197.31270000011136,
+      196.60380000004807,
+      201.2607000006028,
+      196.25879999966855,
+      199.7166000001016,
+      197.02330000018264,
+      196.62100000005012,
+      200.7673000007344,
+      196.6787999999724,
+      196.89529999959632,
+      200.05530000071303,
+      196.22620000063762,
+      199.1785999998683,
+      197.46350000059465
+    ],
+    [
+      196.59260000025824,
+      199.84560000011697,
+      197.73199999963254,
+      198.99600000007922,
+      199.21760000033828,
+      197.1386999994138,
+      199.6052000004056,
+      197.9354000004605,
+      198.9211999998588,
+      197.9164000003948,
+      197.78849999966042,
+      198.4145999995235,
+      196.56209999993735,
+      199.8358000000735,
+      196.59620000038558,
+      198.05110000015702,
+      198.92669999990176,
+      196.46300000022165,
+      199.2443999997704,
+      196.68220000039582
+    ]
+  ],
+  "set_median_ms": [
+    198.1437000004007,
+    197.388100000353,
+    197.99325000030876
+  ],
+  "set_p95_ms": [
+    200.52421500035962,
+    201.05283999987478,
+    199.83629000007568
+  ],
+  "median_ms_per_image": 197.99325000030876,
+  "baseline_vram_mib": 934.0,
+  "peak_vram_mib": 1643.0,
+  "vram_increment_mib": 709.0,
+  "baseline_rss_mib": 70.73828125,
+  "peak_rss_mib": 671.4453125,
+  "metadata_seconds": 1.4378798999996434,
+  "session_seconds": 2.441132899999502,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.15",
+  "onnxruntime": "1.30.0",
+  "webgpu_plugin": "0.3.0",
+  "gpu_index": 0,
+  "directml_device_index": null,
+  "webgpu_device_index": 2,
+  "nvidia_gpu_memory_observed": true,
+  "executed_node_providers": [
+    "CPUExecutionProvider",
+    "WebGpuExecutionProvider"
+  ],
+  "openvino_device": null,
+  "openvino_gpu_name": null,
+  "webgpu_hardware": {
+    "vendor": "NVIDIA",
+    "vendor_id": 4318,
+    "device_id": 7952,
+    "metadata": {
+      "Description": "NVIDIA GeForce RTX 2070 with Max-Q Design",
+      "Discrete": "1",
+      "DxgiAdapterNumber": "0",
+      "DxgiHighPerformanceIndex": "0",
+      "DxgiVideoMemory": "8006 MB",
+      "LUID": "82677"
+    }
+  },
+  "tensorrt_lib_dir": null,
+  "target_vendor": "nvidia",
+  "device_name": "NVIDIA GeForce RTX 2070 with Max-Q Design"
+}

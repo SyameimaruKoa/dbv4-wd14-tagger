@@ -1,0 +1,147 @@
+{
+  "status": "ok",
+  "provider_requested": "webgpu",
+  "provider_active": [
+    "WebGpuExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "profile": "wd14_v3",
+  "repo_id": "SmilingWolf/wd-swinv2-tagger-v3",
+  "metadata_version": "1eefe14281d9f129",
+  "model_path": "C:\\Users\\kouki\\.cache\\huggingface\\hub\\models--SmilingWolf--wd-swinv2-tagger-v3\\snapshots\\627aef95638667ddcaa3ac8ae625e88ea5b02f51\\model.onnx",
+  "batch_size": 1,
+  "input_shape": [
+    "batch_size",
+    448,
+    448,
+    3
+  ],
+  "output_shape": [
+    1,
+    10861
+  ],
+  "seed": 20260922,
+  "image_size": [
+    640,
+    480
+  ],
+  "warmup": 3,
+  "iterations_per_set": 20,
+  "sets": 3,
+  "raw_ms_per_image": [
+    [
+      974.7808000001896,
+      977.8089999999793,
+      974.6387000000141,
+      986.4262999999482,
+      991.4283000002797,
+      993.4607999998661,
+      995.7617999998547,
+      1014.4592999999986,
+      995.0506999998652,
+      1012.2863000001416,
+      972.823800000242,
+      972.3186999999598,
+      972.287999999935,
+      974.2633000000751,
+      975.1013000000057,
+      980.3019999999378,
+      971.0737000000336,
+      974.6530000002167,
+      975.0302000002193,
+      976.6442999998617
+    ],
+    [
+      972.329499999887,
+      973.4131000000161,
+      973.8941000000523,
+      990.4366000000664,
+      988.2835999997042,
+      984.7488999998859,
+      994.3358999998964,
+      1028.2515000003514,
+      1010.6497000001582,
+      975.7851999997911,
+      971.415700000307,
+      972.3063000001275,
+      1974.9096999998983,
+      1022.8029999998398,
+      1024.823799999922,
+      976.6804999999295,
+      986.1398999996709,
+      985.2791000002981,
+      978.8588999999774,
+      979.2007000000922
+    ],
+    [
+      992.7244999998948,
+      1061.5007999999762,
+      1028.3282000000327,
+      990.0346999997964,
+      982.2368999998616,
+      977.9683000001569,
+      981.6949999999451,
+      1019.5504000002984,
+      1024.9635000000126,
+      1018.6604000000443,
+      983.389200000147,
+      980.685099999846,
+      977.3245000001225,
+      984.8677999998472,
+      976.7661000000771,
+      982.8157000001738,
+      995.006099999955,
+      1020.2838000000156,
+      982.0692999996936,
+      977.0813000000089
+    ]
+  ],
+  "set_median_ms": [
+    975.8727999999337,
+    985.014000000092,
+    984.1284999999971
+  ],
+  "set_p95_ms": [
+    1012.3949500001345,
+    1075.5844100003294,
+    1029.9868300000298
+  ],
+  "median_ms_per_image": 984.1284999999971,
+  "baseline_vram_mib": null,
+  "peak_vram_mib": null,
+  "vram_increment_mib": null,
+  "baseline_rss_mib": 68.60546875,
+  "peak_rss_mib": 782.87890625,
+  "metadata_seconds": 1.1609856000000036,
+  "session_seconds": 4.225775800000065,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.15",
+  "onnxruntime": "1.30.0",
+  "webgpu_plugin": "0.4.0",
+  "gpu_index": 0,
+  "directml_device_index": null,
+  "webgpu_device_index": 0,
+  "nvidia_gpu_memory_observed": null,
+  "executed_node_providers": [
+    "CPUExecutionProvider",
+    "WebGpuExecutionProvider"
+  ],
+  "openvino_device": null,
+  "openvino_gpu_name": null,
+  "webgpu_hardware": {
+    "vendor": "amd",
+    "vendor_id": 4098,
+    "device_id": 5607,
+    "metadata": {
+      "Description": "AMD Radeon (TM) Graphics",
+      "Discrete": "0",
+      "DxgiAdapterNumber": "0",
+      "DxgiHighPerformanceIndex": "0",
+      "DxgiVideoMemory": "4079 MB",
+      "LUID": "82644"
+    }
+  },
+  "tensorrt_lib_dir": null,
+  "target_vendor": "amd",
+  "device_name": "AMD Radeon Graphics"
+}
