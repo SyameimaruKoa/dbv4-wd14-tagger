@@ -105,6 +105,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "server_port": 5000,
     "server_workers": 2,
     "client_timeout": 15,
+    "client_batch_timeout": 120,
     "openvino_gpu_device": "GPU.0",
     "general_threshold": 0.40,
     "rating_sublevel_thresholds_5way": [0.20, 0.40, 0.60, 0.80],
@@ -1384,14 +1385,17 @@ def process_images(args: argparse.Namespace) -> None:
                     f"{batch_limit}に変更します。"
                 )
             batch_size = batch_limit
-    io_workers = args.io_workers
+    io_workers = 0 if is_client else args.io_workers
     if io_workers == -1:
         io_workers = max(2, min(4, (os.cpu_count() or 1) // 2)) if batch_size > 1 else 0
     elif io_workers < 0:
         io_workers = 0
 
     if batch_size > 1:
-        print(f"[INFO] DBV4 batch-size={batch_size}, io-workers={io_workers}")
+        if is_client:
+            print(f"[INFO] DBV4 Client batch-size={batch_size}")
+        else:
+            print(f"[INFO] DBV4 batch-size={batch_size}, io-workers={io_workers}")
 
     warmup_time = 0.0
     if runtime:
@@ -1489,16 +1493,20 @@ def process_images(args: argparse.Namespace) -> None:
             return None, exc
 
     def run_batch(items: Sequence[Dict[str, Any]]) -> None:
-        nonlocal inferred, inferred_time
+        nonlocal inferred, inferred_time, batch_size
         if not items:
             return
         started = time.time()
         if is_client:
             timeout = int(APP_CONFIG.get("client_timeout", 15))
+            batch_timeout = max(
+                timeout * len(items),
+                int(APP_CONFIG.get("client_batch_timeout", 120)),
+            )
             server_url = f"http://{args.host}:{args.port}"
             try:
                 predictions = client_predict_batch(
-                    server_url, [item["path"] for item in items], metadata, timeout
+                    server_url, [item["path"] for item in items], metadata, batch_timeout
                 )
             except urllib.error.HTTPError as exc:
                 if exc.code == 404:
@@ -1507,7 +1515,23 @@ def process_images(args: argparse.Namespace) -> None:
                     ) from exc
                 safe_write(f"[WARN] バッチ通信に失敗: HTTP {exc.code} -> 1枚ずつ再試行します。")
                 predictions = None
-            except (urllib.error.URLError, socket.timeout, ClientCompatibilityError):
+            except (socket.timeout, TimeoutError):
+                safe_write(
+                    f"[WARN] {len(items)}枚のバッチ応答が{batch_timeout}秒でタイムアウトしました。"
+                    "以降は1枚ずつ処理します。"
+                )
+                batch_size = 1
+                predictions = None
+            except urllib.error.URLError as exc:
+                if not isinstance(exc.reason, TimeoutError):
+                    raise
+                safe_write(
+                    f"[WARN] {len(items)}枚のバッチ応答が{batch_timeout}秒でタイムアウトしました。"
+                    "以降は1枚ずつ処理します。"
+                )
+                batch_size = 1
+                predictions = None
+            except ClientCompatibilityError:
                 raise
             except Exception as exc:
                 safe_write(f"[WARN] バッチ通信に失敗: {exc} -> 1枚ずつ再試行します。")
@@ -1631,8 +1655,9 @@ def process_images(args: argparse.Namespace) -> None:
                 else:
                     pending.append(item)
                     if len(pending) >= batch_size:
-                        run_batch(pending[:batch_size])
-                        pending = pending[batch_size:]
+                        current_batch = pending[:batch_size]
+                        run_batch(current_batch)
+                        pending = pending[len(current_batch):]
             except ClientCompatibilityError as exc:
                 safe_write(f"互換性エラー: {exc}")
                 safe_write("[ERROR] Server/Clientの構成が一致しないため処理を停止します。")
@@ -1730,7 +1755,7 @@ def process_images(args: argparse.Namespace) -> None:
                 "コンパイル外れ値としてメイン速度から除外しました。"
             )
     else:
-        print("  ・推論実行ファイル (DBV4 AI演算あり): 0 枚")
+        print("  ・推論実行ファイル (DBV4 AI演算あり): 0 枚 | 速度: 測定対象なし")
 
     if skipped:
         skip_speed = skipped / skipped_time if skipped_time else 0.0
@@ -1740,7 +1765,7 @@ def process_images(args: argparse.Namespace) -> None:
             f"速度: {skip_speed:.2f} img/s ({skip_ms:.1f} ms/img)"
         )
     else:
-        print("  ・演算スキップファイル (DBV4 score): 0 枚")
+        print("  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし")
     if is_pixiv:
         print(
             f"  ・Pixiv移動対象: {pixiv_target_groups}フォルダ / "

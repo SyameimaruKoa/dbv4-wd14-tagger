@@ -336,6 +336,7 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 ~~~
 
 Clientも`--batch-size`（既定4）で複数画像を1回の通信と推論にまとめられる。ServerとClientの両方をこの機能に対応する版へ更新し、Serverを再起動すること。古いServerに接続した場合は自動的に1枚ずつ処理する。モデルの入力が固定バッチ1枚なら、Clientも1枚ずつ処理する。
+バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
 
@@ -377,6 +378,7 @@ Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使�
 | server_port | 5000 | Server/Clientポート |
 | server_workers | 2 | Server同時推論数（GPUメモリに応じて調整） |
 | client_timeout | 15 | Client timeout秒 |
+| client_batch_timeout | 120 | バッチ推論の応答待ち時間の下限（秒） |
 | openvino_gpu_device | "GPU.0" | Intel OpenVINOデバイス |
 | general_threshold | 0.40 | R-00安全弁 |
 | rating_sublevel_thresholds_5way | [0.20,0.40,0.60,0.80] | R-15/R-17の5段階境界 |
