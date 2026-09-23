@@ -1,4 +1,5 @@
 import argparse
+import base64
 import csv
 import datetime
 import glob
@@ -997,7 +998,11 @@ class TagServerHandler(BaseHTTPRequestHandler):
         if not self.runtime:
             self._send_json_response(503, b'{}')
             return
-        body = json.dumps(self.runtime.metadata.summary(), ensure_ascii=False).encode("utf-8")
+        body = json.dumps({
+            **self.runtime.metadata.summary(),
+            "batch_supported": True,
+            "batch_limit": getattr(self.runtime, "batch_limit", None),
+        }, ensure_ascii=False).encode("utf-8")
         self._send_json_response(200, body)
 
     def _send_json_response(self, status: int, body: bytes) -> bool:
@@ -1027,6 +1032,31 @@ class TagServerHandler(BaseHTTPRequestHandler):
         try:
             if not self.runtime:
                 raise RuntimeError("DBV4 runtimeが初期化されていません。")
+            if self.path == "/batch":
+                request = json.loads(self.rfile.read(length).decode("utf-8"))
+                encoded_images = request.get("images") if isinstance(request, dict) else None
+                if not isinstance(encoded_images, list) or not encoded_images:
+                    raise ValueError("バッチ画像がありません。")
+                limit = self.runtime.batch_limit
+                if limit is not None and len(encoded_images) > limit:
+                    raise ValueError(f"モデルのバッチ上限は{limit}枚です。")
+                images = [
+                    Image.open(io.BytesIO(base64.b64decode(encoded, validate=True))).convert("RGB")
+                    for encoded in encoded_images
+                ]
+                predictions = self.runtime.predict_images(images)
+                if len(predictions) != len(images):
+                    raise ValueError("推論結果の枚数が一致しません。")
+                payload = {
+                    **self.runtime.metadata.summary(),
+                    "probabilities": [prediction.astype(float).tolist() for prediction in predictions],
+                }
+                body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+                self._send_json_response(200, body)
+                return
+            if self.path != "/":
+                self._send_json_response(404, b'{}')
+                return
             image = Image.open(io.BytesIO(self.rfile.read(length))).convert("RGB")
             probabilities = self.runtime.predict_images([image])[0]
             payload = {
@@ -1138,6 +1168,14 @@ def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
                 "Serverが/metadataに未対応です。新しい版でServerを再起動してください。"
             ) from exc
         raise
+    except urllib.error.URLError as exc:
+        if isinstance(exc.reason, socket.gaierror):
+            raise ClientCompatibilityError(
+                f"接続先「{args.host}」の名前を解決できません。-H の綴り、DNS、またはIPアドレスを確認してください。"
+            ) from exc
+        raise ClientCompatibilityError(
+            f"サーバー {args.host}:{args.port} に接続できません: {exc.reason}"
+        ) from exc
     if not isinstance(server_info, dict) or server_info.get("protocol") != 1:
         raise ClientCompatibilityError("Serverのモデル情報またはprotocol versionが不正です。")
     model_id = server_info.get("model_id")
@@ -1168,6 +1206,9 @@ def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
         raise ClientCompatibilityError("サーバーとクライアントのmetadata versionが不一致です。")
     if server_info.get("output_size") != metadata.label_count:
         raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
+    args.client_batch_supported = server_info.get("batch_supported") is True
+    limit = server_info.get("batch_limit")
+    args.client_batch_limit = limit if isinstance(limit, int) and limit > 0 else None
     return metadata
 
 
@@ -1200,6 +1241,37 @@ def client_predict(
         raise ClientCompatibilityError("サーバー応答形式が不正です。")
     if probabilities.shape[0] != metadata.label_count:
         raise ClientCompatibilityError("DBV4 output sizeがmetadataと一致しません。")
+    return probabilities
+
+
+def client_predict_batch(
+    server_url: str,
+    image_paths: Sequence[str],
+    metadata: DBV4Metadata,
+    timeout: int,
+) -> np.ndarray:
+    images = []
+    for path in image_paths:
+        with open(path, "rb") as image_file:
+            images.append(base64.b64encode(image_file.read()).decode("ascii"))
+    body = json.dumps({"images": images}).encode("utf-8")
+    request = urllib.request.Request(
+        f"{server_url}/batch", data=body,
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict) or payload.get("protocol") != 1:
+        raise ClientCompatibilityError("サーバーのDBV4 protocol versionが不一致です。")
+    if payload.get("model_id") != metadata.repo_id:
+        raise ClientCompatibilityError("サーバーとクライアントのmodel_idが不一致です。")
+    if payload.get("metadata_version") != metadata.metadata_version:
+        raise ClientCompatibilityError("サーバーとクライアントのmetadata versionが不一致です。")
+    if payload.get("output_size") != metadata.label_count:
+        raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
+    probabilities = np.asarray(payload.get("probabilities", []), dtype=np.float32)
+    if probabilities.shape != (len(image_paths), metadata.label_count):
+        raise ClientCompatibilityError("バッチ推論結果の枚数またはラベル数が一致しません。")
     return probabilities
 
 
@@ -1295,11 +1367,14 @@ def process_images(args: argparse.Namespace) -> None:
         base_dirs.append(base)
 
     requested_batch_size = max(1, args.batch_size)
-    batch_size = 1 if is_client else requested_batch_size
-    if is_client and requested_batch_size > 1:
-        print("[WARN] クライアントモードではバッチ推論を使用できないため、batch-size=1で実行します。")
-    if runtime and runtime.batch_limit is not None:
-        batch_limit = max(1, runtime.batch_limit)
+    batch_size = requested_batch_size
+    if is_client and not getattr(args, "client_batch_supported", False):
+        batch_size = 1
+        if requested_batch_size > 1:
+            print("[WARN] 接続先Serverはバッチ通信に未対応です。Serverを更新・再起動するまで1枚ずつ処理します。")
+    batch_limit = runtime.batch_limit if runtime else getattr(args, "client_batch_limit", None)
+    if batch_limit is not None:
+        batch_limit = max(1, batch_limit)
         if batch_size > batch_limit:
             if batch_limit == 1:
                 print("[WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。")
@@ -1315,7 +1390,7 @@ def process_images(args: argparse.Namespace) -> None:
     elif io_workers < 0:
         io_workers = 0
 
-    if runtime and batch_size > 1:
+    if batch_size > 1:
         print(f"[INFO] DBV4 batch-size={batch_size}, io-workers={io_workers}")
 
     warmup_time = 0.0
@@ -1415,9 +1490,57 @@ def process_images(args: argparse.Namespace) -> None:
 
     def run_batch(items: Sequence[Dict[str, Any]]) -> None:
         nonlocal inferred, inferred_time
-        if not runtime or not items:
+        if not items:
             return
         started = time.time()
+        if is_client:
+            timeout = int(APP_CONFIG.get("client_timeout", 15))
+            server_url = f"http://{args.host}:{args.port}"
+            try:
+                predictions = client_predict_batch(
+                    server_url, [item["path"] for item in items], metadata, timeout
+                )
+            except urllib.error.HTTPError as exc:
+                if exc.code == 404:
+                    raise ClientCompatibilityError(
+                        "Serverが/batchに未対応です。Serverを更新・再起動してください。"
+                    ) from exc
+                safe_write(f"[WARN] バッチ通信に失敗: HTTP {exc.code} -> 1枚ずつ再試行します。")
+                predictions = None
+            except (urllib.error.URLError, socket.timeout, ClientCompatibilityError):
+                raise
+            except Exception as exc:
+                safe_write(f"[WARN] バッチ通信に失敗: {exc} -> 1枚ずつ再試行します。")
+                predictions = None
+            if predictions is None:
+                for item in items:
+                    single_started = time.time()
+                    try:
+                        prediction = client_predict(server_url, item["path"], metadata, timeout)
+                        elapsed = time.time() - single_started
+                        inferred += 1
+                        inferred_time += elapsed
+                        batch_history.append({"count": 1, "time": elapsed})
+                        update_progress_postfix()
+                        decode_and_finalize(item, prediction)
+                    except (urllib.error.URLError, socket.timeout, ClientCompatibilityError):
+                        raise
+                    except Exception as single_exc:
+                        safe_write(f"エラー {os.path.basename(item['path'])}: {single_exc}")
+                        progress.update(1)
+                return
+            elapsed = time.time() - started
+            inferred += len(items)
+            inferred_time += elapsed
+            batch_history.append({"count": len(items), "time": elapsed})
+            update_progress_postfix()
+            for item, prediction in zip(items, predictions):
+                try:
+                    decode_and_finalize(item, prediction)
+                except Exception as exc:
+                    safe_write(f"エラー {os.path.basename(item['path'])}: {exc}")
+                    progress.update(1)
+            return
         if executor:
             loaded = list(executor.map(lambda item: load_image(item["path"]), items))
         else:
@@ -1494,7 +1617,7 @@ def process_images(args: argparse.Namespace) -> None:
                     continue
 
                 item = {"path": image_path, "existing_tags": existing_tags}
-                if is_client:
+                if is_client and batch_size == 1:
                     prediction = client_predict(
                         f"http://{args.host}:{args.port}",
                         image_path,
@@ -1536,7 +1659,7 @@ def process_images(args: argparse.Namespace) -> None:
         safe_write("\n[INFO] 中断されました。")
         aborted = True
     finally:
-        if runtime and pending and not aborted:
+        if pending and not aborted:
             run_batch(pending)
         if executor:
             executor.shutdown(wait=True)

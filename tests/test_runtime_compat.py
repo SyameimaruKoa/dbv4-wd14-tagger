@@ -372,7 +372,9 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 url = f"http://127.0.0.1:{server.server_port}/metadata"
                 with urllib.request.urlopen(url) as response:
                     payload = app.json.loads(response.read().decode("utf-8"))
-                self.assertEqual(payload, metadata.summary())
+                self.assertEqual({key: payload[key] for key in metadata.summary()}, metadata.summary())
+                self.assertTrue(payload["batch_supported"])
+                self.assertIsNone(payload["batch_limit"])
                 self.assertNotIn("probabilities", payload)
             finally:
                 server.shutdown()

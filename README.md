@@ -335,6 +335,8 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 ./run_tagger.sh --client --host 192.168.1.10 -p /path/to/images --organize
 ~~~
 
+Clientも`--batch-size`（既定4）で複数画像を1回の通信と推論にまとめられる。ServerとClientの両方をこの機能に対応する版へ更新し、Serverを再起動すること。古いServerに接続した場合は自動的に1枚ずつ処理する。モデルの入力が固定バッチ1枚なら、Clientも1枚ずつ処理する。
+
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
 
 ### Linux実機検証
