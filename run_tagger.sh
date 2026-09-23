@@ -32,25 +32,20 @@ configure_storage_paths() {
     export TMP=/tmp
     export TEMP=/tmp
 
-    if [ -z "${HF_HOME:-}" ] && command -v findmnt >/dev/null 2>&1; then
-        local cache_type=""
-        cache_type=$(findmnt -n -o FSTYPE -T "$HOME/.cache" 2>/dev/null || true)
-        if [ "$cache_type" = "tmpfs" ]; then
-            local cache_base="$HOME/.local/share/huggingface"
-            export HF_HOME="$cache_base"
-            if [ -z "${HF_HUB_CACHE:-}" ]; then
-                export HF_HUB_CACHE="$cache_base/hub"
-            fi
-            if [ -z "${HF_XET_CACHE:-}" ]; then
-                export HF_XET_CACHE="$cache_base/xet"
-            fi
-            mkdir -p "$HF_HOME" "$HF_HUB_CACHE" "$HF_XET_CACHE" || {
-                echo "[ERROR] Hugging Faceモデルキャッシュを作成できません: $cache_base"
-                exit 1
-            }
-            echo "[INFO] 一時領域: /tmp、Hugging Face保存先: $HF_HOME"
-        fi
-    fi
+    local portable_data="$SCRIPT_DIR/.dbv4"
+    export DBV4_DATA_DIR="$portable_data"
+    export HF_HOME="$portable_data/huggingface"
+    export HF_HUB_CACHE="$HF_HOME/hub"
+    export HF_XET_CACHE="$HF_HOME/xet"
+    export HF_TOKEN_PATH="$HF_HOME/token"
+    export PIP_CACHE_DIR="$portable_data/pip-cache"
+    export TENSORRT_ENGINE_CACHE_DIR="$portable_data/tensorrt-engine-cache"
+    mkdir -p "$HF_HOME" "$HF_HUB_CACHE" "$HF_XET_CACHE" \
+        "$PIP_CACHE_DIR" "$TENSORRT_ENGINE_CACHE_DIR" "$portable_data/runtime" || {
+        echo "[ERROR] リポジトリ内データディレクトリを作成できません: $portable_data"
+        exit 1
+    }
+    echo "[INFO] ポータブルデータ保存先: $portable_data"
 }
 
 show_help() {

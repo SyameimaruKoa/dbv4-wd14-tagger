@@ -19,6 +19,17 @@ from dbv4 import DBV4Metadata
 
 
 class RuntimeCompatibilityTests(unittest.TestCase):
+    def test_exiftool_diagnostics_are_not_merged_into_tag_output(self):
+        process = MagicMock()
+        wrapper = app.ExifToolWrapper("exiftool")
+
+        with patch.object(app.subprocess, "Popen", return_value=process) as popen:
+            wrapper.start()
+
+        self.assertIsNone(popen.call_args.kwargs["stderr"])
+        self.assertIsNot(popen.call_args.kwargs["stderr"], app.subprocess.STDOUT)
+        wrapper.stop()
+
     @staticmethod
     def _metadata():
         labels = ("general", "sensitive", "questionable", "explicit", "tag_a")
@@ -112,7 +123,11 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             providers = app.build_providers(True)
         self.assertEqual(
             providers,
-            [("TensorrtExecutionProvider", {"device_id": "0"}), ("CUDAExecutionProvider", {"device_id": "0"}), "CPUExecutionProvider"],
+            [
+                ("TensorrtExecutionProvider", app.gpu_runtime.tensorrt_provider_options(0)),
+                ("CUDAExecutionProvider", {"device_id": "0"}),
+                "CPUExecutionProvider",
+            ],
         )
 
     def test_manual_approval_profiles_are_available(self):

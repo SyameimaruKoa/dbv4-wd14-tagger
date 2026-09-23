@@ -167,12 +167,14 @@ def materialize_external_onnx_bundle(
 ) -> str:
     if not external_paths:
         return model_path
-    cache_base = os.path.abspath(base_dir or os.getcwd())
+    cache_base = os.path.abspath(
+        base_dir or os.environ.get("DBV4_DATA_DIR") or os.getcwd()
+    )
     snapshot_name = os.path.basename(os.path.dirname(model_path))
     bundle_key = hashlib.sha256(
         f"{repo_id}\0{snapshot_name}".encode("utf-8")
     ).hexdigest()[:16]
-    bundle_dir = os.path.join(cache_base, ".dbv4_models", bundle_key)
+    bundle_dir = os.path.join(cache_base, "models", bundle_key)
     os.makedirs(bundle_dir, exist_ok=True)
 
     def materialize(source: str) -> str:

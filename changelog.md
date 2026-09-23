@@ -3,7 +3,7 @@
 ## 2026-09-23
 
 - ベンチマークで追加したCUDA/cuDNN・TensorRT・OpenVINOの初期化、WebGPUのデバイス選択、DirectMLの設定を`gpu_runtime.py`へ共通化し、通常推論とServerへ適用。明示したEPが利用不可の場合や起動検証でノードを実行しない場合は停止する。
-- Bash／PowerShellへEP・GPU番号・TensorRTライブラリ場所の指定を追加。CUDA 12とOpenVINOの依存パッケージを測定時の構成に合わせ、MIGraphXのロード検証、Windowsの終了コード伝播と環境分離を追加。変更元のコミットと適用範囲は`GPU_RUNTIME_PORT.md`に記録。
+- Bash／PowerShellへEP・GPU番号・TensorRTライブラリ場所の指定を追加。CUDA 12とOpenVINOの依存パッケージを測定時の構成に合わせ、MIGraphXのロード検証、Windowsの終了コード伝播と環境分離を追加。
 
 ## 2026-09-22
 

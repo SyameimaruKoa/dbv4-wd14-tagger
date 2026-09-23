@@ -161,6 +161,30 @@ class GPUInitializationTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'Multiple TensorRT'):
                     gpu.prepare_tensorrt_windows(None)
 
+    def test_windows_tensorrt_discovers_runtime_in_portable_venv(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {'PATH': ''}, clear=True):
+            root = Path(directory)
+            runtime = root/'Lib'/'site-packages'/'tensorrt_cu12_libs'
+            runtime.mkdir(parents=True)
+            (runtime/'nvinfer_10.dll').touch()
+            (root/'onnxruntime'/'capi').mkdir(parents=True)
+            with patch.object(gpu.sys, 'prefix', str(root)), patch.object(
+                gpu.ort, '__file__', str(root/'onnxruntime'/'__init__.py')
+            ), patch.object(gpu, 'prepare_cuda'), patch.object(
+                gpu.os, 'add_dll_directory', create=True
+            ), patch.object(gpu.ctypes, 'WinDLL', create=True):
+                found, _ = gpu.prepare_tensorrt_windows(None)
+                self.assertEqual(found, runtime)
+
+    def test_tensorrt_provider_options_use_portable_cache(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(
+            os.environ, {'TENSORRT_ENGINE_CACHE_DIR': directory}, clear=True
+        ):
+            options = gpu.tensorrt_provider_options(2)
+            self.assertEqual(options['device_id'], '2')
+            self.assertEqual(options['trt_engine_cache_enable'], '1')
+            self.assertEqual(Path(options['trt_engine_cache_path']), Path(directory).resolve())
+
     def test_windows_openvino_keeps_dll_search_path(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

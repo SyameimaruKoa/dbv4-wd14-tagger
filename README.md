@@ -222,6 +222,12 @@ compinit
 
 ## Windows / PowerShell
 
+### ポータブルな保存先
+
+ランチャーが作成する認証情報、モデル、キャッシュ、TensorRT engine、pipキャッシュ、仮想環境はすべてこのリポジトリフォルダ内へ保存する。Hugging Faceのtokenは `.dbv4/huggingface/token` に一度保存され、CPU・CUDA・TensorRTなど別の仮想環境から共通利用される。仮想環境を作り直しても再ログインは不要であり、リポジトリフォルダを削除すれば関連データも削除される。
+
+`.dbv4/`、`.dbv4_models/`、`venv_*` はGit管理外である。tokenを含む `.dbv4/` を共有・コミットしないこと。
+
 初回セットアップ：
 
 ~~~powershell
@@ -264,9 +270,19 @@ compinit
 .\run_tagger.ps1 -Client -HostIP "192.168.1.10" -Path "C:\Images" -Organize
 ~~~
 
+### TensorRT
+
+WindowsとLinuxのTensorRTプロバイダーは、初回実行時に公式PyPIのCUDA 12用 `tensorrt-cu12` を `venv_tensorrt` へ自動導入する。NVIDIAドライバーはOS側に必要だが、Python依存関係、TensorRTランタイム、engine cacheはリポジトリ内に保存される。
+
+~~~powershell
+.\run_tagger.ps1 -Provider tensorrt -GpuIndex 0 -Path "C:\Images"
+~~~
+
+PyPI版を使用できない場合は、[NVIDIA TensorRT 10ダウンロード](https://developer.nvidia.com/tensorrt/download/10x)からWindows CUDA 12版ZIPを取得して利用条件へ同意し、展開後の `TensorRT-10.x.x.x` フォルダを `.dbv4/runtime/` に配置する。ランチャーは `.dbv4/runtime/TensorRT-*/bin/nvinfer_10.dll` を自動検出する。任意の場所へ置く場合だけ `-TensorRtLibDir` を指定する。詳細は[NVIDIA公式Windows ZIP導入手順](https://docs.nvidia.com/deeplearning/tensorrt/10.16.0/installing-tensorrt/install-zip.html)を参照。
+
 ## Linux / Bash
 
-`run_tagger.sh`の一時ファイルは`/tmp`を使う。`~/.cache`が容量の小さいtmpfsの場合、Hugging Faceのモデルキャッシュは自動的に`~/.local/share/huggingface`へ保存する。既存の`HF_HUB_CACHE`・`HF_XET_CACHE`指定は優先される。モデルキャッシュは再利用するデータであり、`/tmp`には置かない。
+`run_tagger.sh`の一時ファイルは`/tmp`を使う。認証情報、モデル、pipキャッシュ、TensorRT engine cacheはWindowsと同様にリポジトリ内の`.dbv4/`へ保存する。
 
 初回セットアップ：
 
@@ -285,7 +301,7 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 `ultra`はONNX本体の公開リポジトリとは別に、タグと前処理データを`animetimm/convnextv2_huge.dbv4-full`から取得する。利用前に[モデルページ](https://huggingface.co/animetimm/convnextv2_huge.dbv4-full)で利用条件に同意し、同意したアカウントで`--login`を実行する。401が出る場合は、そのアカウントにアクセス権があるか確認する。
 `ultra`などのアクセス確認で401が返った場合は、モデルページを開いて再ログインを促し、同じ実行内でアクセスを再確認する。利用条件への同意や管理者承認がまだ完了していない場合は、案内を表示して停止する。
 
-既存のGPU／CPU仮想環境から`hf`を利用できる環境を再利用し、環境が一つもない場合だけCPU環境を作成する。ブラウザで作成したread権限のtokenを入力すると、認証情報はHugging Face標準の保存先へ保存され、ログイン後は推論を実行せず終了する。
+既存のGPU／CPU仮想環境から`hf`を利用できる環境を再利用し、環境が一つもない場合だけCPU環境を作成する。ブラウザで作成したread権限のtokenを入力すると、認証情報は`.dbv4/huggingface/token`へ保存され、ログイン後は推論を実行せず終了する。
 
 通常実行：
 

@@ -24,7 +24,12 @@ def prepare_tensorrt_windows(explicit_dir):
     elif os.environ.get("TENSORRT_LIB_DIR"):
         candidates.append(Path(os.environ["TENSORRT_LIB_DIR"]))
     else:
-        candidates.extend(Path.home().glob("Downloads/TensorRT-*/bin"))
+        venv = Path(sys.prefix)
+        candidates.extend(venv.glob("Lib/site-packages/tensorrt*_libs"))
+        candidates.extend(venv.glob("Lib/site-packages/tensorrt*_libs/lib"))
+        portable_runtime = Path(__file__).resolve().parent / ".dbv4" / "runtime"
+        candidates.extend(portable_runtime.glob("TensorRT-*/bin"))
+        candidates.append(portable_runtime / "tensorrt" / "bin")
         candidates.extend(Path(part) for part in os.environ.get("PATH", "").split(os.pathsep)
                           if part)
     matches = []
@@ -131,6 +136,20 @@ def prepare_tensorrt(explicit_dir=None):
     directory, handles = prepare(explicit_dir)
     _RUNTIME_HANDLES.extend(handles)
     return directory
+
+
+def tensorrt_provider_options(gpu_index):
+    """Return TensorRT options with a repository-local engine cache."""
+    cache_dir = Path(os.environ.get(
+        "TENSORRT_ENGINE_CACHE_DIR",
+        Path(__file__).resolve().parent / ".dbv4" / "tensorrt-engine-cache",
+    )).resolve()
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return {
+        "device_id": str(gpu_index),
+        "trt_engine_cache_enable": "1",
+        "trt_engine_cache_path": str(cache_dir),
+    }
 
 
 def prepare_openvino(device):

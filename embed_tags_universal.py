@@ -282,7 +282,9 @@ class ExifToolWrapper:
                 ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                # ExifToolの診断出力をコマンド結果へ混ぜない。stderrをstdoutへ
+                # 結合すると、Perlのlocale警告などが既存タグとして解釈される。
+                stderr=None,
                 startupinfo=startupinfo,
             )
             self.running = True
@@ -398,6 +400,7 @@ def build_providers(use_gpu: bool, provider=None, gpu_index=0,
             options = {"device_id": str(gpu_index)}
             if name == names["tensorrt"]:
                 gpu_runtime.prepare_tensorrt(tensorrt_lib_dir)
+                options = gpu_runtime.tensorrt_provider_options(gpu_index)
             elif name == names["cuda"]:
                 gpu_runtime.prepare_cuda()
             elif name == names["intel"]:

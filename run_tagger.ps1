@@ -293,6 +293,24 @@ if ($Help -or ($RemainingArgs -contains '--help') -or ($RemainingArgs -contains 
 #region Environment Setup
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PythonScript = Join-Path $ScriptDir "embed_tags_universal.py"
+$PortableDataDir = Join-Path $ScriptDir ".dbv4"
+$env:DBV4_DATA_DIR = $PortableDataDir
+$env:HF_HOME = Join-Path $PortableDataDir "huggingface"
+$env:HF_HUB_CACHE = Join-Path $env:HF_HOME "hub"
+$env:HF_XET_CACHE = Join-Path $env:HF_HOME "xet"
+$env:HF_TOKEN_PATH = Join-Path $env:HF_HOME "token"
+$env:PIP_CACHE_DIR = Join-Path $PortableDataDir "pip-cache"
+$env:TENSORRT_ENGINE_CACHE_DIR = Join-Path $PortableDataDir "tensorrt-engine-cache"
+foreach ($PortableDirectory in @(
+    $env:HF_HOME,
+    $env:HF_HUB_CACHE,
+    $env:HF_XET_CACHE,
+    $env:PIP_CACHE_DIR,
+    $env:TENSORRT_ENGINE_CACHE_DIR,
+    (Join-Path $PortableDataDir "runtime")
+)) {
+    New-Item -ItemType Directory -Path $PortableDirectory -Force | Out-Null
+}
 
 $IsWindowsOS = $true
 if ($PSVersionTable.PSVersion.Major -ge 6) {
@@ -327,7 +345,10 @@ function Prepare-Environment {
             switch ($SelectedProvider) {
                 'cpu' { $OnnxPackage = 'onnxruntime' }
                 'cuda' { $OnnxPackage = 'onnxruntime-gpu[cuda,cudnn]<1.27' }
-                'tensorrt' { $OnnxPackage = 'onnxruntime-gpu[cuda,cudnn]<1.27' }
+                'tensorrt' {
+                    $OnnxPackage = 'onnxruntime-gpu[cuda,cudnn]<1.27'
+                    $ExtraPackages = @('tensorrt-cu12<11')
+                }
                 'intel' { $OnnxPackage = 'onnxruntime-openvino==1.24.1'; $ExtraPackages = @('openvino==2025.4.1') }
                 'webgpu' { $OnnxPackage = 'onnxruntime'; $ExtraPackages = @('onnxruntime-ep-webgpu') }
                 'directml' { $OnnxPackage = 'onnxruntime-directml'; $TargetVenv = Join-Path $ScriptDir 'venv_gpu' }

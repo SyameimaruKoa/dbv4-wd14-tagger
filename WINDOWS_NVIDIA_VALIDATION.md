@@ -1,6 +1,6 @@
 # Windows＋NVIDIA 本体反映後の検証手順
 
-対象: [GPU初期化修正](GPU_RUNTIME_PORT.md)を含むコミット。**この文書は実施手順であり、Windowsでの合格記録ではない。** このPCで実施した内容は[ローカル検証結果](LOCAL_VALIDATION.md)を参照。
+対象: `gpu_runtime.py`によるGPU初期化を含む構成。**この文書は実施手順であり、特定PCでの合格記録ではない。**
 
 ベンチマークだけでなく、`run_tagger.ps1`から通常タグ付けとServerを実行する。対象モデルは`balanced`と`wd14_v3`、batchは1と4、EPはCPU・CUDA・TensorRT・DirectML・WebGPU。
 

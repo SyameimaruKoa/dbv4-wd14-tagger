@@ -2,6 +2,7 @@
 __pycache__
 config.json
 .dbv4_models/
+.dbv4/
 
 *.ses
 *.kate-swp
