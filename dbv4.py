@@ -50,6 +50,8 @@ MODEL_PROFILES: Dict[str, Dict[str, Any]] = {
         "preprocess_file": "preprocess.json",
         "categories_file": "categories.json",
         "thresholds_file": "thresholds.csv",
+        "access_notice": "Hugging Faceで利用条件への同意が必要です。",
+        "requires_manual_approval": True,
     },
     "high": {
         "repo_id": "animetimm/eva02_large_patch14_448.dbv4-full",

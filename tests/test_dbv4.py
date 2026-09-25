@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import numpy as np
 from PIL import Image
+from embed_tags_universal import ensure_profile_access
 
 from dbv4 import (
     DBV4Metadata,
@@ -22,6 +23,14 @@ from dbv4 import (
 
 
 class DBV4MetadataTests(unittest.TestCase):
+    def test_balanced_requires_hugging_face_access(self):
+        self.assertTrue(MODEL_PROFILES["balanced"]["requires_manual_approval"])
+        with patch("embed_tags_universal.get_token", return_value=None), patch(
+            "embed_tags_universal.login"
+        ) as login, patch("embed_tags_universal.get_hf_file_metadata"):
+            ensure_profile_access("balanced", MODEL_PROFILES["balanced"])
+        login.assert_called_once_with(skip_if_logged_in=True)
+
     def _make_metadata(self, directory):
         with open(os.path.join(directory, "model.onnx"), "wb") as f:
             f.write(b"placeholder")

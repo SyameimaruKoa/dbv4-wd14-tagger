@@ -32,6 +32,8 @@ def test_colab_notebook_uses_dbv4_profile() -> None:
 
     assert 'get_colab_secret("HF_TOKEN")' in source
     assert 'os.environ["HF_TOKEN"] = hf_token' in source
+    assert 'notebook_login()' in source
+    assert 'get_hf_file_metadata(auth_url, token=True)' in source
 
 
 def test_colab_notebook_reads_tailscale_hostname_secret() -> None:
