@@ -566,15 +566,27 @@ def preprocessor_probe_hash(preprocessor: DBV4Preprocessor, include_codecs: bool
     return digest.hexdigest()[:16]
 
 
+def legacy_preprocessor_probe_hash(preprocessor: DBV4Preprocessor,
+                                   server_environment: Dict[str, str]) -> str:
+    """Compare with servers that included package versions in the core probe."""
+    y, x = np.indices((53, 67), dtype=np.uint16)
+    pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
+                       (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
+    tensor = preprocessor(Image.fromarray(pixels, "RGB")).astype("<f4")
+    versions = (f"Pillow:{server_environment['Pillow']}|"
+                f"NumPy:{server_environment['NumPy']}").encode("ascii")
+    return hashlib.sha256(versions + tensor.tobytes(order="C")).hexdigest()[:16]
+
+
 def compatible_preprocess_format(path: str, client: Any, server: Any) -> bool:
     if not isinstance(client, dict) or not isinstance(server, dict):
         return False
     extension = os.path.splitext(path)[1].lower()
     codec = {
         ".jpg": "jpg", ".jpeg": "jpg", ".webp": "webp",
-        ".png": "zlib", ".avif": "AVIF",
+        ".avif": "AVIF",
     }.get(extension)
-    if extension == ".bmp":
+    if extension in {".bmp", ".png"}:
         return True
     return bool(codec and client.get(codec) and client.get(codec) == server.get(codec))
 
@@ -1138,6 +1150,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
             "batch_supported": True,
             "batch_limit": self._batch_limit(),
             "tensor_batch_supported": hasattr(self.runtime, "preprocessor"),
+            "tensor_preprocess_probe_version": 2,
             "tensor_preprocess_hash": (
                 preprocessor_probe_hash(self.runtime.preprocessor)
                 if hasattr(self.runtime, "preprocessor") else None
@@ -1522,6 +1535,7 @@ def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
     args.client_tensor_supported = server_info.get("tensor_batch_supported") is True
     args.client_tensor_hash = server_info.get("tensor_preprocess_hash")
     args.client_tensor_core_hash = server_info.get("tensor_preprocess_core_hash")
+    args.client_tensor_probe_version = server_info.get("tensor_preprocess_probe_version")
     args.client_tensor_environment = server_info.get("tensor_preprocess_environment")
     limit = server_info.get("batch_limit")
     args.client_batch_limit = limit if isinstance(limit, int) and limit > 0 else None
@@ -1775,13 +1789,13 @@ def process_images(args: argparse.Namespace) -> None:
 
     assert metadata is not None
     upload_mode = str(getattr(args, "client_upload_mode", None) or APP_CONFIG.get("client_upload_mode", "preprocessed"))
-    upload_mode = {"p": "preprocessed", "o": "original"}.get(upload_mode, upload_mode)
+    upload_mode = {"p": "preprocessed", "a": "preprocessed_any", "o": "original"}.get(upload_mode, upload_mode)
     if is_client and upload_mode == "optimized":
         print("[WARN] 旧optimized転送は結果が変わり得るため廃止しました。元画像送信に切り替えます。")
         upload_mode = "original"
-    if is_client and upload_mode not in {"original", "preprocessed"}:
+    if is_client and upload_mode not in {"original", "preprocessed", "preprocessed_any"}:
         raise SystemExit(f"[ERROR] 不明なclient_upload_modeです: {upload_mode}")
-    client_tensor_mode = is_client and upload_mode == "preprocessed"
+    client_tensor_mode = is_client and upload_mode in {"preprocessed", "preprocessed_any"}
     if client_tensor_mode and not getattr(args, "client_tensor_supported", False):
         print("[WARN] 接続先Serverは前処理済みテンソルに未対応です。元画像送信で続行します。")
         client_tensor_mode = False
@@ -1797,6 +1811,17 @@ def process_images(args: argparse.Namespace) -> None:
         except (OSError, ValueError) as exc:
             print(f"[WARN] Client前処理を準備できません: {exc}。元画像送信で続行します。")
             client_tensor_mode = False
+    if client_tensor_mode and probe_hash != (
+        core_hash or getattr(args, "client_tensor_hash", None)
+    ):
+        server_environment = getattr(args, "client_tensor_environment", None)
+        if (core_hash and getattr(args, "client_tensor_probe_version", None) is None
+                and isinstance(server_environment, dict)
+                and all(key in server_environment for key in ("Pillow", "NumPy"))):
+            legacy_hash = legacy_preprocessor_probe_hash(client_preprocessor, server_environment)
+            if legacy_hash == core_hash:
+                probe_hash = core_hash
+                print("[INFO] 旧Serverの前処理照合方式で一致しました。", flush=True)
     if client_tensor_mode and probe_hash != (
         core_hash or getattr(args, "client_tensor_hash", None)
     ):
@@ -1819,7 +1844,7 @@ def process_images(args: argparse.Namespace) -> None:
         )
         client_tensor_mode = False
         client_preprocessor = None
-    if client_tensor_mode and core_hash:
+    if client_tensor_mode and core_hash and upload_mode != "preprocessed_any":
         client_environment = preprocessor_environment()
         server_environment = getattr(args, "client_tensor_environment", None)
         client_codec_compatibility = lambda path: compatible_preprocess_format(
@@ -1837,6 +1862,9 @@ def process_images(args: argparse.Namespace) -> None:
             )
     if client_tensor_mode:
         print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")
+        if upload_mode == "preprocessed_any":
+            print("[WARN] 帯域優先モード: コーデックの版差がある画像もClientで復号します。"
+                  "Server復号時と画素が異なる場合は推論結果も変わる可能性があります。", flush=True)
     elif is_client:
         print("[INFO] Client転送モード: 元画像をそのまま送信します。")
     need_exiftool = (not args.no_tag) or args.organize
@@ -2435,8 +2463,8 @@ def create_parser() -> argparse.ArgumentParser:
     values.add_argument("-y", "--tags-file", default=None, metavar="ファイル", help="タグCSV名またはパス（例: selected_tags.csv）")
     values.add_argument("-j", "--host", default=None, metavar="ホスト名/IP", help="Client接続先（例: google-colab）")
     values.add_argument("-U", "-um", "--client-upload-mode",
-                        choices=["p", "o", "original", "preprocessed"],
-                        help="★初期設定p=前処理・可逆圧縮、o=元画像送信（config.jsonより優先）")
+                        choices=["p", "a", "o", "original", "preprocessed", "preprocessed_any"],
+                        help="★p=互換形式のみ前処理、a=帯域優先で全形式を前処理、o=元画像送信")
     values.add_argument("-u", "--port", type=int, default=None, help="★Server/Clientポート 5000")
     values.add_argument(
         "-v",

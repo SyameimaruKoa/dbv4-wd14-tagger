@@ -30,6 +30,7 @@ from embed_tags_universal import (
     client_predict_tensor_batch,
     compatible_preprocess_format,
     create_parser,
+    legacy_preprocessor_probe_hash,
     migrate_legacy_config,
     preprocessor_probe_hash,
     server_http_error,
@@ -44,6 +45,24 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertTrue(compatible_preprocess_format("b.webp", client, server))
         self.assertTrue(compatible_preprocess_format("c.png", client, server))
         self.assertTrue(compatible_preprocess_format("d.bmp", client, server))
+
+    def test_png_zlib_versions_do_not_disable_preprocessing(self):
+        client = {"zlib": "1.3.1"}
+        server = {"zlib": "1.3.1.zlib-ng"}
+        self.assertTrue(compatible_preprocess_format("image.png", client, server))
+
+    def test_legacy_probe_can_match_server_package_versions(self):
+        preprocessor = DBV4Preprocessor({"test": [{"type": "Resize", "size": [8, 8]}]})
+        server = {"Pillow": "11.0", "NumPy": "2.0"}
+        y, x = np.indices((53, 67), dtype=np.uint16)
+        pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
+                           (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
+        tensor = preprocessor(Image.fromarray(pixels, "RGB")).astype("<f4")
+        import hashlib
+        expected = hashlib.sha256(
+            b"Pillow:11.0|NumPy:2.0" + tensor.tobytes(order="C")
+        ).hexdigest()[:16]
+        self.assertEqual(legacy_preprocessor_probe_hash(preprocessor, server), expected)
 
     def test_core_probe_uses_results_instead_of_package_versions(self):
         preprocessor = DBV4Preprocessor({"test": [{"type": "Resize", "size": [8, 8]}]})
@@ -66,6 +85,7 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertEqual(args.client_upload_mode, "original")
         self.assertEqual(create_parser().parse_args(["-U", "p"]).client_upload_mode, "p")
         self.assertEqual(create_parser().parse_args(["-um", "o"]).client_upload_mode, "o")
+        self.assertEqual(create_parser().parse_args(["-U", "a"]).client_upload_mode, "a")
 
     def test_server_http_error_includes_response_detail(self):
         error = urllib.error.HTTPError(
