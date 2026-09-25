@@ -1290,6 +1290,17 @@ class ClientCompatibilityError(RuntimeError):
     pass
 
 
+def server_http_error(exc: urllib.error.HTTPError) -> str:
+    try:
+        payload = json.loads(exc.read().decode("utf-8"))
+        detail = payload.get("error") if isinstance(payload, dict) else None
+        if isinstance(detail, str) and detail:
+            return f"HTTP {exc.code}: {detail}"
+    except (OSError, UnicodeError, ValueError):
+        pass
+    return f"HTTP {exc.code}"
+
+
 def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
     url = f"http://{args.host}:{args.port}/metadata"
     try:
@@ -1820,7 +1831,7 @@ def process_images(args: argparse.Namespace) -> None:
                     raise ClientCompatibilityError(
                         "Serverが/batchに未対応です。Serverを更新・再起動してください。"
                     ) from exc
-                safe_write(f"[WARN] バッチ通信に失敗: HTTP {exc.code} -> 1枚ずつ再試行します。")
+                safe_write(f"[WARN] バッチ通信に失敗: {server_http_error(exc)} -> 1枚ずつ再試行します。")
                 predictions = None
             except (socket.timeout, TimeoutError):
                 safe_write(
@@ -1854,6 +1865,9 @@ def process_images(args: argparse.Namespace) -> None:
                         batch_history.append({"count": 1, "time": elapsed})
                         update_progress_postfix()
                         decode_and_finalize(item, prediction)
+                    except urllib.error.HTTPError as single_exc:
+                        safe_write(f"エラー {os.path.basename(item['path'])}: {server_http_error(single_exc)}")
+                        progress.update(1)
                     except (urllib.error.URLError, socket.timeout, ClientCompatibilityError):
                         raise
                     except Exception as single_exc:
@@ -1987,7 +2001,7 @@ def process_images(args: argparse.Namespace) -> None:
                 aborted = True
                 break
             except urllib.error.HTTPError as exc:
-                safe_write(f"サーバー処理エラー {os.path.basename(image_path)}: {exc}")
+                safe_write(f"サーバー処理エラー {os.path.basename(image_path)}: {server_http_error(exc)}")
                 progress.update(1)
                 continue
             except (urllib.error.URLError, socket.timeout) as exc:

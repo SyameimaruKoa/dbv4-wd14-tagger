@@ -29,10 +29,18 @@ from embed_tags_universal import (
     client_predict_tensor_batch,
     migrate_legacy_config,
     preprocessor_probe_hash,
+    server_http_error,
 )
 
 
 class BatchProtocolTests(unittest.TestCase):
+    def test_server_http_error_includes_response_detail(self):
+        error = urllib.error.HTTPError(
+            "http://server/batch", 500, "Internal Server Error", {},
+            io.BytesIO(json.dumps({"error": "CUDA out of memory"}).encode("utf-8")),
+        )
+        self.assertEqual(server_http_error(error), "HTTP 500: CUDA out of memory")
+
     def test_old_lossy_upload_setting_migrates_to_original(self):
         config = {"client_upload_mode": "optimized", "model_profiles": {}}
         self.assertTrue(migrate_legacy_config(config))
