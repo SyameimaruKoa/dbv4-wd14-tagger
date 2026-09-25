@@ -1,4 +1,5 @@
 import base64
+import gzip
 import io
 import json
 import socket
@@ -105,6 +106,8 @@ class BatchProtocolTests(unittest.TestCase):
             def read(self):
                 return json.dumps(payload).encode("utf-8")
 
+            headers = {}
+
         with tempfile.TemporaryDirectory() as directory:
             files = [Path(directory) / f"{index}.png" for index in range(2)]
             for path in files:
@@ -115,6 +118,45 @@ class BatchProtocolTests(unittest.TestCase):
             request = urlopen.call_args.args[0]
             self.assertEqual(request.full_url, "http://server:5000/batch")
             self.assertEqual(len(json.loads(request.data)["images"]), 2)
+
+    def test_client_batch_accepts_compressed_response(self):
+        metadata = SimpleNamespace(repo_id="test/model", metadata_version="v1", label_count=2)
+        payload = {"protocol": 1, "model_id": "test/model", "metadata_version": "v1",
+                   "output_size": 2, "probabilities": [[0.25, 0.75]]}
+
+        class Response:
+            headers = {"Content-Encoding": "gzip"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def read(self):
+                return gzip.compress(json.dumps(payload).encode("utf-8"))
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "image.png"
+            path.write_bytes(b"image data")
+            with patch("urllib.request.urlopen", return_value=Response()) as urlopen:
+                result = client_predict_batch("http://server:5000", [str(path)], metadata, 15)
+        np.testing.assert_array_equal(result, [[0.25, 0.75]])
+        self.assertEqual(urlopen.call_args.args[0].get_header("Accept-encoding"), "gzip")
+
+    def test_server_compresses_large_opted_in_response(self):
+        handler = TagServerHandler.__new__(TagServerHandler)
+        handler.headers = {"Accept-Encoding": "gzip"}
+        handler.wfile = io.BytesIO()
+        headers = {}
+        handler.send_response = lambda status: None
+        handler.send_header = lambda key, value: headers.__setitem__(key, value)
+        handler.end_headers = lambda: None
+        body = json.dumps({"probabilities": [0.123456789] * 1000}).encode("utf-8")
+        self.assertTrue(handler._send_json_response(200, body))
+        self.assertEqual(headers["Content-Encoding"], "gzip")
+        self.assertEqual(int(headers["Content-Length"]), len(handler.wfile.getvalue()))
+        self.assertEqual(gzip.decompress(handler.wfile.getvalue()), body)
 
 
 if __name__ == "__main__":

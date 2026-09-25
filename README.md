@@ -336,6 +336,7 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 ~~~
 
 Clientも`--batch-size`（既定4）で複数画像を1回の通信と推論にまとめられる。ServerとClientの両方をこの機能に対応する版へ更新し、Serverを再起動すること。古いServerに接続した場合は自動的に1枚ずつ処理する。モデルの入力が固定バッチ1枚なら、Clientも1枚ずつ処理する。
+新しいClientとServer間のバッチ応答は、サイズが大きい場合にgzipで圧縮する。古いServerからの非圧縮応答も引き続き利用できる。圧縮を有効にするにはServerの更新と再起動が必要。
 バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。

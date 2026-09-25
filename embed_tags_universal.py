@@ -3,6 +3,7 @@ import base64
 import csv
 import datetime
 import glob
+import gzip
 import io
 import json
 import os
@@ -1008,8 +1009,13 @@ class TagServerHandler(BaseHTTPRequestHandler):
 
     def _send_json_response(self, status: int, body: bytes) -> bool:
         try:
+            compressed = "gzip" in self.headers.get("Accept-Encoding", "").lower() and len(body) >= 1024
+            if compressed:
+                body = gzip.compress(body, compresslevel=1)
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            if compressed:
+                self.send_header("Content-Encoding", "gzip")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -1258,10 +1264,13 @@ def client_predict_batch(
     body = json.dumps({"images": images}).encode("utf-8")
     request = urllib.request.Request(
         f"{server_url}/batch", data=body,
-        headers={"Content-Type": "application/json"}, method="POST",
+        headers={"Content-Type": "application/json", "Accept-Encoding": "gzip"}, method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+        response_body = response.read()
+        if response.headers.get("Content-Encoding", "").lower() == "gzip":
+            response_body = gzip.decompress(response_body)
+        payload = json.loads(response_body.decode("utf-8"))
     if not isinstance(payload, dict) or payload.get("protocol") != 1:
         raise ClientCompatibilityError("サーバーのDBV4 protocol versionが不一致です。")
     if payload.get("model_id") != metadata.repo_id:
