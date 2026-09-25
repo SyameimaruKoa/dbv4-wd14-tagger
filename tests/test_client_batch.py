@@ -122,6 +122,7 @@ class BatchProtocolTests(unittest.TestCase):
                     server_info = json.load(response)
                 self.assertTrue(server_info["tensor_batch_supported"])
                 self.assertEqual(server_info["tensor_preprocess_hash"], preprocessor_probe_hash(preprocessor))
+                self.assertIn("Pillow", server_info["tensor_preprocess_environment"])
                 paths = [str(path), str(transparent_path)]
                 original = client_predict_batch(url, paths, metadata, 5)
                 prepared = client_predict_tensor_batch(url, paths, metadata, preprocessor, 5)

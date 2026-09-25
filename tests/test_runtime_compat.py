@@ -233,6 +233,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 host="localhost",
                 port=5000,
                 no_report=True,
+                client_upload_mode="original",
             )
             prediction = np.array([0.9, 0.1, 0.05, 0.01, 0.8], dtype=np.float32)
             http_error = urllib.error.HTTPError(
@@ -288,6 +289,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 batch_size=2, io_workers=0, force=True, rating_thresh=None,
                 ignore_sensitive=False, thresh=None, host="localhost", port=5000,
                 no_report=True, client_batch_supported=True, client_batch_limit=None,
+                client_upload_mode="original",
             )
             prediction = np.array([0.9, 0.1, 0.05, 0.01, 0.8], dtype=np.float32)
             with (
@@ -297,8 +299,8 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 patch.object(app, "client_predict", return_value=prediction) as single,
             ):
                 app.process_images(args)
-            batch.assert_called_once()
-            self.assertEqual(batch.call_args.args[-1], 120)
+            self.assertEqual(batch.call_count, 2)
+            self.assertTrue(all(call.args[-1] == 120 for call in batch.call_args_list))
             self.assertEqual(single.call_count, 3)
 
     def test_client_compatibility_error_stops_remaining_images(self):
@@ -326,6 +328,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 host="localhost",
                 port=5000,
                 no_report=True,
+                client_upload_mode="original",
             )
 
             with self.assertRaises(SystemExit) as raised:
@@ -398,7 +401,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                     payload = app.json.loads(response.read().decode("utf-8"))
                 self.assertEqual({key: payload[key] for key in metadata.summary()}, metadata.summary())
                 self.assertTrue(payload["batch_supported"])
-                self.assertIsNone(payload["batch_limit"])
+                self.assertEqual(payload["batch_limit"], 8)
                 self.assertNotIn("probabilities", payload)
             finally:
                 server.shutdown()

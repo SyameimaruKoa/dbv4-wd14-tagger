@@ -501,17 +501,25 @@ class RuntimeModel:
         return [infer_output_to_probabilities(row) for row in raw]
 
 
+def preprocessor_environment() -> Dict[str, str]:
+    result = {"Pillow": Image.__version__, "NumPy": np.__version__}
+    for name in ("jpg", "webp", "libtiff"):
+        result[name] = str(features.version(name))
+    result["AVIF"] = str(getattr(pillow_avif, "__version__", "none"))
+    return result
+
+
 def preprocessor_probe_hash(preprocessor: DBV4Preprocessor) -> str:
     y, x = np.indices((53, 67), dtype=np.uint16)
     pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
                        (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
-    image = Image.fromarray(pixels, "RGB")
+    image = Image.fromarray(pixels)
     tensor = preprocessor(image.convert("RGB")).astype("<f4")
-    codec_versions = [str(features.version(name)) for name in ("jpg", "webp", "libtiff")]
-    avif_version = getattr(pillow_avif, "__version__", "none")
+    environment = preprocessor_environment()
     versions = (
-        f"Pillow:{Image.__version__}|NumPy:{np.__version__}|"
-        f"Codecs:{','.join(codec_versions)}|AVIF:{avif_version}"
+        f"Pillow:{environment['Pillow']}|NumPy:{environment['NumPy']}|"
+        f"Codecs:{environment['jpg']},{environment['webp']},{environment['libtiff']}|"
+        f"AVIF:{environment['AVIF']}"
     ).encode("ascii")
     return hashlib.sha256(versions + tensor.tobytes(order="C")).hexdigest()[:16]
 
@@ -610,6 +618,8 @@ def load_runtime_model(
         try:
             if not expected.intersection(active):
                 raise RuntimeError(f"Requested GPU EP unavailable: expected={expected}, active={active}")
+            if "TensorrtExecutionProvider" in active:
+                print("[INFO] TensorRTの起動検証中です。初回はエンジン構築が完了するまでServerは接続を受け付けません。", flush=True)
             runtime.predict_images([Image.new("RGB", (640, 480), (127, 63, 191))]
                                    * (runtime.batch_limit or 1))
             path = session.end_profiling()
@@ -1031,7 +1041,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
 
     def _batch_limit(self) -> int:
         configured = max(1, int(APP_CONFIG.get("server_max_batch_images", 8)))
-        model_limit = self.runtime.batch_limit
+        model_limit = getattr(self.runtime, "batch_limit", None)
         return min(configured, model_limit) if model_limit is not None else configured
 
     def _decode_image(self, data: bytes) -> Image.Image:
@@ -1057,12 +1067,13 @@ class TagServerHandler(BaseHTTPRequestHandler):
                 preprocessor_probe_hash(self.runtime.preprocessor)
                 if hasattr(self.runtime, "preprocessor") else None
             ),
+            "tensor_preprocess_environment": preprocessor_environment(),
         }, ensure_ascii=False).encode("utf-8")
         self._send_json_response(200, body)
 
     def _send_json_response(self, status: int, body: bytes) -> bool:
         try:
-            compressed = "gzip" in self.headers.get("Accept-Encoding", "").lower() and len(body) >= 1024
+            compressed = "gzip" in getattr(self, "headers", {}).get("Accept-Encoding", "").lower() and len(body) >= 1024
             if compressed:
                 body = gzip.compress(body, compresslevel=1)
             self.send_response(status)
@@ -1320,6 +1331,11 @@ def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
         raise ClientCompatibilityError(
             f"サーバー {args.host}:{args.port} に接続できません: {exc.reason}"
         ) from exc
+    except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError) as exc:
+        raise ClientCompatibilityError(
+            f"サーバー {args.host}:{args.port} の応答が途切れました。"
+            "Serverの起動検証が完了し、稼働中 Port のログが出ているか確認してください。"
+        ) from exc
     if not isinstance(server_info, dict) or server_info.get("protocol") != 1:
         raise ClientCompatibilityError("Serverのモデル情報またはprotocol versionが不正です。")
     model_id = server_info.get("model_id")
@@ -1353,6 +1369,7 @@ def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
     args.client_batch_supported = server_info.get("batch_supported") is True
     args.client_tensor_supported = server_info.get("tensor_batch_supported") is True
     args.client_tensor_hash = server_info.get("tensor_preprocess_hash")
+    args.client_tensor_environment = server_info.get("tensor_preprocess_environment")
     limit = server_info.get("batch_limit")
     args.client_batch_limit = limit if isinstance(limit, int) and limit > 0 else None
     return metadata
@@ -1612,13 +1629,22 @@ def process_images(args: argparse.Namespace) -> None:
         raise SystemExit(f"[ERROR] 不明なclient_upload_modeです: {upload_mode}")
     client_tensor_mode = is_client and upload_mode == "preprocessed"
     if client_tensor_mode and not getattr(args, "client_tensor_supported", False):
-        print("[WARN] 接続先Serverは前処理済みテンソルに未対応です。元画像送信に切り替えます。")
-        client_tensor_mode = False
+        raise SystemExit("[ERROR] 接続先Serverは前処理済みテンソルに未対応です。Serverを更新・再起動するか、--client-upload-mode originalを選んでください。")
     client_preprocessor = DBV4Preprocessor.from_metadata(metadata) if client_tensor_mode else None
     if client_tensor_mode and preprocessor_probe_hash(client_preprocessor) != getattr(args, "client_tensor_hash", None):
-        print("[WARN] ClientとServerの前処理結果が一致しません。元画像送信に切り替えます。")
-        client_tensor_mode = False
-        client_preprocessor = None
+        server_environment = getattr(args, "client_tensor_environment", None)
+        client_environment = preprocessor_environment()
+        differences = (
+            ", ".join(
+                f"{key}: Client={client_environment[key]}, Server={server_environment.get(key)}"
+                for key in client_environment if client_environment[key] != server_environment.get(key)
+            ) if isinstance(server_environment, dict) else "Serverのライブラリ版情報がありません"
+        )
+        raise SystemExit(
+            "[ERROR] ClientとServerの前処理結果が一致しません。"
+            f"ライブラリ差分: {differences}。"
+            "結果を変えずに縮小転送するには同じ版を使用してください。"
+        )
     if client_tensor_mode:
         print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")
     elif is_client:
