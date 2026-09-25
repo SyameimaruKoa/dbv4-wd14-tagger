@@ -22,10 +22,11 @@ import urllib.request
 import uuid
 import warnings
 import webbrowser
+from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Deque, Dict, List, Optional, Sequence, Tuple
 
 import gpu_runtime
 
@@ -105,6 +106,10 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
     "server_workers": 2,
+    "server_max_request_mib": 128,
+    "server_max_batch_images": 8,
+    "server_max_image_pixels": 20000000,
+    "client_max_request_mib": 128,
     "client_timeout": 15,
     "client_batch_timeout": 120,
     "openvino_gpu_device": "GPU.0",
@@ -993,6 +998,18 @@ def organize_pixiv_folder(
 class TagServerHandler(BaseHTTPRequestHandler):
     runtime: Optional[RuntimeModel] = None
 
+    def _batch_limit(self) -> int:
+        configured = max(1, int(APP_CONFIG.get("server_max_batch_images", 8)))
+        model_limit = self.runtime.batch_limit
+        return min(configured, model_limit) if model_limit is not None else configured
+
+    def _decode_image(self, data: bytes) -> Image.Image:
+        with Image.open(io.BytesIO(data)) as image:
+            pixel_limit = max(1, int(APP_CONFIG.get("server_max_image_pixels", 20000000)))
+            if image.width * image.height > pixel_limit:
+                raise ValueError(f"画像の画素数が上限({pixel_limit})を超えています。")
+            return image.convert("RGB")
+
     def do_GET(self) -> None:
         if self.path != "/metadata":
             self._send_json_response(404, b'{}')
@@ -1003,7 +1020,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
         body = json.dumps({
             **self.runtime.metadata.summary(),
             "batch_supported": True,
-            "batch_limit": getattr(self.runtime, "batch_limit", None),
+            "batch_limit": self._batch_limit(),
         }, ensure_ascii=False).encode("utf-8")
         self._send_json_response(200, body)
 
@@ -1052,16 +1069,20 @@ class TagServerHandler(BaseHTTPRequestHandler):
         try:
             if not self.runtime:
                 raise RuntimeError("DBV4 runtimeが初期化されていません。")
+            max_request = max(1, int(APP_CONFIG.get("server_max_request_mib", 128))) * 1024 * 1024
+            if length < 0 or length > max_request:
+                self._send_json_response(413, json.dumps({"error": "HTTP本文がサイズ上限を超えています。"}).encode())
+                return
             if self.path == "/batch":
                 request = json.loads(self._read_request_body(length, client_ip, image_name).decode("utf-8"))
                 encoded_images = request.get("images") if isinstance(request, dict) else None
                 if not isinstance(encoded_images, list) or not encoded_images:
                     raise ValueError("バッチ画像がありません。")
-                limit = self.runtime.batch_limit
-                if limit is not None and len(encoded_images) > limit:
-                    raise ValueError(f"モデルのバッチ上限は{limit}枚です。")
+                limit = self._batch_limit()
+                if len(encoded_images) > limit:
+                    raise ValueError(f"バッチ上限は{limit}枚です。")
                 images = [
-                    Image.open(io.BytesIO(base64.b64decode(encoded, validate=True))).convert("RGB")
+                    self._decode_image(base64.b64decode(encoded, validate=True))
                     for encoded in encoded_images
                 ]
                 predictions = self.runtime.predict_images(images)
@@ -1077,7 +1098,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
             if self.path != "/":
                 self._send_json_response(404, b'{}')
                 return
-            image = Image.open(io.BytesIO(self._read_request_body(length, client_ip, image_name))).convert("RGB")
+            image = self._decode_image(self._read_request_body(length, client_ip, image_name))
             probabilities = self.runtime.predict_images([image])[0]
             payload = {
                 **self.runtime.metadata.summary(),
@@ -1238,6 +1259,9 @@ def client_predict(
     metadata: DBV4Metadata,
     timeout: int,
 ) -> np.ndarray:
+    max_request = max(1, int(APP_CONFIG.get("client_max_request_mib", 128))) * 1024 * 1024
+    if os.path.getsize(image_path) > max_request:
+        raise ValueError(f"画像がClientの送信サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
     with open(image_path, "rb") as f:
         data = f.read()
     request = urllib.request.Request(server_url, data=data, method="POST")
@@ -1270,6 +1294,10 @@ def client_predict_batch(
     metadata: DBV4Metadata,
     timeout: int,
 ) -> np.ndarray:
+    max_request = max(1, int(APP_CONFIG.get("client_max_request_mib", 128))) * 1024 * 1024
+    encoded_size = sum(4 * ((os.path.getsize(path) + 2) // 3) for path in image_paths)
+    if encoded_size + len(image_paths) * 4 + 16 > max_request:
+        raise ValueError(f"バッチがClientの送信サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
     images = []
     for path in image_paths:
         with open(path, "rb") as image_file:
@@ -1333,22 +1361,21 @@ def inference_timing_summary(
 
 
 class ClientBatchPipeline:
-    """Send the next batch while the main thread handles the previous result."""
+    """Keep at most two requests in flight and consume results in input order."""
 
     def __init__(self) -> None:
-        self.executor = ThreadPoolExecutor(max_workers=1)
-        self.pending: Optional[Tuple[List[Dict[str, Any]], Future]] = None
+        self.executor = ThreadPoolExecutor(max_workers=2)
+        self.pending: Deque[Tuple[List[Dict[str, Any]], Future]] = deque()
 
     def submit(self, items: Sequence[Dict[str, Any]], request: Any, consume: Any) -> None:
-        previous = self.pending
-        self.pending = (list(items), self.executor.submit(request, list(items)))
-        if previous is not None:
-            consume(*previous)
+        batch = list(items)
+        self.pending.append((batch, self.executor.submit(request, batch)))
+        if len(self.pending) == 2:
+            consume(*self.pending.popleft())
 
     def finish(self, consume: Any) -> None:
-        previous, self.pending = self.pending, None
-        if previous is not None:
-            consume(*previous)
+        while self.pending:
+            consume(*self.pending.popleft())
 
     def close(self) -> None:
         self.executor.shutdown(wait=True, cancel_futures=True)

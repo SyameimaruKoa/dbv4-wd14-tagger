@@ -10,6 +10,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 import urllib.error
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from PIL import Image
@@ -25,6 +27,94 @@ from embed_tags_universal import (
 
 
 class BatchProtocolTests(unittest.TestCase):
+    def test_server_receives_next_request_while_inference_runs(self):
+        first_inference = threading.Event()
+        second_received = threading.Event()
+        second_inference = threading.Event()
+        release_inference = threading.Event()
+
+        class Runtime:
+            batch_limit = 4
+            metadata = SimpleNamespace(summary=lambda: {
+                "protocol": 1, "model_id": "test/model", "metadata_version": "v1", "output_size": 2,
+            })
+            calls = 0
+
+            def predict_images(self, images):
+                self.calls += 1
+                if self.calls == 1:
+                    first_inference.set()
+                    if not release_inference.wait(3):
+                        raise TimeoutError("first inference was not released")
+                else:
+                    second_inference.set()
+                return [np.asarray([1, 0], dtype=np.float32) for _ in images]
+
+        class ObservedHandler(TagServerHandler):
+            runtime = Runtime()
+            reads = 0
+
+            def _read_request_body(self, length, client_ip, image_name):
+                body = super()._read_request_body(length, client_ip, image_name)
+                type(self).reads += 1
+                if type(self).reads == 2:
+                    second_received.set()
+                return body
+
+        image = io.BytesIO()
+        Image.new("RGB", (2, 2)).save(image, format="PNG")
+        server = ParallelTagServer(("127.0.0.1", 0), ObservedHandler, 2)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        def send():
+            with urllib.request.urlopen(f"http://127.0.0.1:{server.server_port}/", data=image.getvalue(), timeout=5) as response:
+                return response.status
+
+        try:
+            with ThreadPoolExecutor(max_workers=2) as requests:
+                first = requests.submit(send)
+                self.assertTrue(first_inference.wait(3))
+                second = requests.submit(send)
+                self.assertTrue(second_received.wait(3))
+                self.assertTrue(second_inference.wait(3))
+                release_inference.set()
+                self.assertEqual((first.result(), second.result()), (200, 200))
+        finally:
+            release_inference.set()
+            server.shutdown()
+            server.server_close()
+            thread.join()
+        self.assertEqual(ObservedHandler.runtime.calls, 2)
+
+    def test_server_rejects_oversized_body_before_reading(self):
+        handler = TagServerHandler.__new__(TagServerHandler)
+        handler.runtime = SimpleNamespace(batch_limit=4)
+        handler.path = "/batch"
+        handler.client_address = ("127.0.0.1", 1000)
+        handler.headers = {"Content-Length": str(129 * 1024 * 1024)}
+        handler.rfile = io.BytesIO()
+        responses = []
+        handler._send_json_response = lambda status, body: responses.append(status) or True
+        handler.do_POST()
+        self.assertEqual(responses, [413])
+
+    def test_server_rejects_oversized_decoded_image(self):
+        handler = TagServerHandler.__new__(TagServerHandler)
+        image = io.BytesIO()
+        Image.new("RGB", (100, 100)).save(image, format="PNG")
+        with patch.dict("embed_tags_universal.APP_CONFIG", {"server_max_image_pixels": 1000}):
+            with self.assertRaisesRegex(ValueError, "画素数が上限"):
+                handler._decode_image(image.getvalue())
+
+    def test_client_rejects_oversized_batch_before_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "large.png"
+            with path.open("wb") as image:
+                image.truncate(100 * 1024 * 1024)
+            with self.assertRaisesRegex(ValueError, "送信サイズ上限"):
+                client_predict_batch("http://server:5000", [str(path)], None, 5)
+
     def test_server_logs_http_receive_rate(self):
         handler = TagServerHandler.__new__(TagServerHandler)
         handler.rfile = io.BytesIO(b"x" * (1024 * 1024))
@@ -36,11 +126,17 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertIn("HTTP受信: 1.00 MiB / 0.500s = 2.00 MiB/s", log.call_args.args[0])
 
     def test_pipeline_sends_next_batch_while_consuming_previous(self):
+        first_started = threading.Event()
         second_started = threading.Event()
+        release_first = threading.Event()
         consumed = []
 
         def request(items):
-            if items == [2]:
+            if items == [1]:
+                first_started.set()
+                if not release_first.wait(3):
+                    raise TimeoutError("first request was not released")
+            else:
                 second_started.set()
             return items
 
@@ -52,9 +148,16 @@ class BatchProtocolTests(unittest.TestCase):
         pipeline = ClientBatchPipeline()
         try:
             pipeline.submit([1], request, consume)
-            pipeline.submit([2], request, consume)
+            self.assertTrue(first_started.wait(3))
+            submit_second = threading.Thread(target=lambda: pipeline.submit([2], request, consume))
+            submit_second.start()
+            self.assertTrue(second_started.wait(3))
+            release_first.set()
+            submit_second.join(3)
+            self.assertFalse(submit_second.is_alive())
             pipeline.finish(consume)
         finally:
+            release_first.set()
             pipeline.close()
         self.assertEqual(consumed, [[1], [2]])
 

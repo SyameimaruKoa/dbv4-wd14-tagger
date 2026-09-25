@@ -336,7 +336,7 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 ~~~
 
 Clientも`--batch-size`（既定4）で複数画像を1回の通信と推論にまとめられる。ServerとClientの両方をこの機能に対応する版へ更新し、Serverを再起動すること。古いServerに接続した場合は自動的に1枚ずつ処理する。モデルの入力が固定バッチ1枚なら、Clientも1枚ずつ処理する。
-Clientは次のバッチを先に送信し、前のバッチのタグ書き込みと通信・推論を重ねる。GPUへの同時推論要求は1件に抑えるため、ultraなどVRAMを大きく使うモデルでも追加の同時実行メモリを要求しない。バッチ推論に非対応の場合、この先読みは行わない。
+Clientは最大2バッチの通信を並行させ、次のバッチのアップロードと前のバッチの推論・タグ書き込みを重ねる。バッチ推論に非対応の場合、この先読みは行わない。
 新しいClientとServer間のバッチ応答は、サイズが大きい場合にgzipで圧縮する。古いServerからの非圧縮応答も引き続き利用できる。圧縮を有効にするにはServerの更新と再起動が必要。
 バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
 
@@ -379,6 +379,10 @@ Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使�
 | server_hosts | ["localhost", "google-colab", "100.xxx.xxx.xxx"] | Client接続先 |
 | server_port | 5000 | Server/Clientポート |
 | server_workers | 2 | Server同時推論数（GPUメモリに応じて調整） |
+| server_max_request_mib | 128 | HTTP要求本文の上限（MiB） |
+| server_max_batch_images | 8 | 1バッチの画像枚数上限 |
+| server_max_image_pixels | 20000000 | 1画像の画素数上限 |
+| client_max_request_mib | 128 | Clientが組み立てるHTTP要求本文の上限（MiB） |
 | client_timeout | 15 | Client timeout秒 |
 | client_batch_timeout | 120 | バッチ推論の応答待ち時間の下限（秒） |
 | openvino_gpu_device | "GPU.0" | Intel OpenVINOデバイス |
@@ -416,6 +420,7 @@ Clientは処理開始時にServerの`/metadata`からmodel ID、profile、metada
 Serverは画像ごとに受信時刻、Client IP、ファイル名、転送サイズ、処理開始、処理時間、完了状態を表示する。推論中にClientが切断した場合もServerは停止せず、長い`BrokenPipeError` tracebackの代わりに対象リクエストの警告だけを表示して次の接続を待機する。
 
 Serverは複数Clientの要求を既定で2件まで並列処理する。`config.json`の`server_workers`で同時数を変更できる。ultraなど大きなモデルでGPUメモリ不足になる場合は`1`へ下げる。
+受信バッファの上限は`server_max_request_mib`（既定128 MiB）、バッチ枚数の上限は`server_max_batch_images`（既定8枚）、画像の画素数上限は`server_max_image_pixels`（既定2000万画素）で指定する。`server_workers`と合わせてServerが同時に保持する要求の規模を制限する。
 Serverは各画像・バッチ要求のHTTP本文について、受信サイズ、受信時間、受信速度（MiB/s）をログに記録する。この値はServerが本文を読み取った速度であり、Tailscaleなどの中継が本文をバッファした場合はClientからの実効回線速度とは異なる。
 
 ## テスト
