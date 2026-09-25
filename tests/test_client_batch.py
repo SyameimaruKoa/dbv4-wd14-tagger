@@ -28,6 +28,7 @@ from embed_tags_universal import (
     align_client_model,
     client_predict_batch,
     client_predict_tensor_batch,
+    compatible_preprocess_format,
     create_parser,
     migrate_legacy_config,
     preprocessor_probe_hash,
@@ -36,6 +37,19 @@ from embed_tags_universal import (
 
 
 class BatchProtocolTests(unittest.TestCase):
+    def test_codec_mismatch_only_disables_affected_format(self):
+        client = {"jpg": "6.2", "webp": "1.6.0", "zlib": "1.3.1", "AVIF": "1.3.0"}
+        server = {**client, "jpg": "8.0"}
+        self.assertFalse(compatible_preprocess_format("a.jpg", client, server))
+        self.assertTrue(compatible_preprocess_format("b.webp", client, server))
+        self.assertTrue(compatible_preprocess_format("c.png", client, server))
+        self.assertTrue(compatible_preprocess_format("d.bmp", client, server))
+
+    def test_legacy_pixel_limit_is_migrated(self):
+        config = {"server_max_image_pixels": 20000000, "model_profiles": {}}
+        self.assertTrue(migrate_legacy_config(config))
+        self.assertEqual(config["server_max_image_pixels"], 80000000)
+
     def test_transfer_mode_defaults_to_preprocessed_and_has_override(self):
         self.assertEqual(DEFAULT_CONFIG["client_upload_mode"], "preprocessed")
         args = create_parser().parse_args(["--client-upload-mode", "original"])

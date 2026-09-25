@@ -111,7 +111,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "server_max_request_mib": 128,
     "server_max_batch_images": 8,
     "server_tensorrt_batch_size": 2,
-    "server_max_image_pixels": 20000000,
+    "server_max_image_pixels": 80000000,
     "client_max_request_mib": 128,
     "client_upload_mode": "preprocessed",
     "client_timeout": 15,
@@ -179,6 +179,9 @@ def merge_defaults(target: Dict[str, Any], source: Dict[str, Any]) -> bool:
 
 def migrate_legacy_config(config: Dict[str, Any]) -> bool:
     changed = False
+    if config.get("server_max_image_pixels") == 20000000:
+        config["server_max_image_pixels"] = 80000000
+        changed = True
     if config.get("client_upload_mode") == "optimized":
         config["client_upload_mode"] = "original"
         changed = True
@@ -505,7 +508,7 @@ class RuntimeModel:
 
 def preprocessor_environment() -> Dict[str, str]:
     result = {"Pillow": Image.__version__, "NumPy": np.__version__}
-    for name in ("jpg", "webp", "libtiff"):
+    for name in ("jpg", "webp", "libtiff", "zlib"):
         result[name] = str(features.version(name))
     result["AVIF"] = str(getattr(pillow_avif, "__version__", "none"))
     return result
@@ -545,19 +548,33 @@ def sync_client_preprocessor_packages(server_environment: Any) -> None:
     raise ClientCompatibilityError("Clientの再起動に失敗しました。")
 
 
-def preprocessor_probe_hash(preprocessor: DBV4Preprocessor) -> str:
+def preprocessor_probe_hash(preprocessor: DBV4Preprocessor, include_codecs: bool = True) -> str:
     y, x = np.indices((53, 67), dtype=np.uint16)
     pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
                        (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
     image = Image.fromarray(pixels)
     tensor = preprocessor(image.convert("RGB")).astype("<f4")
     environment = preprocessor_environment()
-    versions = (
-        f"Pillow:{environment['Pillow']}|NumPy:{environment['NumPy']}|"
-        f"Codecs:{environment['jpg']},{environment['webp']},{environment['libtiff']}|"
-        f"AVIF:{environment['AVIF']}"
-    ).encode("ascii")
+    versions = f"Pillow:{environment['Pillow']}|NumPy:{environment['NumPy']}".encode("ascii")
+    if include_codecs:
+        versions += (
+            f"|Codecs:{environment['jpg']},{environment['webp']},"
+            f"{environment['libtiff']},{environment['zlib']}|AVIF:{environment['AVIF']}"
+        ).encode("ascii")
     return hashlib.sha256(versions + tensor.tobytes(order="C")).hexdigest()[:16]
+
+
+def compatible_preprocess_format(path: str, client: Any, server: Any) -> bool:
+    if not isinstance(client, dict) or not isinstance(server, dict):
+        return False
+    extension = os.path.splitext(path)[1].lower()
+    codec = {
+        ".jpg": "jpg", ".jpeg": "jpg", ".webp": "webp",
+        ".png": "zlib", ".avif": "AVIF",
+    }.get(extension)
+    if extension == ".bmp":
+        return True
+    return bool(codec and client.get(codec) and client.get(codec) == server.get(codec))
 
 
 def load_runtime_model(
@@ -1099,7 +1116,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
 
     def _decode_image(self, data: bytes) -> Image.Image:
         with Image.open(io.BytesIO(data)) as image:
-            pixel_limit = max(1, int(APP_CONFIG.get("server_max_image_pixels", 20000000)))
+            pixel_limit = max(1, int(APP_CONFIG.get("server_max_image_pixels", 80000000)))
             if image.width * image.height > pixel_limit:
                 raise ValueError(f"画像の画素数が上限({pixel_limit})を超えています。")
             return image.convert("RGB")
@@ -1121,6 +1138,10 @@ class TagServerHandler(BaseHTTPRequestHandler):
             "tensor_batch_supported": hasattr(self.runtime, "preprocessor"),
             "tensor_preprocess_hash": (
                 preprocessor_probe_hash(self.runtime.preprocessor)
+                if hasattr(self.runtime, "preprocessor") else None
+            ),
+            "tensor_preprocess_core_hash": (
+                preprocessor_probe_hash(self.runtime.preprocessor, include_codecs=False)
                 if hasattr(self.runtime, "preprocessor") else None
             ),
             "tensor_preprocess_environment": preprocessor_environment(),
@@ -1352,7 +1373,8 @@ def run_server(args: argparse.Namespace) -> None:
                 status_callback=lambda stage: setattr(handler, "startup_stage", stage),
                 **runtime_cli_options(args),
             )
-            if "TensorrtExecutionProvider" in runtime.session.get_providers():
+            session = getattr(runtime, "session", None)
+            if session and "TensorrtExecutionProvider" in session.get_providers():
                 batch_limit = min(
                     max(1, int(APP_CONFIG.get("server_max_batch_images", 8))),
                     max(1, int(APP_CONFIG.get("server_tensorrt_batch_size", 2))),
@@ -1497,6 +1519,7 @@ def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
     args.client_batch_supported = server_info.get("batch_supported") is True
     args.client_tensor_supported = server_info.get("tensor_batch_supported") is True
     args.client_tensor_hash = server_info.get("tensor_preprocess_hash")
+    args.client_tensor_core_hash = server_info.get("tensor_preprocess_core_hash")
     args.client_tensor_environment = server_info.get("tensor_preprocess_environment")
     limit = server_info.get("batch_limit")
     args.client_batch_limit = limit if isinstance(limit, int) and limit > 0 else None
@@ -1761,14 +1784,20 @@ def process_images(args: argparse.Namespace) -> None:
         print("[WARN] 接続先Serverは前処理済みテンソルに未対応です。元画像送信で続行します。")
         client_tensor_mode = False
     client_preprocessor = None
+    client_codec_compatibility = None
     if client_tensor_mode:
         try:
             client_preprocessor = DBV4Preprocessor.from_metadata(metadata)
-            probe_hash = preprocessor_probe_hash(client_preprocessor)
+            core_hash = getattr(args, "client_tensor_core_hash", None)
+            probe_hash = preprocessor_probe_hash(
+                client_preprocessor, include_codecs=False
+            ) if core_hash else preprocessor_probe_hash(client_preprocessor)
         except (OSError, ValueError) as exc:
             print(f"[WARN] Client前処理を準備できません: {exc}。元画像送信で続行します。")
             client_tensor_mode = False
-    if client_tensor_mode and probe_hash != getattr(args, "client_tensor_hash", None):
+    if client_tensor_mode and probe_hash != (
+        core_hash or getattr(args, "client_tensor_hash", None)
+    ):
         server_environment = getattr(args, "client_tensor_environment", None)
         client_environment = preprocessor_environment()
         try:
@@ -1788,6 +1817,22 @@ def process_images(args: argparse.Namespace) -> None:
         )
         client_tensor_mode = False
         client_preprocessor = None
+    if client_tensor_mode and core_hash:
+        client_environment = preprocessor_environment()
+        server_environment = getattr(args, "client_tensor_environment", None)
+        client_codec_compatibility = lambda path: compatible_preprocess_format(
+            path, client_environment, server_environment
+        )
+        incompatible = [
+            extension for extension in VALID_EXTS
+            if not client_codec_compatibility("probe" + extension)
+        ]
+        if incompatible:
+            print(
+                "[WARN] 画像コーデックの版が異なる形式は結果保持のため元画像で送信します: "
+                + ", ".join(incompatible),
+                flush=True,
+            )
     if client_tensor_mode:
         print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")
     elif is_client:
@@ -1962,21 +2007,45 @@ def process_images(args: argparse.Namespace) -> None:
         timeout = int(APP_CONFIG.get("client_timeout", 15))
         batch_timeout = max(timeout * len(items), int(APP_CONFIG.get("client_batch_timeout", 120)))
         server_url = f"http://{args.host}:{args.port}"
-        if client_tensor_mode and not tensor_transfer_failed.is_set():
-            try:
-                predictions = client_predict_tensor_batch(
-                    server_url, paths, metadata, client_preprocessor, batch_timeout
-                )
-                return predictions, time.time() - started
-            except Exception as exc:
-                tensor_transfer_failed.set()
-                safe_write(f"[WARN] 前処理済み転送に失敗しました: {exc}。元画像送信で続行します。")
-        predictions = client_predict_batch(server_url, paths, metadata, batch_timeout)
-        return predictions, time.time() - started
+        tensor_indices = [
+            index for index, path in enumerate(paths)
+            if client_tensor_mode and not tensor_transfer_failed.is_set() and (
+                client_codec_compatibility is None or client_codec_compatibility(path)
+            )
+        ]
+        original_indices = [index for index in range(len(paths)) if index not in tensor_indices]
+        rows: List[Optional[np.ndarray]] = [None] * len(paths)
+        errors: List[Optional[str]] = [None] * len(paths)
+        for indices, use_tensor in ((tensor_indices, True), (original_indices, False)):
+            if not indices:
+                continue
+            selected = [paths[index] for index in indices]
+            if use_tensor:
+                try:
+                    result = client_predict_tensor_batch(
+                        server_url, selected, metadata, client_preprocessor, batch_timeout
+                    )
+                except Exception as exc:
+                    tensor_transfer_failed.set()
+                    safe_write(f"[WARN] 前処理済み転送に失敗しました: {exc}。元画像送信で続行します。")
+                    result = client_predict_batch(server_url, selected, metadata, batch_timeout)
+            else:
+                result = client_predict_batch(server_url, selected, metadata, batch_timeout)
+            if isinstance(result, PartialBatchPredictions):
+                selected_rows, selected_errors = result.predictions, result.errors
+            else:
+                selected_rows, selected_errors = result, [None] * len(indices)
+            for index, row, error in zip(indices, selected_rows, selected_errors):
+                rows[index], errors[index] = row, error
+        if any(errors):
+            return PartialBatchPredictions(rows, errors), time.time() - started
+        return np.stack(rows), time.time() - started
 
     def request_client_single(path: str, timeout: int) -> np.ndarray:
         server_url = f"http://{args.host}:{args.port}"
-        if client_tensor_mode and not tensor_transfer_failed.is_set():
+        if client_tensor_mode and not tensor_transfer_failed.is_set() and (
+            client_codec_compatibility is None or client_codec_compatibility(path)
+        ):
             try:
                 prediction = client_predict_tensor_batch(
                     server_url, [path], metadata, client_preprocessor, timeout

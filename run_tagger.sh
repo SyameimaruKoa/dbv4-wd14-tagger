@@ -190,19 +190,7 @@ setup_env() {
     local venv_name=""
     
     if [ "$is_client" = "1" ]; then
-        if [ -d "$SCRIPT_DIR/venv_webgpu" ]; then
-            venv_name="venv_webgpu"
-        elif [ -d "$SCRIPT_DIR/venv_gpu" ]; then
-            venv_name="venv_gpu"
-        elif [ -d "$SCRIPT_DIR/venv_intel" ]; then
-            venv_name="venv_intel"
-        elif [ -d "$SCRIPT_DIR/venv_amd" ]; then
-            venv_name="venv_amd"
-        elif [ -d "$SCRIPT_DIR/venv_std" ]; then
-            venv_name="venv_std"
-        else
-            venv_name="venv_client"
-        fi
+        venv_name="venv_client"
         backend="client"
     elif [ "$backend" = "cpu" ]; then
         venv_name="venv_std"
@@ -242,7 +230,7 @@ setup_env() {
     
     PIP_CMD="$VENV_DIR/bin/pip"
 
-    if [ "$is_client" = "1" ] && "$VENV_DIR/bin/python" -c "import huggingface_hub, numpy, PIL" >/dev/null 2>&1; then
+    if [ "$is_client" = "1" ] && "$VENV_DIR/bin/python" -c "import huggingface_hub, numpy, PIL, onnxruntime" >/dev/null 2>&1; then
         echo "[INFO] Clientは既存の仮想環境を再利用します: $venv_name"
         return 0
     fi
@@ -255,7 +243,7 @@ setup_env() {
     
     # 失敗したときにすぐ止まるようにエラー処理を追加じゃ
     if [ "$backend" = "client" ]; then
-        $PIP_CMD install -r "$REQ_FILE" || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
+        $PIP_CMD install -r "$REQ_FILE" onnxruntime || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "nvidia" ]; then
         local arch_name=$(uname -m)
         if [ "$arch_name" = "aarch64" ] || [ "$arch_name" = "arm64" ]; then

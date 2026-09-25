@@ -383,7 +383,7 @@ Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使�
 | server_workers | 2 | Server同時推論数（GPUメモリに応じて調整） |
 | server_max_request_mib | 128 | HTTP要求本文の上限（MiB） |
 | server_max_batch_images | 8 | 1バッチの画像枚数上限 |
-| server_max_image_pixels | 20000000 | 1画像の画素数上限 |
+| server_max_image_pixels | 80000000 | 1画像の画素数上限（旧既定値20000000は自動更新） |
 | client_max_request_mib | 128 | Clientが組み立てるHTTP要求本文の上限（MiB） |
 | client_upload_mode | "preprocessed" | Clientがモデル用前処理を実行。`"original"`でClient負荷を低減 |
 | client_timeout | 15 | Client timeout秒 |
@@ -424,7 +424,7 @@ Clientは処理開始時にServerの`/metadata`からmodel ID、profile、metada
 Serverは画像ごとに受信時刻、Client IP、ファイル名、転送サイズ、処理開始、処理時間、完了状態を表示する。推論中にClientが切断した場合もServerは停止せず、長い`BrokenPipeError` tracebackの代わりに対象リクエストの警告だけを表示して次の接続を待機する。
 
 Serverは複数Clientの要求を既定で2件まで並列処理する。`config.json`の`server_workers`で同時数を変更できる。ultraなど大きなモデルでGPUメモリ不足になる場合は`1`へ下げる。
-受信バッファの上限は`server_max_request_mib`（既定128 MiB）、バッチ枚数の上限は`server_max_batch_images`（既定8枚）、画像の画素数上限は`server_max_image_pixels`（既定2000万画素）で指定する。`server_workers`と合わせてServerが同時に保持する要求の規模を制限する。
+受信バッファの上限は`server_max_request_mib`（既定128 MiB）、バッチ枚数の上限は`server_max_batch_images`（既定8枚）、画像の画素数上限は`server_max_image_pixels`（既定8000万画素）で指定する。`server_workers`と合わせてServerが同時に保持する要求の規模を制限する。ClientとServerで画像コーデックの版が異なる形式は元画像を送信し、版が一致する形式は前処理済みテンソルを送信する。混在バッチは形式ごとに分けて送信する。
 Serverはモデル読み込み前にポートを開き、`/metadata`へ準備状態をHTTP 503で返す。Clientは準備完了まで待機し、エラーまたは待機上限に達した場合は理由を表示して停止する。Serverは各画像・バッチ要求のHTTP本文について、受信サイズ、受信時間、受信速度（MiB/s）をログに記録する。この値はServerが本文を読み取った速度であり、Tailscaleなどの中継が本文をバッファした場合はClientからの実効回線速度とは異なる。
 
 ## テスト

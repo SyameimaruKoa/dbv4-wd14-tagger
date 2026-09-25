@@ -365,6 +365,35 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 app.process_images(args)
             original.assert_called_once()
 
+    def test_codec_mismatch_splits_mixed_batch_without_reordering(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = [f"{directory}/one.jpg", f"{directory}/two.webp"]
+            environment = app.preprocessor_environment()
+            server_environment = {**environment, "jpg": "different"}
+            args = SimpleNamespace(
+                mode="client", gpu=False, model_profile="test", model_repo=None,
+                model_file=None, tags_file=None, no_tag=True, organize=False,
+                record_ratio=None, pixiv=False, recursive=False, images=paths,
+                batch_size=2, io_workers=0, force=True, rating_thresh=None,
+                ignore_sensitive=False, thresh=None, host="localhost", port=5000,
+                no_report=True, client_upload_mode="preprocessed",
+                client_batch_supported=True, client_batch_limit=2,
+                client_tensor_supported=True, client_tensor_core_hash="same",
+                client_tensor_environment=server_environment,
+            )
+            row = np.array([[0.9, 0.1, 0.05, 0.01, 0.8]], dtype=np.float32)
+            with (
+                patch.object(app, "align_client_model", return_value=self._metadata()),
+                patch.object(app, "collect_images", return_value=paths),
+                patch.object(app.DBV4Preprocessor, "from_metadata", return_value=MagicMock()),
+                patch.object(app, "preprocessor_probe_hash", return_value="same"),
+                patch.object(app, "client_predict_batch", return_value=row) as original,
+                patch.object(app, "client_predict_tensor_batch", return_value=row) as tensor,
+            ):
+                app.process_images(args)
+            self.assertEqual(original.call_args.args[1], [paths[0]])
+            self.assertEqual(tensor.call_args.args[1], [paths[1]])
+
     def test_client_batch_timeout_retries_singles_and_keeps_processing(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = [f"{directory}/{index}.jpg" for index in range(3)]
@@ -446,14 +475,15 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         lock = threading.Lock()
 
         class SlowHandler(BaseHTTPRequestHandler):
-            def do_GET(self):
+            def do_POST(self):
                 nonlocal active, maximum
-                with lock:
-                    active += 1
-                    maximum = max(maximum, active)
-                time.sleep(0.1)
-                with lock:
-                    active -= 1
+                with self.server._worker_slots:
+                    with lock:
+                        active += 1
+                        maximum = max(maximum, active)
+                    time.sleep(0.1)
+                    with lock:
+                        active -= 1
                 self.send_response(200)
                 self.end_headers()
 
@@ -466,7 +496,7 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         try:
             url = f"http://127.0.0.1:{server.server_port}"
             with ThreadPoolExecutor(max_workers=4) as executor:
-                results = list(executor.map(lambda _: urllib.request.urlopen(url).status, range(4)))
+                results = list(executor.map(lambda _: urllib.request.urlopen(url, data=b"x").status, range(4)))
             self.assertEqual(results, [200] * 4)
             self.assertEqual(maximum, 2)
         finally:

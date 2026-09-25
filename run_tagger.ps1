@@ -343,7 +343,7 @@ function Prepare-Environment {
     if ($IsClient) {
         $EnvName = "Client (軽量)"
         $TargetVenv = Join-Path $ScriptDir "venv_client"
-        $OnnxPackage = ""
+        $OnnxPackage = "onnxruntime"
     }
     else {
         if ($SelectedProvider) {
