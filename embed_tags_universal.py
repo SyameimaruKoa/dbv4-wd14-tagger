@@ -1023,6 +1023,19 @@ class TagServerHandler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             return False
 
+    def _read_request_body(self, length: int, client_ip: str, image_name: str) -> bytes:
+        started = time.perf_counter()
+        body = self.rfile.read(length)
+        elapsed = max(time.perf_counter() - started, 1e-6)
+        mib = len(body) / (1024 * 1024)
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        print(
+            f"[{timestamp}] {client_ip:<15} | File: {image_name} | "
+            f"HTTP受信: {mib:.2f} MiB / {elapsed:.3f}s = {mib / elapsed:.2f} MiB/s",
+            flush=True,
+        )
+        return body
+
     def do_POST(self) -> None:
         started = time.time()
         client_ip = self.client_address[0]
@@ -1040,7 +1053,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
             if not self.runtime:
                 raise RuntimeError("DBV4 runtimeが初期化されていません。")
             if self.path == "/batch":
-                request = json.loads(self.rfile.read(length).decode("utf-8"))
+                request = json.loads(self._read_request_body(length, client_ip, image_name).decode("utf-8"))
                 encoded_images = request.get("images") if isinstance(request, dict) else None
                 if not isinstance(encoded_images, list) or not encoded_images:
                     raise ValueError("バッチ画像がありません。")
@@ -1064,7 +1077,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
             if self.path != "/":
                 self._send_json_response(404, b'{}')
                 return
-            image = Image.open(io.BytesIO(self.rfile.read(length))).convert("RGB")
+            image = Image.open(io.BytesIO(self._read_request_body(length, client_ip, image_name))).convert("RGB")
             probabilities = self.runtime.predict_images([image])[0]
             payload = {
                 **self.runtime.metadata.summary(),

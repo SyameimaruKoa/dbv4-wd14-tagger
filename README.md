@@ -416,6 +416,7 @@ Clientは処理開始時にServerの`/metadata`からmodel ID、profile、metada
 Serverは画像ごとに受信時刻、Client IP、ファイル名、転送サイズ、処理開始、処理時間、完了状態を表示する。推論中にClientが切断した場合もServerは停止せず、長い`BrokenPipeError` tracebackの代わりに対象リクエストの警告だけを表示して次の接続を待機する。
 
 Serverは複数Clientの要求を既定で2件まで並列処理する。`config.json`の`server_workers`で同時数を変更できる。ultraなど大きなモデルでGPUメモリ不足になる場合は`1`へ下げる。
+Serverは各画像・バッチ要求のHTTP本文について、受信サイズ、受信時間、受信速度（MiB/s）をログに記録する。この値はServerが本文を読み取った速度であり、Tailscaleなどの中継が本文をバッファした場合はClientからの実効回線速度とは異なる。
 
 ## テスト
 

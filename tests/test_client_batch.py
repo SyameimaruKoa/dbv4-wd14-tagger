@@ -25,6 +25,16 @@ from embed_tags_universal import (
 
 
 class BatchProtocolTests(unittest.TestCase):
+    def test_server_logs_http_receive_rate(self):
+        handler = TagServerHandler.__new__(TagServerHandler)
+        handler.rfile = io.BytesIO(b"x" * (1024 * 1024))
+        with patch("embed_tags_universal.time.perf_counter", side_effect=[10.0, 10.5]), patch(
+            "builtins.print"
+        ) as log:
+            body = handler._read_request_body(1024 * 1024, "127.0.0.1", "image.png")
+        self.assertEqual(len(body), 1024 * 1024)
+        self.assertIn("HTTP受信: 1.00 MiB / 0.500s = 2.00 MiB/s", log.call_args.args[0])
+
     def test_pipeline_sends_next_batch_while_consuming_previous(self):
         second_started = threading.Event()
         consumed = []
