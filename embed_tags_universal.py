@@ -110,6 +110,10 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "server_max_batch_images": 8,
     "server_max_image_pixels": 20000000,
     "client_max_request_mib": 128,
+    "client_upload_mode": "optimized",
+    "client_upload_max_side": 1024,
+    "client_upload_webp_quality": 90,
+    "client_upload_min_bytes": 1048576,
     "client_timeout": 15,
     "client_batch_timeout": 120,
     "openvino_gpu_device": "GPU.0",
@@ -1045,10 +1049,17 @@ class TagServerHandler(BaseHTTPRequestHandler):
         body = self.rfile.read(length)
         elapsed = max(time.perf_counter() - started, 1e-6)
         mib = len(body) / (1024 * 1024)
+        original_header = self.headers.get("X-Original-Bytes", "")
+        original_mib = int(original_header) / (1024 * 1024) if original_header.isdecimal() else None
+        reduction = (
+            f" | 原本: {original_mib:.2f} MiB"
+            if original_mib is not None and original_mib > mib else ""
+        )
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         print(
             f"[{timestamp}] {client_ip:<15} | File: {image_name} | "
-            f"HTTP受信: {mib:.2f} MiB / {elapsed:.3f}s = {mib / elapsed:.2f} MiB/s",
+            f"HTTP受信: {mib:.2f} MiB / {elapsed:.3f}s = {mib / elapsed:.2f} MiB/s"
+            f"{reduction}",
             flush=True,
         )
         return body
@@ -1260,13 +1271,13 @@ def client_predict(
     timeout: int,
 ) -> np.ndarray:
     max_request = max(1, int(APP_CONFIG.get("client_max_request_mib", 128))) * 1024 * 1024
-    if os.path.getsize(image_path) > max_request:
+    data = client_upload_image(image_path)
+    if len(data) > max_request:
         raise ValueError(f"画像がClientの送信サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
-    with open(image_path, "rb") as f:
-        data = f.read()
     request = urllib.request.Request(server_url, data=data, method="POST")
     request.add_header("Content-Type", "application/octet-stream")
     request.add_header("X-Image-Name", urllib.parse.quote(os.path.basename(image_path)))
+    request.add_header("X-Original-Bytes", str(os.path.getsize(image_path)))
     with urllib.request.urlopen(request, timeout=timeout) as response:
         payload = json.loads(response.read().decode("utf-8"))
     if isinstance(payload, list):
@@ -1288,6 +1299,35 @@ def client_predict(
     return probabilities
 
 
+def client_upload_image(image_path: str) -> bytes:
+    original_size = os.path.getsize(image_path)
+    max_request = max(1, int(APP_CONFIG.get("client_max_request_mib", 128))) * 1024 * 1024
+    if original_size > max_request:
+        raise ValueError(f"画像がClientの読込サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
+    with open(image_path, "rb") as image_file:
+        original = image_file.read()
+    if (
+        APP_CONFIG.get("client_upload_mode", "optimized") != "optimized"
+        or len(original) < int(APP_CONFIG.get("client_upload_min_bytes", 1048576))
+    ):
+        return original
+    try:
+        with Image.open(io.BytesIO(original)) as image:
+            resized = image.convert("RGB")
+            max_side = max(1, int(APP_CONFIG.get("client_upload_max_side", 1024)))
+            resized.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
+            output = io.BytesIO()
+            resized.save(
+                output, format="WEBP",
+                quality=max(1, min(100, int(APP_CONFIG.get("client_upload_webp_quality", 90)))),
+                method=4,
+            )
+        encoded = output.getvalue()
+        return encoded if len(encoded) < len(original) else original
+    except (OSError, ValueError):
+        return original
+
+
 def client_predict_batch(
     server_url: str,
     image_paths: Sequence[str],
@@ -1295,17 +1335,21 @@ def client_predict_batch(
     timeout: int,
 ) -> np.ndarray:
     max_request = max(1, int(APP_CONFIG.get("client_max_request_mib", 128))) * 1024 * 1024
-    encoded_size = sum(4 * ((os.path.getsize(path) + 2) // 3) for path in image_paths)
-    if encoded_size + len(image_paths) * 4 + 16 > max_request:
-        raise ValueError(f"バッチがClientの送信サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
     images = []
+    encoded_size = 16
+    original_size = 0
     for path in image_paths:
-        with open(path, "rb") as image_file:
-            images.append(base64.b64encode(image_file.read()).decode("ascii"))
+        original_size += os.path.getsize(path)
+        encoded = base64.b64encode(client_upload_image(path)).decode("ascii")
+        encoded_size += len(encoded) + 4
+        if encoded_size > max_request:
+            raise ValueError(f"バッチがClientの送信サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
+        images.append(encoded)
     body = json.dumps({"images": images}).encode("utf-8")
     request = urllib.request.Request(
         f"{server_url}/batch", data=body,
-        headers={"Content-Type": "application/json", "Accept-Encoding": "gzip"}, method="POST",
+        headers={"Content-Type": "application/json", "Accept-Encoding": "gzip",
+                 "X-Original-Bytes": str(original_size)}, method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
         response_body = response.read()

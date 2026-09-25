@@ -337,6 +337,7 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 
 Clientも`--batch-size`（既定4）で複数画像を1回の通信と推論にまとめられる。ServerとClientの両方をこの機能に対応する版へ更新し、Serverを再起動すること。古いServerに接続した場合は自動的に1枚ずつ処理する。モデルの入力が固定バッチ1枚なら、Clientも1枚ずつ処理する。
 Clientは最大2バッチの通信を並行させ、次のバッチのアップロードと前のバッチの推論・タグ書き込みを重ねる。バッチ推論に非対応の場合、この先読みは行わない。
+1 MiB以上の画像はClientで長辺1024画素以内のWebP（品質90）に変換し、元より小さい場合だけ送信する。これは元ファイルを変更せず、転送画像だけを縮小・再圧縮するため、閾値付近のタグ結果が変わる可能性がある。元画像をそのまま送る場合は`config.json`の`client_upload_mode`を`"original"`にする。
 新しいClientとServer間のバッチ応答は、サイズが大きい場合にgzipで圧縮する。古いServerからの非圧縮応答も引き続き利用できる。圧縮を有効にするにはServerの更新と再起動が必要。
 バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
 
@@ -383,6 +384,10 @@ Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使�
 | server_max_batch_images | 8 | 1バッチの画像枚数上限 |
 | server_max_image_pixels | 20000000 | 1画像の画素数上限 |
 | client_max_request_mib | 128 | Clientが組み立てるHTTP要求本文の上限（MiB） |
+| client_upload_mode | "optimized" | 大きい画像をWebPへ変換。`"original"`で無効 |
+| client_upload_max_side | 1024 | 転送画像の長辺上限 |
+| client_upload_webp_quality | 90 | 転送用WebPの品質 |
+| client_upload_min_bytes | 1048576 | 変換を試みる元画像サイズの下限 |
 | client_timeout | 15 | Client timeout秒 |
 | client_batch_timeout | 120 | バッチ推論の応答待ち時間の下限（秒） |
 | openvino_gpu_device | "GPU.0" | Intel OpenVINOデバイス |

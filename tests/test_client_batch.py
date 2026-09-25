@@ -22,11 +22,24 @@ from embed_tags_universal import (
     ParallelTagServer,
     TagServerHandler,
     align_client_model,
+    client_upload_image,
     client_predict_batch,
 )
 
 
 class BatchProtocolTests(unittest.TestCase):
+    def test_client_reduces_large_upload_and_can_preserve_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "large.png"
+            pixels = np.random.default_rng(0).integers(0, 256, (1200, 1200, 3), dtype=np.uint8)
+            Image.fromarray(pixels, "RGB").save(path)
+            optimized = client_upload_image(str(path))
+            self.assertLess(len(optimized), path.stat().st_size)
+            with Image.open(io.BytesIO(optimized)) as decoded:
+                self.assertLessEqual(max(decoded.size), 1024)
+            with patch.dict("embed_tags_universal.APP_CONFIG", {"client_upload_mode": "original"}):
+                self.assertEqual(client_upload_image(str(path)), path.read_bytes())
+
     def test_server_receives_next_request_while_inference_runs(self):
         first_inference = threading.Event()
         second_received = threading.Event()
@@ -118,6 +131,7 @@ class BatchProtocolTests(unittest.TestCase):
     def test_server_logs_http_receive_rate(self):
         handler = TagServerHandler.__new__(TagServerHandler)
         handler.rfile = io.BytesIO(b"x" * (1024 * 1024))
+        handler.headers = {}
         with patch("embed_tags_universal.time.perf_counter", side_effect=[10.0, 10.5]), patch(
             "builtins.print"
         ) as log:
