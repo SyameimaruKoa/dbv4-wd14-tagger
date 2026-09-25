@@ -46,11 +46,6 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertTrue(compatible_preprocess_format("c.png", client, server))
         self.assertTrue(compatible_preprocess_format("d.bmp", client, server))
 
-    def test_png_zlib_versions_do_not_disable_preprocessing(self):
-        client = {"zlib": "1.3.1"}
-        server = {"zlib": "1.3.1.zlib-ng"}
-        self.assertTrue(compatible_preprocess_format("image.png", client, server))
-
     def test_legacy_probe_can_match_server_package_versions(self):
         preprocessor = DBV4Preprocessor({"test": [{"type": "Resize", "size": [8, 8]}]})
         server = {"Pillow": "11.0", "NumPy": "2.0"}
@@ -85,7 +80,6 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertEqual(args.client_upload_mode, "original")
         self.assertEqual(create_parser().parse_args(["-U", "p"]).client_upload_mode, "p")
         self.assertEqual(create_parser().parse_args(["-um", "o"]).client_upload_mode, "o")
-        self.assertEqual(create_parser().parse_args(["-U", "a"]).client_upload_mode, "a")
 
     def test_server_http_error_includes_response_detail(self):
         error = urllib.error.HTTPError(

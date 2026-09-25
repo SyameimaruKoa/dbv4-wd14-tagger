@@ -584,9 +584,9 @@ def compatible_preprocess_format(path: str, client: Any, server: Any) -> bool:
     extension = os.path.splitext(path)[1].lower()
     codec = {
         ".jpg": "jpg", ".jpeg": "jpg", ".webp": "webp",
-        ".avif": "AVIF",
+        ".png": "zlib", ".avif": "AVIF",
     }.get(extension)
-    if extension in {".bmp", ".png"}:
+    if extension == ".bmp":
         return True
     return bool(codec and client.get(codec) and client.get(codec) == server.get(codec))
 
@@ -1789,13 +1789,13 @@ def process_images(args: argparse.Namespace) -> None:
 
     assert metadata is not None
     upload_mode = str(getattr(args, "client_upload_mode", None) or APP_CONFIG.get("client_upload_mode", "preprocessed"))
-    upload_mode = {"p": "preprocessed", "a": "preprocessed_any", "o": "original"}.get(upload_mode, upload_mode)
+    upload_mode = {"p": "preprocessed", "o": "original"}.get(upload_mode, upload_mode)
     if is_client and upload_mode == "optimized":
         print("[WARN] 旧optimized転送は結果が変わり得るため廃止しました。元画像送信に切り替えます。")
         upload_mode = "original"
-    if is_client and upload_mode not in {"original", "preprocessed", "preprocessed_any"}:
+    if is_client and upload_mode not in {"original", "preprocessed"}:
         raise SystemExit(f"[ERROR] 不明なclient_upload_modeです: {upload_mode}")
-    client_tensor_mode = is_client and upload_mode in {"preprocessed", "preprocessed_any"}
+    client_tensor_mode = is_client and upload_mode == "preprocessed"
     if client_tensor_mode and not getattr(args, "client_tensor_supported", False):
         print("[WARN] 接続先Serverは前処理済みテンソルに未対応です。元画像送信で続行します。")
         client_tensor_mode = False
@@ -1844,7 +1844,7 @@ def process_images(args: argparse.Namespace) -> None:
         )
         client_tensor_mode = False
         client_preprocessor = None
-    if client_tensor_mode and core_hash and upload_mode != "preprocessed_any":
+    if client_tensor_mode and core_hash:
         client_environment = preprocessor_environment()
         server_environment = getattr(args, "client_tensor_environment", None)
         client_codec_compatibility = lambda path: compatible_preprocess_format(
@@ -1862,9 +1862,6 @@ def process_images(args: argparse.Namespace) -> None:
             )
     if client_tensor_mode:
         print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")
-        if upload_mode == "preprocessed_any":
-            print("[WARN] 帯域優先モード: コーデックの版差がある画像もClientで復号します。"
-                  "Server復号時と画素が異なる場合は推論結果も変わる可能性があります。", flush=True)
     elif is_client:
         print("[INFO] Client転送モード: 元画像をそのまま送信します。")
     need_exiftool = (not args.no_tag) or args.organize
@@ -2463,8 +2460,8 @@ def create_parser() -> argparse.ArgumentParser:
     values.add_argument("-y", "--tags-file", default=None, metavar="ファイル", help="タグCSV名またはパス（例: selected_tags.csv）")
     values.add_argument("-j", "--host", default=None, metavar="ホスト名/IP", help="Client接続先（例: google-colab）")
     values.add_argument("-U", "-um", "--client-upload-mode",
-                        choices=["p", "a", "o", "original", "preprocessed", "preprocessed_any"],
-                        help="★p=互換形式のみ前処理、a=帯域優先で全形式を前処理、o=元画像送信")
+                        choices=["p", "o", "original", "preprocessed"],
+                        help="★p=互換形式のみ前処理、o=元画像送信")
     values.add_argument("-u", "--port", type=int, default=None, help="★Server/Clientポート 5000")
     values.add_argument(
         "-v",

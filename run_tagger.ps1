@@ -152,7 +152,7 @@ param (
     [Alias('p')]
     [string]$Path,
     [Alias('um')]
-    [ValidateSet('original', 'preprocessed', 'preprocessed_any', 'o', 'p', 'a')]
+    [ValidateSet('original', 'preprocessed', 'o', 'p')]
     [string]$ClientUploadMode,
     [Alias('o')]
     [switch]$Organize,
