@@ -4,6 +4,7 @@ import csv
 import datetime
 import glob
 import gzip
+import hashlib
 import io
 import json
 import os
@@ -22,6 +23,7 @@ import urllib.request
 import uuid
 import warnings
 import webbrowser
+import zlib
 from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -110,10 +112,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "server_max_batch_images": 8,
     "server_max_image_pixels": 20000000,
     "client_max_request_mib": 128,
-    "client_upload_mode": "optimized",
-    "client_upload_max_side": 1024,
-    "client_upload_webp_quality": 90,
-    "client_upload_min_bytes": 1048576,
+    "client_upload_mode": "original",
     "client_timeout": 15,
     "client_batch_timeout": 120,
     "openvino_gpu_device": "GPU.0",
@@ -178,6 +177,9 @@ def merge_defaults(target: Dict[str, Any], source: Dict[str, Any]) -> bool:
 
 def migrate_legacy_config(config: Dict[str, Any]) -> bool:
     changed = False
+    if config.get("client_upload_mode") == "optimized":
+        config["client_upload_mode"] = "original"
+        changed = True
     profiles = config.get("model_profiles", {})
     if not isinstance(profiles, dict):
         return changed
@@ -471,22 +473,42 @@ class RuntimeModel:
     def predict_images(self, images: Sequence[Image.Image]) -> List[np.ndarray]:
         if not images:
             return []
+        return self._predict_input(self.preprocess_batch(images), len(images))
+
+    def predict_preprocessed(self, batch_nchw: np.ndarray) -> List[np.ndarray]:
+        batch = adapt_input_layout(batch_nchw, self.input_shape)
+        for actual, expected in zip(batch.shape, self.input_shape):
+            if isinstance(expected, int) and actual != expected:
+                raise ValueError(f"前処理済みテンソルの形状がモデル入力と一致しません: {batch.shape}")
+        return self._predict_input(batch, len(batch_nchw))
+
+    def _predict_input(self, batch: np.ndarray, count: int) -> List[np.ndarray]:
         raw = self.session.run(
             [self.output_name],
-            {self.input_name: self.preprocess_batch(images)},
+            {self.input_name: batch},
         )[0]
         raw = np.asarray(raw)
         if raw.ndim == 1:
             raw = raw[None, :]
         if raw.ndim != 2:
             raise ValueError(f"DBV4 outputは2次元を想定しています: shape={raw.shape}")
-        expected_shape = (len(images), self.metadata.label_count)
+        expected_shape = (count, self.metadata.label_count)
         if raw.shape != expected_shape:
             raise ValueError(
                 f"DBV4 output shape mismatch: model={raw.shape}, expected={expected_shape}, "
                 f"output={self.output_name}"
             )
         return [infer_output_to_probabilities(row) for row in raw]
+
+
+def preprocessor_probe_hash(preprocessor: DBV4Preprocessor) -> str:
+    y, x = np.indices((53, 67), dtype=np.uint16)
+    pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
+                       (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
+    image = Image.fromarray(pixels, "RGB")
+    tensor = preprocessor(image.convert("RGB")).astype("<f4")
+    versions = f"Pillow:{Image.__version__}|NumPy:{np.__version__}".encode("ascii")
+    return hashlib.sha256(versions + tensor.tobytes(order="C")).hexdigest()[:16]
 
 
 def load_runtime_model(
@@ -1025,6 +1047,11 @@ class TagServerHandler(BaseHTTPRequestHandler):
             **self.runtime.metadata.summary(),
             "batch_supported": True,
             "batch_limit": self._batch_limit(),
+            "tensor_batch_supported": hasattr(self.runtime, "preprocessor"),
+            "tensor_preprocess_hash": (
+                preprocessor_probe_hash(self.runtime.preprocessor)
+                if hasattr(self.runtime, "preprocessor") else None
+            ),
         }, ensure_ascii=False).encode("utf-8")
         self._send_json_response(200, body)
 
@@ -1083,6 +1110,42 @@ class TagServerHandler(BaseHTTPRequestHandler):
             max_request = max(1, int(APP_CONFIG.get("server_max_request_mib", 128))) * 1024 * 1024
             if length < 0 or length > max_request:
                 self._send_json_response(413, json.dumps({"error": "HTTP本文がサイズ上限を超えています。"}).encode())
+                return
+            if self.path == "/tensor-batch":
+                if self.headers.get("X-Model-Id") != self.runtime.metadata.repo_id:
+                    raise ValueError("前処理済みテンソルのmodel_idが一致しません。")
+                if self.headers.get("X-Metadata-Version") != self.runtime.metadata.metadata_version:
+                    raise ValueError("前処理済みテンソルのmetadata versionが一致しません。")
+                shape = json.loads(self.headers.get("X-Tensor-Shape", "null"))
+                if not isinstance(shape, list) or len(shape) != 4 or any(
+                    not isinstance(value, int) or isinstance(value, bool) or value < 1 for value in shape
+                ) or shape[1] != 3 or shape[0] > self._batch_limit():
+                    raise ValueError("前処理済みテンソルの形状が不正です。")
+                expected_bytes = 4
+                for value in shape:
+                    expected_bytes *= value
+                if expected_bytes > max_request:
+                    raise ValueError("前処理済みテンソルがサイズ上限を超えています。")
+                encoded = self._read_request_body(length, client_ip, image_name)
+                encoding = self.headers.get("X-Tensor-Encoding", "raw")
+                if encoding == "zlib":
+                    decoder = zlib.decompressobj()
+                    data = decoder.decompress(encoded, expected_bytes + 1)
+                    if not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:
+                        raise ValueError("前処理済みテンソルの圧縮データが不正です。")
+                elif encoding == "raw":
+                    data = encoded
+                else:
+                    raise ValueError("前処理済みテンソルの圧縮形式が不正です。")
+                if len(data) != expected_bytes:
+                    raise ValueError("前処理済みテンソルのバイト数が一致しません。")
+                tensor = np.frombuffer(data, dtype="<f4").reshape(shape)
+                predictions = self.runtime.predict_preprocessed(tensor)
+                body = json.dumps({
+                    **self.runtime.metadata.summary(),
+                    "probabilities": [prediction.astype(float).tolist() for prediction in predictions],
+                }, ensure_ascii=False).encode("utf-8")
+                self._send_json_response(200, body)
                 return
             if self.path == "/batch":
                 request = json.loads(self._read_request_body(length, client_ip, image_name).decode("utf-8"))
@@ -1259,6 +1322,8 @@ def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
     if server_info.get("output_size") != metadata.label_count:
         raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
     args.client_batch_supported = server_info.get("batch_supported") is True
+    args.client_tensor_supported = server_info.get("tensor_batch_supported") is True
+    args.client_tensor_hash = server_info.get("tensor_preprocess_hash")
     limit = server_info.get("batch_limit")
     args.client_batch_limit = limit if isinstance(limit, int) and limit > 0 else None
     return metadata
@@ -1305,27 +1370,7 @@ def client_upload_image(image_path: str) -> bytes:
     if original_size > max_request:
         raise ValueError(f"画像がClientの読込サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
     with open(image_path, "rb") as image_file:
-        original = image_file.read()
-    if (
-        APP_CONFIG.get("client_upload_mode", "optimized") != "optimized"
-        or len(original) < int(APP_CONFIG.get("client_upload_min_bytes", 1048576))
-    ):
-        return original
-    try:
-        with Image.open(io.BytesIO(original)) as image:
-            resized = image.convert("RGB")
-            max_side = max(1, int(APP_CONFIG.get("client_upload_max_side", 1024)))
-            resized.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
-            output = io.BytesIO()
-            resized.save(
-                output, format="WEBP",
-                quality=max(1, min(100, int(APP_CONFIG.get("client_upload_webp_quality", 90)))),
-                method=4,
-            )
-        encoded = output.getvalue()
-        return encoded if len(encoded) < len(original) else original
-    except (OSError, ValueError):
-        return original
+        return image_file.read()
 
 
 def client_predict_batch(
@@ -1350,6 +1395,55 @@ def client_predict_batch(
         f"{server_url}/batch", data=body,
         headers={"Content-Type": "application/json", "Accept-Encoding": "gzip",
                  "X-Original-Bytes": str(original_size)}, method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        response_body = response.read()
+        if response.headers.get("Content-Encoding", "").lower() == "gzip":
+            response_body = gzip.decompress(response_body)
+        payload = json.loads(response_body.decode("utf-8"))
+    if not isinstance(payload, dict) or payload.get("protocol") != 1:
+        raise ClientCompatibilityError("サーバーのDBV4 protocol versionが不一致です。")
+    if payload.get("model_id") != metadata.repo_id:
+        raise ClientCompatibilityError("サーバーとクライアントのmodel_idが不一致です。")
+    if payload.get("metadata_version") != metadata.metadata_version:
+        raise ClientCompatibilityError("サーバーとクライアントのmetadata versionが不一致です。")
+    if payload.get("output_size") != metadata.label_count:
+        raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
+    probabilities = np.asarray(payload.get("probabilities", []), dtype=np.float32)
+    if probabilities.shape != (len(image_paths), metadata.label_count):
+        raise ClientCompatibilityError("バッチ推論結果の枚数またはラベル数が一致しません。")
+    return probabilities
+
+
+def client_predict_tensor_batch(
+    server_url: str,
+    image_paths: Sequence[str],
+    metadata: DBV4Metadata,
+    preprocessor: DBV4Preprocessor,
+    timeout: int,
+) -> np.ndarray:
+    prepared = []
+    for path in image_paths:
+        with Image.open(path) as image:
+            prepared.append(preprocessor(image.convert("RGB")))
+    batch = np.stack(prepared, axis=0).astype("<f4")
+    raw = batch.tobytes(order="C")
+    compressed = zlib.compress(raw, level=1)
+    body = compressed if len(compressed) < len(raw) else raw
+    max_request = max(1, int(APP_CONFIG.get("client_max_request_mib", 128))) * 1024 * 1024
+    if len(body) > max_request:
+        raise ValueError(f"前処理済みバッチが送信サイズ上限({max_request // (1024 * 1024)} MiB)を超えています。")
+    request = urllib.request.Request(
+        f"{server_url}/tensor-batch", data=body,
+        headers={
+            "Content-Type": "application/octet-stream",
+            "Accept-Encoding": "gzip",
+            "X-Model-Id": metadata.repo_id,
+            "X-Metadata-Version": metadata.metadata_version,
+            "X-Tensor-Shape": json.dumps(list(batch.shape)),
+            "X-Tensor-Encoding": "zlib" if body is compressed else "raw",
+            "X-Original-Bytes": str(sum(os.path.getsize(path) for path in image_paths)),
+        }, method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
         response_body = response.read()
@@ -1445,6 +1539,23 @@ def process_images(args: argparse.Namespace) -> None:
         metadata = runtime.metadata
 
     assert metadata is not None
+    upload_mode = str(APP_CONFIG.get("client_upload_mode", "original"))
+    if is_client and upload_mode == "optimized":
+        print("[WARN] 旧optimized転送は結果が変わり得るため廃止しました。元画像送信に切り替えます。")
+        upload_mode = "original"
+    if is_client and upload_mode not in {"original", "preprocessed"}:
+        raise SystemExit(f"[ERROR] 不明なclient_upload_modeです: {upload_mode}")
+    client_tensor_mode = is_client and upload_mode == "preprocessed"
+    if client_tensor_mode and not getattr(args, "client_tensor_supported", False):
+        print("[WARN] 接続先Serverは前処理済みテンソルに未対応です。元画像送信に切り替えます。")
+        client_tensor_mode = False
+    client_preprocessor = DBV4Preprocessor.from_metadata(metadata) if client_tensor_mode else None
+    if client_tensor_mode and preprocessor_probe_hash(client_preprocessor) != getattr(args, "client_tensor_hash", None):
+        print("[WARN] ClientとServerの前処理結果が一致しません。元画像送信に切り替えます。")
+        client_tensor_mode = False
+        client_preprocessor = None
+    if client_tensor_mode:
+        print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")
     need_exiftool = (not args.no_tag) or args.organize
     if need_exiftool:
         et_wrapper.start()
@@ -1613,10 +1724,23 @@ def process_images(args: argparse.Namespace) -> None:
         paths = [item["path"] for item in items]
         timeout = int(APP_CONFIG.get("client_timeout", 15))
         batch_timeout = max(timeout * len(items), int(APP_CONFIG.get("client_batch_timeout", 120)))
-        predictions = client_predict_batch(
-            f"http://{args.host}:{args.port}", paths, metadata, batch_timeout
-        )
+        if client_tensor_mode:
+            predictions = client_predict_tensor_batch(
+                f"http://{args.host}:{args.port}", paths, metadata, client_preprocessor, batch_timeout
+            )
+        else:
+            predictions = client_predict_batch(
+                f"http://{args.host}:{args.port}", paths, metadata, batch_timeout
+            )
         return predictions, time.time() - started
+
+    def request_client_single(path: str, timeout: int) -> np.ndarray:
+        server_url = f"http://{args.host}:{args.port}"
+        if client_tensor_mode:
+            return client_predict_tensor_batch(
+                server_url, [path], metadata, client_preprocessor, timeout
+            )[0]
+        return client_predict(server_url, path, metadata, timeout)
 
     def run_batch(items: Sequence[Dict[str, Any]], future: Optional[Future] = None) -> None:
         nonlocal inferred, inferred_time, batch_size
@@ -1666,7 +1790,7 @@ def process_images(args: argparse.Namespace) -> None:
                 for item in items:
                     single_started = time.time()
                     try:
-                        prediction = client_predict(server_url, item["path"], metadata, timeout)
+                        prediction = request_client_single(item["path"], timeout)
                         elapsed = time.time() - single_started
                         inferred += 1
                         inferred_time += elapsed
@@ -1770,11 +1894,8 @@ def process_images(args: argparse.Namespace) -> None:
                 if is_client and batch_size == 1:
                     if client_pipeline:
                         client_pipeline.finish(run_batch)
-                    prediction = client_predict(
-                        f"http://{args.host}:{args.port}",
-                        image_path,
-                        metadata,
-                        int(APP_CONFIG.get("client_timeout", 15)),
+                    prediction = request_client_single(
+                        image_path, int(APP_CONFIG.get("client_timeout", 15))
                     )
                     inferred += 1
                     inferred_time += time.time() - started

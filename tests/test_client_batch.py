@@ -15,30 +15,105 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from PIL import Image
+from dbv4 import DBV4Preprocessor
 
 from embed_tags_universal import (
     ClientBatchPipeline,
     ClientCompatibilityError,
     ParallelTagServer,
+    RuntimeModel,
     TagServerHandler,
     align_client_model,
-    client_upload_image,
     client_predict_batch,
+    client_predict_tensor_batch,
+    migrate_legacy_config,
+    preprocessor_probe_hash,
 )
 
 
 class BatchProtocolTests(unittest.TestCase):
-    def test_client_reduces_large_upload_and_can_preserve_original(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "large.png"
-            pixels = np.random.default_rng(0).integers(0, 256, (1200, 1200, 3), dtype=np.uint8)
+    def test_old_lossy_upload_setting_migrates_to_original(self):
+        config = {"client_upload_mode": "optimized", "model_profiles": {}}
+        self.assertTrue(migrate_legacy_config(config))
+        self.assertEqual(config["client_upload_mode"], "original")
+
+    def test_preprocessed_tensor_matches_nhwc_model_input(self):
+        preprocessor = DBV4Preprocessor({"test": [{"type": "Resize", "size": [8, 8]}]})
+        metadata = SimpleNamespace(label_count=2)
+
+        class Session:
+            inputs = []
+
+            def get_inputs(self):
+                return [SimpleNamespace(name="input", shape=[None, 8, 8, 3])]
+
+            def get_outputs(self):
+                return [SimpleNamespace(name="probabilities", shape=[None, 2])]
+
+            def run(self, names, feeds):
+                self.inputs.append(feeds["input"].copy())
+                return [np.asarray([[0.25, 0.75]], dtype=np.float32)]
+
+        session = Session()
+        runtime = RuntimeModel(metadata, preprocessor, session)
+        image = Image.new("RGB", (12, 10), (20, 30, 40))
+        runtime.predict_images([image])
+        runtime.predict_preprocessed(np.stack([preprocessor(image)], axis=0))
+        np.testing.assert_array_equal(session.inputs[0], session.inputs[1])
+
+    def test_client_preprocessed_mode_matches_original_inference(self):
+        preprocess_config = {"test": [
+            {"type": "PadToSize", "size": [64, 64], "background_color": "white"},
+            {"type": "Resize", "size": 32, "interpolation": "bicubic"},
+            {"type": "CenterCrop", "size": [32, 32]},
+            {"type": "Normalize", "mean": [0.5, 0.5, 0.5], "std": [0.25, 0.25, 0.25]},
+        ]}
+        metadata = SimpleNamespace(
+            repo_id="test/model", metadata_version="v1", label_count=2,
+            preprocess_config=preprocess_config,
+            summary=lambda: {"protocol": 1, "model_id": "test/model", "metadata_version": "v1", "output_size": 2},
+        )
+
+        class Session:
+            def get_inputs(self):
+                return [SimpleNamespace(name="input", shape=[None, 3, 32, 32])]
+
+            def get_outputs(self):
+                return [SimpleNamespace(name="probabilities", shape=[None, 2])]
+
+            def run(self, names, feeds):
+                values = feeds["input"]
+                return [np.stack((values.mean(axis=(1, 2, 3)), values.std(axis=(1, 2, 3))), axis=1)]
+
+        preprocessor = DBV4Preprocessor.from_metadata(metadata)
+        self.assertEqual(preprocessor_probe_hash(preprocessor), preprocessor_probe_hash(DBV4Preprocessor.from_metadata(metadata)))
+        changed = DBV4Preprocessor({"test": [{"type": "Resize", "size": 32}]})
+        self.assertNotEqual(preprocessor_probe_hash(preprocessor), preprocessor_probe_hash(changed))
+        runtime = RuntimeModel(metadata, preprocessor, Session())
+        with tempfile.TemporaryDirectory() as directory, patch.object(TagServerHandler, "runtime", runtime):
+            path = Path(directory) / "image.png"
+            transparent_path = Path(directory) / "transparent.png"
+            pixels = np.random.default_rng(0).integers(0, 256, (40, 60, 3), dtype=np.uint8)
             Image.fromarray(pixels, "RGB").save(path)
-            optimized = client_upload_image(str(path))
-            self.assertLess(len(optimized), path.stat().st_size)
-            with Image.open(io.BytesIO(optimized)) as decoded:
-                self.assertLessEqual(max(decoded.size), 1024)
-            with patch.dict("embed_tags_universal.APP_CONFIG", {"client_upload_mode": "original"}):
-                self.assertEqual(client_upload_image(str(path)), path.read_bytes())
+            rgba = np.dstack((pixels, np.full((40, 60), 120, dtype=np.uint8)))
+            Image.fromarray(rgba, "RGBA").save(transparent_path)
+            server = ParallelTagServer(("127.0.0.1", 0), TagServerHandler, 2)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                url = f"http://127.0.0.1:{server.server_port}"
+                with urllib.request.urlopen(f"{url}/metadata") as response:
+                    server_info = json.load(response)
+                self.assertTrue(server_info["tensor_batch_supported"])
+                self.assertEqual(server_info["tensor_preprocess_hash"], preprocessor_probe_hash(preprocessor))
+                paths = [str(path), str(transparent_path)]
+                original = client_predict_batch(url, paths, metadata, 5)
+                prepared = client_predict_tensor_batch(url, paths, metadata, preprocessor, 5)
+                np.testing.assert_array_equal(prepared, original)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
 
     def test_server_receives_next_request_while_inference_runs(self):
         first_inference = threading.Event()
