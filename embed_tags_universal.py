@@ -34,7 +34,7 @@ import gpu_runtime
 
 import numpy as np
 import onnxruntime as ort
-from PIL import Image
+from PIL import Image, features
 from huggingface_hub import (
     get_hf_file_metadata,
     get_token,
@@ -507,7 +507,12 @@ def preprocessor_probe_hash(preprocessor: DBV4Preprocessor) -> str:
                        (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
     image = Image.fromarray(pixels, "RGB")
     tensor = preprocessor(image.convert("RGB")).astype("<f4")
-    versions = f"Pillow:{Image.__version__}|NumPy:{np.__version__}".encode("ascii")
+    codec_versions = [str(features.version(name)) for name in ("jpg", "webp", "libtiff")]
+    avif_version = getattr(pillow_avif, "__version__", "none")
+    versions = (
+        f"Pillow:{Image.__version__}|NumPy:{np.__version__}|"
+        f"Codecs:{','.join(codec_versions)}|AVIF:{avif_version}"
+    ).encode("ascii")
     return hashlib.sha256(versions + tensor.tobytes(order="C")).hexdigest()[:16]
 
 
