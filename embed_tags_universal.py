@@ -114,6 +114,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "client_max_request_mib": 128,
     "client_upload_mode": "preprocessed",
     "client_timeout": 15,
+    "client_startup_wait_seconds": 1800,
     "client_batch_timeout": 120,
     "openvino_gpu_device": "GPU.0",
     "general_threshold": 0.40,
@@ -509,6 +510,37 @@ def preprocessor_environment() -> Dict[str, str]:
     return result
 
 
+def sync_client_preprocessor_packages(server_environment: Any) -> None:
+    if not isinstance(server_environment, dict):
+        raise ClientCompatibilityError("Serverにライブラリ版情報がありません。Serverを更新してください。")
+    if sys.prefix == sys.base_prefix:
+        raise ClientCompatibilityError("Clientを仮想環境から起動してください。自動版合わせは仮想環境内だけで行います。")
+    if os.environ.get("DBV4_PREPROCESS_SYNCED") == "1":
+        raise ClientCompatibilityError("ライブラリを揃えた後も前処理結果が一致しません。画像コーデックの環境差を確認してください。")
+    client_environment = preprocessor_environment()
+    packages = []
+    for key, package in (("Pillow", "Pillow"), ("NumPy", "numpy"),
+                         ("AVIF", "pillow-avif-plugin")):
+        version = server_environment.get(key)
+        if version != client_environment[key]:
+            if key == "AVIF" and version == "none":
+                raise ClientCompatibilityError("ServerにはAVIFプラグインがありません。自動版合わせはできません。")
+            if not isinstance(version, str) or not re.fullmatch(r"\d+(?:\.\d+){1,3}(?:\.post\d+)?", version):
+                raise ClientCompatibilityError(f"Serverの{key}版情報が不正です。")
+            packages.append(f"{package}=={version}")
+    if not packages:
+        raise ClientCompatibilityError("ライブラリの版は一致していますが前処理結果が異なります。画像コーデックを確認してください。")
+    print(f"[INFO] Client仮想環境の前処理ライブラリをServerに合わせます: {', '.join(packages)}", flush=True)
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", *packages], check=True)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ClientCompatibilityError(f"前処理ライブラリの自動更新に失敗しました: {exc}") from exc
+    os.environ["DBV4_PREPROCESS_SYNCED"] = "1"
+    print("[INFO] 更新したライブラリを読み込むためClientを再起動します。", flush=True)
+    os.execv(sys.executable, [sys.executable, *sys.argv])
+    raise RuntimeError("Clientの再起動に失敗しました。")
+
+
 def preprocessor_probe_hash(preprocessor: DBV4Preprocessor) -> str:
     y, x = np.indices((53, 67), dtype=np.uint16)
     pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
@@ -538,6 +570,7 @@ def load_runtime_model(
     openvino_device: Optional[str] = None,
     tensorrt_lib_dir: Optional[str] = None,
     target_vendor: Optional[str] = None,
+    status_callback: Optional[Any] = None,
 ) -> RuntimeModel:
     if use_webgpu and provider not in (None, "webgpu"):
         raise ValueError("--webgpu conflicts with --provider")
@@ -552,6 +585,8 @@ def load_runtime_model(
         print(f"[WARN] {profile_name}: {profile['access_notice']}")
     if profile.get("runtime_warning"):
         print(f"[WARN] {profile['runtime_warning']}")
+    if status_callback:
+        status_callback("モデルと前処理情報を読み込んでいます")
     ensure_profile_access(profile_name, profile)
     if use_gpu and profile.get("vram_warning"):
         print(f"[WARN] {profile['vram_warning']}")
@@ -580,6 +615,8 @@ def load_runtime_model(
     if profile_dir:
         session_options.enable_profiling = True
         session_options.profile_file_prefix = os.path.join(profile_dir.name, "ort")
+    if status_callback:
+        status_callback("GPU実行プロバイダを初期化しています" if use_gpu else "モデルを初期化しています")
     try:
         if use_webgpu:
             session = ort.InferenceSession(metadata.model_path, sess_options=session_options)
@@ -619,7 +656,11 @@ def load_runtime_model(
             if not expected.intersection(active):
                 raise RuntimeError(f"Requested GPU EP unavailable: expected={expected}, active={active}")
             if "TensorrtExecutionProvider" in active:
+                if status_callback:
+                    status_callback("TensorRTエンジンを構築・検証しています")
                 print("[INFO] TensorRTの起動検証中です。初回はエンジン構築が完了するまでServerは接続を受け付けません。", flush=True)
+            elif status_callback:
+                status_callback("GPUの起動検証を実行しています")
             runtime.predict_images([Image.new("RGB", (640, 480), (127, 63, 191))]
                                    * (runtime.batch_limit or 1))
             path = session.end_profiling()
@@ -1038,6 +1079,8 @@ def organize_pixiv_folder(
 
 class TagServerHandler(BaseHTTPRequestHandler):
     runtime: Optional[RuntimeModel] = None
+    startup_stage = "モデルを読み込んでいます"
+    startup_error: Optional[str] = None
 
     def _batch_limit(self) -> int:
         configured = max(1, int(APP_CONFIG.get("server_max_batch_images", 8)))
@@ -1056,7 +1099,10 @@ class TagServerHandler(BaseHTTPRequestHandler):
             self._send_json_response(404, b'{}')
             return
         if not self.runtime:
-            self._send_json_response(503, b'{}')
+            status = "error" if self.startup_error else "loading"
+            body = json.dumps({"status": status, "stage": self.startup_stage,
+                               "error": self.startup_error}, ensure_ascii=False).encode("utf-8")
+            self._send_json_response(503, body)
             return
         body = json.dumps({
             **self.runtime.metadata.summary(),
@@ -1108,6 +1154,12 @@ class TagServerHandler(BaseHTTPRequestHandler):
         return body
 
     def do_POST(self) -> None:
+        if not self.runtime:
+            body = json.dumps({"status": "error" if self.startup_error else "loading",
+                               "stage": self.startup_stage, "error": self.startup_error},
+                              ensure_ascii=False).encode("utf-8")
+            self._send_json_response(503, body)
+            return
         started = time.time()
         client_ip = self.client_address[0]
         image_name = urllib.parse.unquote(self.headers.get("X-Image-Name", "画像"))
@@ -1259,23 +1311,34 @@ class ParallelTagServer(ThreadingMixIn, HTTPServer):
 
 
 def run_server(args: argparse.Namespace) -> None:
-    runtime = load_runtime_model(
-        args.gpu,
-        args.model_profile,
-        args.model_repo,
-        args.model_file,
-        args.tags_file,
-        use_webgpu=getattr(args, "webgpu", False),
-        **runtime_cli_options(args),
-    )
-    TagServerHandler.runtime = runtime
     workers = max(1, int(APP_CONFIG.get("server_workers", 2)))
-    server = ParallelTagServer(("0.0.0.0", args.port), TagServerHandler, workers)
-    print(f"\n[INFO] DBV4推論サーバー稼働中 Port: {args.port}")
-    print(f"[INFO] 同時処理数: {workers}")
-    print(f"[INFO] model_id={runtime.metadata.repo_id}")
-    print(f"[INFO] output_size={runtime.metadata.label_count}")
-    print(f"[INFO] metadata_version={runtime.metadata.metadata_version}")
+    handler = type("ActiveTagServerHandler", (TagServerHandler,), {
+        "runtime": None,
+        "startup_stage": "モデル読み込み・GPU起動検証中",
+        "startup_error": None,
+    })
+    server = ParallelTagServer(("0.0.0.0", args.port), handler, workers)
+    print(f"\n[INFO] Port: {server.server_port} で待受開始。モデル読み込み中はClientを待機させます。", flush=True)
+
+    def load_model() -> None:
+        try:
+            runtime = load_runtime_model(
+                args.gpu, args.model_profile, args.model_repo, args.model_file,
+                args.tags_file, use_webgpu=getattr(args, "webgpu", False),
+                status_callback=lambda stage: setattr(handler, "startup_stage", stage),
+                **runtime_cli_options(args),
+            )
+            handler.runtime = runtime
+            print(f"\n[INFO] DBV4推論サーバー稼働中 Port: {server.server_port}", flush=True)
+            print(f"[INFO] 同時処理数: {workers}")
+            print(f"[INFO] model_id={runtime.metadata.repo_id}")
+            print(f"[INFO] output_size={runtime.metadata.label_count}")
+            print(f"[INFO] metadata_version={runtime.metadata.metadata_version}", flush=True)
+        except Exception as exc:
+            handler.startup_error = str(exc)
+            print(f"[ERROR] モデルの起動に失敗しました: {exc}", flush=True)
+
+    threading.Thread(target=load_model, name="dbv4-model-loader", daemon=True).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -1314,28 +1377,52 @@ def server_http_error(exc: urllib.error.HTTPError) -> str:
 
 def align_client_model(args: argparse.Namespace) -> DBV4Metadata:
     url = f"http://{args.host}:{args.port}/metadata"
-    try:
-        with urllib.request.urlopen(url, timeout=int(APP_CONFIG.get("client_timeout", 15))) as response:
-            server_info = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
+    wait_limit = max(1, int(APP_CONFIG.get("client_startup_wait_seconds", 1800)))
+    started = time.monotonic()
+    last_stage = None
+    while True:
+        try:
+            with urllib.request.urlopen(url, timeout=int(APP_CONFIG.get("client_timeout", 15))) as response:
+                server_info = json.loads(response.read().decode("utf-8"))
+            if last_stage is not None:
+                print("[INFO] Serverのモデル準備が完了しました。", flush=True)
+            break
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                raise ClientCompatibilityError(
+                    "Serverが/metadataに未対応です。新しい版でServerを再起動してください。"
+                ) from exc
+            if exc.code != 503:
+                raise
+            try:
+                status = json.loads(exc.read().decode("utf-8"))
+            except (OSError, UnicodeError, ValueError):
+                status = {}
+            if isinstance(status, dict) and status.get("status") == "error":
+                raise ClientCompatibilityError(
+                    f"Serverのモデル起動に失敗しました: {status.get('error') or '原因不明'}"
+                ) from exc
+            stage = status.get("stage") if isinstance(status, dict) else None
+            stage = stage if isinstance(stage, str) and stage else "モデル読み込み中"
+            if stage != last_stage:
+                print(f"[INFO] Server準備中: {stage}。接続したまま待機します。", flush=True)
+                last_stage = stage
+            if time.monotonic() - started >= wait_limit:
+                raise ClientCompatibilityError(f"Serverの準備が{wait_limit}秒以内に完了しませんでした: {stage}") from exc
+            time.sleep(2)
+        except urllib.error.URLError as exc:
+            if isinstance(exc.reason, socket.gaierror):
+                raise ClientCompatibilityError(
+                    f"接続先「{args.host}」の名前を解決できません。-H の綴り、DNS、またはIPアドレスを確認してください。"
+                ) from exc
             raise ClientCompatibilityError(
-                "Serverが/metadataに未対応です。新しい版でServerを再起動してください。"
+                f"サーバー {args.host}:{args.port} に接続できません: {exc.reason}"
             ) from exc
-        raise
-    except urllib.error.URLError as exc:
-        if isinstance(exc.reason, socket.gaierror):
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError) as exc:
             raise ClientCompatibilityError(
-                f"接続先「{args.host}」の名前を解決できません。-H の綴り、DNS、またはIPアドレスを確認してください。"
+                f"サーバー {args.host}:{args.port} の応答が途切れました。"
+                "Serverの起動検証が完了し、稼働中 Port のログが出ているか確認してください。"
             ) from exc
-        raise ClientCompatibilityError(
-            f"サーバー {args.host}:{args.port} に接続できません: {exc.reason}"
-        ) from exc
-    except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError) as exc:
-        raise ClientCompatibilityError(
-            f"サーバー {args.host}:{args.port} の応答が途切れました。"
-            "Serverの起動検証が完了し、稼働中 Port のログが出ているか確認してください。"
-        ) from exc
     if not isinstance(server_info, dict) or server_info.get("protocol") != 1:
         raise ClientCompatibilityError("Serverのモデル情報またはprotocol versionが不正です。")
     model_id = server_info.get("model_id")
@@ -1634,6 +1721,10 @@ def process_images(args: argparse.Namespace) -> None:
     if client_tensor_mode and preprocessor_probe_hash(client_preprocessor) != getattr(args, "client_tensor_hash", None):
         server_environment = getattr(args, "client_tensor_environment", None)
         client_environment = preprocessor_environment()
+        try:
+            sync_client_preprocessor_packages(server_environment)
+        except ClientCompatibilityError as exc:
+            sync_error = str(exc)
         differences = (
             ", ".join(
                 f"{key}: Client={client_environment[key]}, Server={server_environment.get(key)}"
@@ -1643,7 +1734,7 @@ def process_images(args: argparse.Namespace) -> None:
         raise SystemExit(
             "[ERROR] ClientとServerの前処理結果が一致しません。"
             f"ライブラリ差分: {differences}。"
-            "結果を変えずに縮小転送するには同じ版を使用してください。"
+            f"自動版合わせ: {sync_error}"
         )
     if client_tensor_mode:
         print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")

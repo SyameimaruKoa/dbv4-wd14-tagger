@@ -337,7 +337,7 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 
 Clientも`--batch-size`（既定4）で複数画像を1回の通信と推論にまとめられる。ServerとClientの両方をこの機能に対応する版へ更新し、Serverを再起動すること。古いServerに接続した場合は自動的に1枚ずつ処理する。モデルの入力が固定バッチ1枚なら、Clientも1枚ずつ処理する。
 Clientは最大2バッチの通信を並行させ、次のバッチのアップロードと前のバッチの推論・タグ書き込みを重ねる。バッチ推論に非対応の場合、この先読みは行わない。
-既定の`client_upload_mode: "preprocessed"`では、ClientがServerと同じ前処理を実行し、モデル入力のfloat32テンソルを可逆圧縮して送る。元画像送信と同じテンソルが推論に渡る。Client側のCPU負荷を抑えたい場合は`"original"`を選ぶ。既存の`config.json`に`"original"`が保存されている場合、その設定は自動変更されない。`--client-upload-mode preprocessed`（PowerShellは`-ClientUploadMode preprocessed`）で今回の実行だけ切り替えられる。前処理済みモードには対応する新しいServerが必要。前処理設定、Pillow・NumPy・画像コーデックの版、前処理結果の照合に失敗した場合は差分を表示して停止し、元画像を黙って転送しない。
+既定の`client_upload_mode: "preprocessed"`では、ClientがServerと同じ前処理を実行し、モデル入力のfloat32テンソルを可逆圧縮して送る。元画像送信と同じテンソルが推論に渡る。Client側のCPU負荷を抑えたい場合は`"original"`を選ぶ。既存の`config.json`に`"original"`が保存されている場合、その設定は自動変更されない。`--client-upload-mode preprocessed`（PowerShellは`-ClientUploadMode preprocessed`）で今回の実行だけ切り替えられる。前処理済みモードには対応する新しいServerが必要。ライブラリの版が異なる場合はClient仮想環境内のPillow・NumPy・AVIFプラグインをServerの版へ自動更新してClientを再起動する。再照合でも前処理が一致しなければ差分を表示して停止し、元画像を黙って転送しない。
 新しいClientとServer間のバッチ応答は、サイズが大きい場合にgzipで圧縮する。古いServerからの非圧縮応答も引き続き利用できる。圧縮を有効にするにはServerの更新と再起動が必要。
 バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
 
@@ -386,6 +386,7 @@ Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使�
 | client_max_request_mib | 128 | Clientが組み立てるHTTP要求本文の上限（MiB） |
 | client_upload_mode | "preprocessed" | Clientがモデル用前処理を実行。`"original"`でClient負荷を低減 |
 | client_timeout | 15 | Client timeout秒 |
+| client_startup_wait_seconds | 1800 | Serverのモデル読み込みを待つ上限（秒） |
 | client_batch_timeout | 120 | バッチ推論の応答待ち時間の下限（秒） |
 | openvino_gpu_device | "GPU.0" | Intel OpenVINOデバイス |
 | general_threshold | 0.40 | R-00安全弁 |
@@ -423,7 +424,7 @@ Serverは画像ごとに受信時刻、Client IP、ファイル名、転送サ�
 
 Serverは複数Clientの要求を既定で2件まで並列処理する。`config.json`の`server_workers`で同時数を変更できる。ultraなど大きなモデルでGPUメモリ不足になる場合は`1`へ下げる。
 受信バッファの上限は`server_max_request_mib`（既定128 MiB）、バッチ枚数の上限は`server_max_batch_images`（既定8枚）、画像の画素数上限は`server_max_image_pixels`（既定2000万画素）で指定する。`server_workers`と合わせてServerが同時に保持する要求の規模を制限する。
-Serverは各画像・バッチ要求のHTTP本文について、受信サイズ、受信時間、受信速度（MiB/s）をログに記録する。この値はServerが本文を読み取った速度であり、Tailscaleなどの中継が本文をバッファした場合はClientからの実効回線速度とは異なる。
+Serverはモデル読み込み前にポートを開き、`/metadata`へ準備状態をHTTP 503で返す。Clientは準備完了まで待機し、エラーまたは待機上限に達した場合は理由を表示して停止する。Serverは各画像・バッチ要求のHTTP本文について、受信サイズ、受信時間、受信速度（MiB/s）をログに記録する。この値はServerが本文を読み取った速度であり、Tailscaleなどの中継が本文をバッファした場合はClientからの実効回線速度とは異なる。
 
 ## テスト
 

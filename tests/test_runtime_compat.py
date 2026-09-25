@@ -279,6 +279,44 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         self.assertEqual(args.model_profile, "lightweight")
         load.assert_called_once_with(args)
 
+    def test_client_waits_for_server_model_loading(self):
+        metadata = self._metadata()
+        loading = urllib.error.HTTPError(
+            "http://server/metadata", 503, "loading", {},
+            app.io.BytesIO(b'{"status":"loading","stage":"TensorRT engine build"}'),
+        )
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = app.json.dumps(metadata.summary()).encode()
+        args = SimpleNamespace(host="server", port=5000, model_profile="test", model_repo=None,
+                               auto_model_profile=False)
+        with patch.object(app.urllib.request, "urlopen", side_effect=[loading, response]) as urlopen, \
+             patch.object(app.time, "sleep") as sleep, \
+             patch.object(app, "load_client_metadata", return_value=metadata):
+            self.assertIs(app.align_client_model(args), metadata)
+        self.assertEqual(urlopen.call_count, 2)
+        sleep.assert_called_once_with(2)
+
+    def test_client_syncs_preprocessor_packages_in_virtualenv(self):
+        server_environment = app.preprocessor_environment() | {"Pillow": "11.3.0", "NumPy": "2.1.3"}
+        with patch.object(app.sys, "prefix", "/tmp/client-venv"), \
+             patch.object(app.sys, "base_prefix", "/usr"), \
+             patch.dict(app.os.environ, {}, clear=True), \
+             patch.object(app.subprocess, "run") as install, \
+             patch.object(app.os, "execv", side_effect=RuntimeError("restarted")):
+            with self.assertRaisesRegex(RuntimeError, "restarted"):
+                app.sync_client_preprocessor_packages(server_environment)
+        self.assertEqual(install.call_args.args[0][-2:], ["Pillow==11.3.0", "numpy==2.1.3"])
+
+    def test_client_reports_server_startup_failure(self):
+        failed = urllib.error.HTTPError(
+            "http://server/metadata", 503, "loading", {},
+            app.io.BytesIO(b'{"status":"error","error":"TensorRT initialization failed"}'),
+        )
+        args = SimpleNamespace(host="server", port=5000)
+        with patch.object(app.urllib.request, "urlopen", side_effect=failed):
+            with self.assertRaisesRegex(app.ClientCompatibilityError, "TensorRT initialization failed"):
+                app.align_client_model(args)
+
     def test_client_batch_timeout_retries_singles_and_keeps_processing(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = [f"{directory}/{index}.jpg" for index in range(3)]
@@ -407,6 +445,55 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
                 thread.join()
+
+    def test_server_binds_before_loading_model(self):
+        loading = threading.Event()
+        release = threading.Event()
+        servers = []
+        real_server = app.ParallelTagServer
+        metadata = self._metadata()
+        runtime = SimpleNamespace(metadata=metadata, batch_limit=None)
+
+        def create_server(*args):
+            server = real_server(*args)
+            servers.append(server)
+            return server
+
+        def load_model(*args, **kwargs):
+            loading.set()
+            self.assertTrue(release.wait(3))
+            return runtime
+
+        args = SimpleNamespace(gpu=True, model_profile="test", model_repo=None,
+                               model_file=None, tags_file=None, webgpu=False, port=0)
+        with patch.object(app, "ParallelTagServer", side_effect=create_server), \
+             patch.object(app, "load_runtime_model", side_effect=load_model):
+            thread = threading.Thread(target=app.run_server, args=(args,), daemon=True)
+            thread.start()
+            try:
+                self.assertTrue(loading.wait(3))
+                url = f"http://127.0.0.1:{servers[0].server_port}/metadata"
+                with self.assertRaises(urllib.error.HTTPError) as raised:
+                    urllib.request.urlopen(url, timeout=3)
+                self.assertEqual(raised.exception.code, 503)
+                self.assertEqual(app.json.load(raised.exception)["status"], "loading")
+                release.set()
+                for _ in range(30):
+                    try:
+                        with urllib.request.urlopen(url, timeout=3) as response:
+                            self.assertEqual(app.json.load(response)["model_id"], metadata.repo_id)
+                        break
+                    except urllib.error.HTTPError as exc:
+                        self.assertEqual(exc.code, 503)
+                        time.sleep(0.05)
+                else:
+                    self.fail("Server did not become ready")
+            finally:
+                release.set()
+                if servers:
+                    servers[0].shutdown()
+                thread.join(3)
+            self.assertFalse(thread.is_alive())
 
     def test_postprocess_error_does_not_retry_batch_inference(self):
         with tempfile.TemporaryDirectory() as directory:
