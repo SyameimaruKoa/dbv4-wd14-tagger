@@ -317,6 +317,54 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             with self.assertRaisesRegex(app.ClientCompatibilityError, "TensorRT initialization failed"):
                 app.align_client_model(args)
 
+    def test_incompatible_preprocessing_falls_back_to_original_upload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = f"{directory}/one.jpg"
+            args = SimpleNamespace(
+                mode="client", gpu=False, model_profile="test", model_repo=None,
+                model_file=None, tags_file=None, no_tag=True, organize=False,
+                record_ratio=None, pixiv=False, recursive=False, images=[path],
+                batch_size=1, io_workers=0, force=True, rating_thresh=None,
+                ignore_sensitive=False, thresh=None, host="localhost", port=5000,
+                no_report=True, client_upload_mode="preprocessed",
+                client_tensor_supported=True, client_tensor_hash="server-hash",
+                client_tensor_environment=app.preprocessor_environment(),
+            )
+            prediction = np.array([0.9, 0.1, 0.05, 0.01, 0.8], dtype=np.float32)
+            with patch.object(app, "align_client_model", return_value=self._metadata()), \
+                 patch.object(app, "collect_images", return_value=[path]), \
+                 patch.object(app.DBV4Preprocessor, "from_metadata", return_value=MagicMock()), \
+                 patch.object(app, "preprocessor_probe_hash", return_value="client-hash"), \
+                 patch.object(app, "sync_client_preprocessor_packages",
+                              side_effect=app.ClientCompatibilityError("sync failed")), \
+                 patch.object(app, "client_predict", return_value=prediction) as original, \
+                 patch.object(app, "client_predict_tensor_batch") as tensor:
+                app.process_images(args)
+            original.assert_called_once()
+            tensor.assert_not_called()
+
+    def test_tensor_request_failure_switches_to_original_upload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = f"{directory}/one.jpg"
+            args = SimpleNamespace(
+                mode="client", gpu=False, model_profile="test", model_repo=None,
+                model_file=None, tags_file=None, no_tag=True, organize=False,
+                record_ratio=None, pixiv=False, recursive=False, images=[path],
+                batch_size=1, io_workers=0, force=True, rating_thresh=None,
+                ignore_sensitive=False, thresh=None, host="localhost", port=5000,
+                no_report=True, client_upload_mode="preprocessed",
+                client_tensor_supported=True, client_tensor_hash="same",
+            )
+            prediction = np.array([0.9, 0.1, 0.05, 0.01, 0.8], dtype=np.float32)
+            with patch.object(app, "align_client_model", return_value=self._metadata()), \
+                 patch.object(app, "collect_images", return_value=[path]), \
+                 patch.object(app.DBV4Preprocessor, "from_metadata", return_value=MagicMock()), \
+                 patch.object(app, "preprocessor_probe_hash", return_value="same"), \
+                 patch.object(app, "client_predict_tensor_batch", side_effect=ValueError("tensor rejected")), \
+                 patch.object(app, "client_predict", return_value=prediction) as original:
+                app.process_images(args)
+            original.assert_called_once()
+
     def test_client_batch_timeout_retries_singles_and_keeps_processing(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = [f"{directory}/{index}.jpg" for index in range(3)]

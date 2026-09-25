@@ -532,13 +532,16 @@ def sync_client_preprocessor_packages(server_environment: Any) -> None:
         raise ClientCompatibilityError("ライブラリの版は一致していますが前処理結果が異なります。画像コーデックを確認してください。")
     print(f"[INFO] Client仮想環境の前処理ライブラリをServerに合わせます: {', '.join(packages)}", flush=True)
     try:
-        subprocess.run([sys.executable, "-m", "pip", "install", *packages], check=True)
-    except (OSError, subprocess.CalledProcessError) as exc:
+        subprocess.run([sys.executable, "-m", "pip", "install", *packages], check=True, timeout=180)
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
         raise ClientCompatibilityError(f"前処理ライブラリの自動更新に失敗しました: {exc}") from exc
     os.environ["DBV4_PREPROCESS_SYNCED"] = "1"
     print("[INFO] 更新したライブラリを読み込むためClientを再起動します。", flush=True)
-    os.execv(sys.executable, [sys.executable, *sys.argv])
-    raise RuntimeError("Clientの再起動に失敗しました。")
+    try:
+        os.execv(sys.executable, [sys.executable, *sys.argv])
+    except OSError as exc:
+        raise ClientCompatibilityError(f"Clientの再起動に失敗しました: {exc}") from exc
+    raise ClientCompatibilityError("Clientの再起動に失敗しました。")
 
 
 def preprocessor_probe_hash(preprocessor: DBV4Preprocessor) -> str:
@@ -1716,9 +1719,17 @@ def process_images(args: argparse.Namespace) -> None:
         raise SystemExit(f"[ERROR] 不明なclient_upload_modeです: {upload_mode}")
     client_tensor_mode = is_client and upload_mode == "preprocessed"
     if client_tensor_mode and not getattr(args, "client_tensor_supported", False):
-        raise SystemExit("[ERROR] 接続先Serverは前処理済みテンソルに未対応です。Serverを更新・再起動するか、--client-upload-mode originalを選んでください。")
-    client_preprocessor = DBV4Preprocessor.from_metadata(metadata) if client_tensor_mode else None
-    if client_tensor_mode and preprocessor_probe_hash(client_preprocessor) != getattr(args, "client_tensor_hash", None):
+        print("[WARN] 接続先Serverは前処理済みテンソルに未対応です。元画像送信で続行します。")
+        client_tensor_mode = False
+    client_preprocessor = None
+    if client_tensor_mode:
+        try:
+            client_preprocessor = DBV4Preprocessor.from_metadata(metadata)
+            probe_hash = preprocessor_probe_hash(client_preprocessor)
+        except (OSError, ValueError) as exc:
+            print(f"[WARN] Client前処理を準備できません: {exc}。元画像送信で続行します。")
+            client_tensor_mode = False
+    if client_tensor_mode and probe_hash != getattr(args, "client_tensor_hash", None):
         server_environment = getattr(args, "client_tensor_environment", None)
         client_environment = preprocessor_environment()
         try:
@@ -1731,11 +1742,13 @@ def process_images(args: argparse.Namespace) -> None:
                 for key in client_environment if client_environment[key] != server_environment.get(key)
             ) if isinstance(server_environment, dict) else "Serverのライブラリ版情報がありません"
         )
-        raise SystemExit(
-            "[ERROR] ClientとServerの前処理結果が一致しません。"
+        print(
+            "[WARN] ClientとServerの前処理結果が一致しません。"
             f"ライブラリ差分: {differences}。"
-            f"自動版合わせ: {sync_error}"
+            f"自動版合わせ: {sync_error}。元画像送信で続行します。"
         )
+        client_tensor_mode = False
+        client_preprocessor = None
     if client_tensor_mode:
         print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")
     elif is_client:
@@ -1828,6 +1841,7 @@ def process_images(args: argparse.Namespace) -> None:
         else None
     )
     client_pipeline = ClientBatchPipeline() if is_client and batch_size > 1 else None
+    tensor_transfer_failed = threading.Event()
     pending: List[Dict[str, Any]] = []
     report_data: List[Dict[str, Any]] = []
     fatal_client_error: Optional[ClientCompatibilityError] = None
@@ -1908,25 +1922,33 @@ def process_images(args: argparse.Namespace) -> None:
         paths = [item["path"] for item in items]
         timeout = int(APP_CONFIG.get("client_timeout", 15))
         batch_timeout = max(timeout * len(items), int(APP_CONFIG.get("client_batch_timeout", 120)))
-        if client_tensor_mode:
-            predictions = client_predict_tensor_batch(
-                f"http://{args.host}:{args.port}", paths, metadata, client_preprocessor, batch_timeout
-            )
-        else:
-            predictions = client_predict_batch(
-                f"http://{args.host}:{args.port}", paths, metadata, batch_timeout
-            )
+        server_url = f"http://{args.host}:{args.port}"
+        if client_tensor_mode and not tensor_transfer_failed.is_set():
+            try:
+                predictions = client_predict_tensor_batch(
+                    server_url, paths, metadata, client_preprocessor, batch_timeout
+                )
+                return predictions, time.time() - started
+            except Exception as exc:
+                tensor_transfer_failed.set()
+                safe_write(f"[WARN] 前処理済み転送に失敗しました: {exc}。元画像送信で続行します。")
+        predictions = client_predict_batch(server_url, paths, metadata, batch_timeout)
         return predictions, time.time() - started
 
     def request_client_single(path: str, timeout: int) -> np.ndarray:
         server_url = f"http://{args.host}:{args.port}"
-        if client_tensor_mode:
-            prediction = client_predict_tensor_batch(
-                server_url, [path], metadata, client_preprocessor, timeout
-            )
-            if isinstance(prediction, PartialBatchPredictions):
-                raise ValueError(prediction.errors[0])
-            return prediction[0]
+        if client_tensor_mode and not tensor_transfer_failed.is_set():
+            try:
+                prediction = client_predict_tensor_batch(
+                    server_url, [path], metadata, client_preprocessor, timeout
+                )
+            except Exception as exc:
+                tensor_transfer_failed.set()
+                safe_write(f"[WARN] 前処理済み転送に失敗しました: {exc}。元画像送信で続行します。")
+            else:
+                if isinstance(prediction, PartialBatchPredictions):
+                    raise ValueError(prediction.errors[0])
+                return prediction[0]
         return client_predict(server_url, path, metadata, timeout)
 
     def run_batch(items: Sequence[Dict[str, Any]], future: Optional[Future] = None) -> None:
@@ -2297,7 +2319,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-y", "--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
     parser.add_argument("-j", "--host", default=None, help="Client接続先ホスト")
     parser.add_argument("--client-upload-mode", choices=["original", "preprocessed"],
-                        help="Client転送方式（config.jsonより優先）")
+                        help="Client転送方式（config.jsonより優先。preprocessed失敗時はoriginalで続行）")
     parser.add_argument("-u", "--port", type=int, default=None, help="Server/Clientポート")
     parser.add_argument(
         "-v",

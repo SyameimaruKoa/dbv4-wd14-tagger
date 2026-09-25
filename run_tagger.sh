@@ -88,11 +88,17 @@ show_help() {
     echo "    -C, --no-record-ratio RAW・割合スコアタグを記録しない"
     echo "    -S, --server        サーバーモード"
     echo "    -K, --client        クライアントモード"
+    echo "    --client-upload-mode MODE  preprocessed=縮小・可逆圧縮 / original=元画像送信"
+    echo "                        前処理済み転送が使えない場合は元画像送信で続行"
     echo "    -L, --login         Hugging Faceログインモード（認証後に終了）"
     echo "    -H, --host <ip>     サーバーのIPアドレス"
     echo "    -P, --port <port>   ポート番号"
     echo "    -d, --debug         GPU/OpenVINOの詳細デバッグログを有効化"
     echo "    -h, --help          ヘルプ表示"
+    echo ""
+    echo "Client転送モードの例:"
+    echo "    ./run_tagger.sh -K -H google-colab -p /path/to/images --client-upload-mode preprocessed"
+    echo "    ./run_tagger.sh -K -H google-colab -p /path/to/images --client-upload-mode original"
     echo ""
 }
 
@@ -324,6 +330,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -S|--server) PY_ARGS+=("--mode" "server"); shift ;;
         -K|--client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
+        --client-upload-mode) PY_ARGS+=("--client-upload-mode" "$2"); shift 2 ;;
         -L|--login) LOGIN_MODE=1; shift ;;
         -o|--organize) DO_ORGANIZE=1; shift ;;
         -t|--tag) DO_TAG=1; shift ;; 
