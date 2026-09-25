@@ -2302,13 +2302,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
     switches.add_argument("-g", "--gpu", action="store_true", help="GPUを使用する")
     switches.add_argument("-wg", "--webgpu", action="store_true", help="WebGPUを使用する")
-    values.add_argument("-ep", "--provider", choices=["cpu", "cuda", "tensorrt", "intel", "directml", "webgpu", "migraphx"], help="実行EPを明示（利用不可時は停止）")
+    values.add_argument("-ep", "--provider", choices=["cpu", "cuda", "tensorrt", "intel", "directml", "webgpu", "migraphx"], metavar="EP名", help="cpu/cuda/tensorrt/intel/directml/webgpu/migraphx（利用不可時は停止）")
     values.add_argument("-gi", "--gpu-index", type=int, default=0, help="★GPU番号 0")
     values.add_argument("-di", "--directml-device-index", type=int, default=0, help="★DirectML番号 0")
     values.add_argument("-wi", "--webgpu-device-index", type=int)
-    values.add_argument("-tv", "--target-vendor", choices=["nvidia", "intel", "amd"])
-    values.add_argument("-od", "--openvino-device", help="Intel実機名を検証するGPU.N")
-    values.add_argument("-td", "--tensorrt-lib-dir", help="TensorRT 10ライブラリディレクトリ")
+    values.add_argument("-tv", "--target-vendor", choices=["nvidia", "intel", "amd"], metavar="ベンダー名", help="nvidia/intel/amd")
+    values.add_argument("-od", "--openvino-device", metavar="GPU.N", help="OpenVINOデバイス（例: GPU.0）")
+    values.add_argument("-td", "--tensorrt-lib-dir", metavar="ディレクトリ", help="TensorRT 10ライブラリの場所")
     values.add_argument("-b", "--batch-size", type=int, default=4, help="★推論バッチサイズ 4（モデル上限で調整）")
     values.add_argument("-w", "--io-workers", type=int, default=-1, help="★画像読込みの並列数 -1=自動（Clientは0）")
     switches.add_argument("-f", "--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
@@ -2319,12 +2319,12 @@ def create_parser() -> argparse.ArgumentParser:
         "--model-profile",
         default=None,
         metavar="NAME",
-        help="DBV4モデルプロファイル（configのカスタム定義も指定可）",
+        help="★balanced。compact_manual/lightweight/medium_manual/balanced/high/ultra（configのカスタム定義も可）",
     )
-    values.add_argument("-e", "--model-repo", default=None, help="DBV4モデル/metadataのHugging FaceリポジトリID")
-    values.add_argument("-l", "--model-file", default=None, help="ONNXモデルファイル名またはパス")
-    values.add_argument("-y", "--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
-    values.add_argument("-j", "--host", default=None, help="Client接続先ホスト")
+    values.add_argument("-e", "--model-repo", default=None, metavar="所有者/リポジトリ", help="HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）")
+    values.add_argument("-l", "--model-file", default=None, metavar="ファイル", help="ONNXモデルファイル名またはパス（例: model.onnx）")
+    values.add_argument("-y", "--tags-file", default=None, metavar="ファイル", help="タグCSV名またはパス（例: selected_tags.csv）")
+    values.add_argument("-j", "--host", default=None, metavar="ホスト名/IP", help="Client接続先（例: google-colab）")
     values.add_argument("-U", "-um", "--client-upload-mode",
                         choices=["p", "o", "original", "preprocessed"],
                         help="★初期設定p=前処理・可逆圧縮、o=元画像送信（config.jsonより優先）")
@@ -2337,8 +2337,8 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="旧CLI互換（DBV4ではR-15/R-17の5段階固定）",
     )
-    switches.add_argument("-a", "--record-ratio", action="store_true", default=None, help="rating scoreをXMPへ保存")
-    switches.add_argument("-k", "--no-record-ratio", action="store_false", dest="record_ratio", help="rating scoreのXMP保存を無効化")
+    switches.add_argument("-a", "--record-ratio", action="store_true", default=None, help="★rating RAWスコアをXMPへ保存（既定ON、config.jsonで変更可）")
+    switches.add_argument("-k", "--no-record-ratio", action="store_false", dest="record_ratio", help="rating RAWスコアのXMP保存をOFF")
     values.add_argument("-d", "--rating-thresh", type=float, default=None, help="非General rating判定閾値（旧CLI互換）")
     switches.add_argument("-i", "--ignore-sensitive", action="store_true", help="Sensitive判定をGeneralとして扱う")
     switches.add_argument("-G", "--gen-config", action="store_true", help="config.jsonを生成・更新")
