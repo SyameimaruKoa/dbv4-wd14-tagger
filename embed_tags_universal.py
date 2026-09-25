@@ -549,19 +549,21 @@ def sync_client_preprocessor_packages(server_environment: Any) -> None:
 
 
 def preprocessor_probe_hash(preprocessor: DBV4Preprocessor, include_codecs: bool = True) -> str:
-    y, x = np.indices((53, 67), dtype=np.uint16)
-    pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
-                       (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
-    image = Image.fromarray(pixels)
-    tensor = preprocessor(image.convert("RGB")).astype("<f4")
-    environment = preprocessor_environment()
-    versions = f"Pillow:{environment['Pillow']}|NumPy:{environment['NumPy']}".encode("ascii")
+    digest = hashlib.sha256(b"dbv4-preprocess-probe-v2")
+    for height, width in ((53, 67), (71, 43), (448, 448)):
+        y, x = np.indices((height, width), dtype=np.uint16)
+        pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
+                           (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
+        tensor = preprocessor(Image.fromarray(pixels, "RGB")).astype("<f4")
+        digest.update(np.asarray(tensor.shape, dtype="<i4").tobytes())
+        digest.update(tensor.tobytes(order="C"))
     if include_codecs:
-        versions += (
+        environment = preprocessor_environment()
+        digest.update(
             f"|Codecs:{environment['jpg']},{environment['webp']},"
-            f"{environment['libtiff']},{environment['zlib']}|AVIF:{environment['AVIF']}"
-        ).encode("ascii")
-    return hashlib.sha256(versions + tensor.tobytes(order="C")).hexdigest()[:16]
+            f"{environment['libtiff']},{environment['zlib']}|AVIF:{environment['AVIF']}".encode("ascii")
+        )
+    return digest.hexdigest()[:16]
 
 
 def compatible_preprocess_format(path: str, client: Any, server: Any) -> bool:

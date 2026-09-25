@@ -45,6 +45,16 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertTrue(compatible_preprocess_format("c.png", client, server))
         self.assertTrue(compatible_preprocess_format("d.bmp", client, server))
 
+    def test_core_probe_uses_results_instead_of_package_versions(self):
+        preprocessor = DBV4Preprocessor({"test": [{"type": "Resize", "size": [8, 8]}]})
+        first = {"Pillow": "10.0", "NumPy": "1.26", "jpg": "9.0",
+                 "webp": "1.0", "libtiff": "4.0", "zlib": "1.2", "AVIF": "none"}
+        second = {**first, "Pillow": "11.0", "NumPy": "2.0"}
+        with patch("embed_tags_universal.preprocessor_environment", return_value=first):
+            expected = preprocessor_probe_hash(preprocessor, include_codecs=False)
+        with patch("embed_tags_universal.preprocessor_environment", return_value=second):
+            self.assertEqual(preprocessor_probe_hash(preprocessor, include_codecs=False), expected)
+
     def test_legacy_pixel_limit_is_migrated(self):
         config = {"server_max_image_pixels": 20000000, "model_profiles": {}}
         self.assertTrue(migrate_legacy_config(config))
