@@ -112,7 +112,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "server_max_batch_images": 8,
     "server_max_image_pixels": 20000000,
     "client_max_request_mib": 128,
-    "client_upload_mode": "original",
+    "client_upload_mode": "preprocessed",
     "client_timeout": 15,
     "client_batch_timeout": 120,
     "openvino_gpu_device": "GPU.0",
@@ -1604,7 +1604,7 @@ def process_images(args: argparse.Namespace) -> None:
         metadata = runtime.metadata
 
     assert metadata is not None
-    upload_mode = str(APP_CONFIG.get("client_upload_mode", "original"))
+    upload_mode = str(getattr(args, "client_upload_mode", None) or APP_CONFIG.get("client_upload_mode", "preprocessed"))
     if is_client and upload_mode == "optimized":
         print("[WARN] 旧optimized転送は結果が変わり得るため廃止しました。元画像送信に切り替えます。")
         upload_mode = "original"
@@ -1621,6 +1621,8 @@ def process_images(args: argparse.Namespace) -> None:
         client_preprocessor = None
     if client_tensor_mode:
         print("[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。")
+    elif is_client:
+        print("[INFO] Client転送モード: 元画像をそのまま送信します。")
     need_exiftool = (not args.no_tag) or args.organize
     if need_exiftool:
         et_wrapper.start()
@@ -2177,6 +2179,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-l", "--model-file", default=None, help="ONNXモデルファイル名またはパス")
     parser.add_argument("-y", "--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
     parser.add_argument("-j", "--host", default=None, help="Client接続先ホスト")
+    parser.add_argument("--client-upload-mode", choices=["original", "preprocessed"],
+                        help="Client転送方式（config.jsonより優先）")
     parser.add_argument("-u", "--port", type=int, default=None, help="Server/Clientポート")
     parser.add_argument(
         "-v",

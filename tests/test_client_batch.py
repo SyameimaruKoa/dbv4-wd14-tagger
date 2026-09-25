@@ -20,6 +20,7 @@ from dbv4 import DBV4Preprocessor
 from embed_tags_universal import (
     ClientBatchPipeline,
     ClientCompatibilityError,
+    DEFAULT_CONFIG,
     ParallelTagServer,
     PartialBatchPredictions,
     RuntimeModel,
@@ -27,6 +28,7 @@ from embed_tags_universal import (
     align_client_model,
     client_predict_batch,
     client_predict_tensor_batch,
+    create_parser,
     migrate_legacy_config,
     preprocessor_probe_hash,
     server_http_error,
@@ -34,6 +36,11 @@ from embed_tags_universal import (
 
 
 class BatchProtocolTests(unittest.TestCase):
+    def test_transfer_mode_defaults_to_preprocessed_and_has_override(self):
+        self.assertEqual(DEFAULT_CONFIG["client_upload_mode"], "preprocessed")
+        args = create_parser().parse_args(["--client-upload-mode", "original"])
+        self.assertEqual(args.client_upload_mode, "original")
+
     def test_server_http_error_includes_response_detail(self):
         error = urllib.error.HTTPError(
             "http://server/batch", 500, "Internal Server Error", {},

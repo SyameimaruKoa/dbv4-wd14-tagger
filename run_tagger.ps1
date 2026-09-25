@@ -151,6 +151,8 @@
 param (
     [Alias('p')]
     [string]$Path,
+    [ValidateSet('original', 'preprocessed')]
+    [string]$ClientUploadMode,
     [Alias('o')]
     [switch]$Organize,
     [Alias('t')]
@@ -601,6 +603,7 @@ if ($RecordRatio) { $PyArgs += "--record-ratio" }
 if ($NoRecordRatio) { $PyArgs += "--no-record-ratio" }
 
 if ($HostIP) { $PyArgs += ("--host", $HostIP) }
+if ($ClientUploadMode) { $PyArgs += @('--client-upload-mode', $ClientUploadMode) }
 if ($Port) { $PyArgs += ("--port", $Port) }
 
 # Old Params
