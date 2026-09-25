@@ -1160,17 +1160,30 @@ class TagServerHandler(BaseHTTPRequestHandler):
                 limit = self._batch_limit()
                 if len(encoded_images) > limit:
                     raise ValueError(f"バッチ上限は{limit}枚です。")
-                images = [
-                    self._decode_image(base64.b64decode(encoded, validate=True))
-                    for encoded in encoded_images
-                ]
-                predictions = self.runtime.predict_images(images)
+                images = []
+                valid_indices = []
+                errors = [None] * len(encoded_images)
+                for index, encoded in enumerate(encoded_images):
+                    try:
+                        image = self._decode_image(base64.b64decode(encoded, validate=True))
+                    except (OSError, ValueError) as exc:
+                        errors[index] = str(exc)
+                        print(f"[WARN] {client_ip} | Batch image {index + 1}: {exc}", flush=True)
+                        continue
+                    images.append(image)
+                    valid_indices.append(index)
+                predictions = self.runtime.predict_images(images) if images else []
                 if len(predictions) != len(images):
                     raise ValueError("推論結果の枚数が一致しません。")
+                positional_predictions = [None] * len(encoded_images)
+                for index, prediction in zip(valid_indices, predictions):
+                    positional_predictions[index] = prediction.astype(float).tolist()
                 payload = {
                     **self.runtime.metadata.summary(),
-                    "probabilities": [prediction.astype(float).tolist() for prediction in predictions],
+                    "probabilities": positional_predictions,
                 }
+                if any(errors):
+                    payload["errors"] = errors
                 body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
                 self._send_json_response(200, body)
                 return
@@ -1378,12 +1391,18 @@ def client_upload_image(image_path: str) -> bytes:
         return image_file.read()
 
 
+class PartialBatchPredictions:
+    def __init__(self, predictions: List[Optional[np.ndarray]], errors: List[Optional[str]]):
+        self.predictions = predictions
+        self.errors = errors
+
+
 def client_predict_batch(
     server_url: str,
     image_paths: Sequence[str],
     metadata: DBV4Metadata,
     timeout: int,
-) -> np.ndarray:
+) -> Any:
     max_request = max(1, int(APP_CONFIG.get("client_max_request_mib", 128))) * 1024 * 1024
     images = []
     encoded_size = 16
@@ -1414,7 +1433,24 @@ def client_predict_batch(
         raise ClientCompatibilityError("サーバーとクライアントのmetadata versionが不一致です。")
     if payload.get("output_size") != metadata.label_count:
         raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
-    probabilities = np.asarray(payload.get("probabilities", []), dtype=np.float32)
+    rows = payload.get("probabilities", [])
+    if isinstance(rows, list) and len(rows) == len(image_paths) and any(row is None for row in rows):
+        errors = payload.get("errors")
+        if not isinstance(errors, list) or len(errors) != len(rows):
+            raise ClientCompatibilityError("バッチ画像エラーの形式が不正です。")
+        predictions = []
+        for row, error in zip(rows, errors):
+            if row is None:
+                if not isinstance(error, str):
+                    raise ClientCompatibilityError("バッチ画像エラーの形式が不正です。")
+                predictions.append(None)
+            else:
+                prediction = np.asarray(row, dtype=np.float32)
+                if prediction.shape != (metadata.label_count,) or error is not None:
+                    raise ClientCompatibilityError("バッチ推論結果のラベル数が一致しません。")
+                predictions.append(prediction)
+        return PartialBatchPredictions(predictions, errors)
+    probabilities = np.asarray(rows, dtype=np.float32)
     if probabilities.shape != (len(image_paths), metadata.label_count):
         raise ClientCompatibilityError("バッチ推論結果の枚数またはラベル数が一致しません。")
     return probabilities
@@ -1426,11 +1462,19 @@ def client_predict_tensor_batch(
     metadata: DBV4Metadata,
     preprocessor: DBV4Preprocessor,
     timeout: int,
-) -> np.ndarray:
+) -> Any:
     prepared = []
-    for path in image_paths:
-        with Image.open(path) as image:
-            prepared.append(preprocessor(image.convert("RGB")))
+    valid_indices = []
+    errors = [None] * len(image_paths)
+    for index, path in enumerate(image_paths):
+        try:
+            with Image.open(path) as image:
+                prepared.append(preprocessor(image.convert("RGB")))
+            valid_indices.append(index)
+        except (OSError, ValueError) as exc:
+            errors[index] = str(exc)
+    if not prepared:
+        return PartialBatchPredictions([None] * len(image_paths), errors)
     batch = np.stack(prepared, axis=0).astype("<f4")
     raw = batch.tobytes(order="C")
     compressed = zlib.compress(raw, level=1)
@@ -1447,7 +1491,7 @@ def client_predict_tensor_batch(
             "X-Metadata-Version": metadata.metadata_version,
             "X-Tensor-Shape": json.dumps(list(batch.shape)),
             "X-Tensor-Encoding": "zlib" if body is compressed else "raw",
-            "X-Original-Bytes": str(sum(os.path.getsize(path) for path in image_paths)),
+            "X-Original-Bytes": str(sum(os.path.getsize(image_paths[index]) for index in valid_indices)),
         }, method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -1464,8 +1508,13 @@ def client_predict_tensor_batch(
     if payload.get("output_size") != metadata.label_count:
         raise ClientCompatibilityError("サーバーとクライアントのoutput sizeが不一致です。")
     probabilities = np.asarray(payload.get("probabilities", []), dtype=np.float32)
-    if probabilities.shape != (len(image_paths), metadata.label_count):
+    if probabilities.shape != (len(valid_indices), metadata.label_count):
         raise ClientCompatibilityError("バッチ推論結果の枚数またはラベル数が一致しません。")
+    if len(valid_indices) != len(image_paths):
+        positional_predictions = [None] * len(image_paths)
+        for index, prediction in zip(valid_indices, probabilities):
+            positional_predictions[index] = prediction
+        return PartialBatchPredictions(positional_predictions, errors)
     return probabilities
 
 
@@ -1724,7 +1773,7 @@ def process_images(args: argparse.Namespace) -> None:
         except Exception as exc:
             return None, exc
 
-    def request_client_batch(items: Sequence[Dict[str, Any]]) -> Tuple[np.ndarray, float]:
+    def request_client_batch(items: Sequence[Dict[str, Any]]) -> Tuple[Any, float]:
         started = time.time()
         paths = [item["path"] for item in items]
         timeout = int(APP_CONFIG.get("client_timeout", 15))
@@ -1742,9 +1791,12 @@ def process_images(args: argparse.Namespace) -> None:
     def request_client_single(path: str, timeout: int) -> np.ndarray:
         server_url = f"http://{args.host}:{args.port}"
         if client_tensor_mode:
-            return client_predict_tensor_batch(
+            prediction = client_predict_tensor_batch(
                 server_url, [path], metadata, client_preprocessor, timeout
-            )[0]
+            )
+            if isinstance(prediction, PartialBatchPredictions):
+                raise ValueError(prediction.errors[0])
+            return prediction[0]
         return client_predict(server_url, path, metadata, timeout)
 
     def run_batch(items: Sequence[Dict[str, Any]], future: Optional[Future] = None) -> None:
@@ -1809,11 +1861,24 @@ def process_images(args: argparse.Namespace) -> None:
                         progress.update(1)
                 return
             elapsed = request_elapsed
-            inferred += len(items)
-            inferred_time += elapsed
-            batch_history.append({"count": len(items), "time": elapsed})
+            if isinstance(predictions, PartialBatchPredictions):
+                valid_count = sum(prediction is not None for prediction in predictions.predictions)
+                prediction_rows = predictions.predictions
+                prediction_errors = predictions.errors
+            else:
+                valid_count = len(items)
+                prediction_rows = predictions
+                prediction_errors = [None] * len(items)
+            inferred += valid_count
+            if valid_count:
+                inferred_time += elapsed
+                batch_history.append({"count": valid_count, "time": elapsed})
             update_progress_postfix()
-            for item, prediction in zip(items, predictions):
+            for item, prediction, error in zip(items, prediction_rows, prediction_errors):
+                if prediction is None:
+                    safe_write(f"エラー {os.path.basename(item['path'])}: {error}")
+                    progress.update(1)
+                    continue
                 try:
                     decode_and_finalize(item, prediction)
                 except Exception as exc:

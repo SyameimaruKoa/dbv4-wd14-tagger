@@ -21,6 +21,7 @@ from embed_tags_universal import (
     ClientBatchPipeline,
     ClientCompatibilityError,
     ParallelTagServer,
+    PartialBatchPredictions,
     RuntimeModel,
     TagServerHandler,
     align_client_model,
@@ -284,6 +285,83 @@ class BatchProtocolTests(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
                 thread.join()
+
+    def test_corrupt_image_does_not_fail_batch(self):
+        class Runtime:
+            batch_limit = 4
+            metadata = SimpleNamespace(summary=lambda: {
+                "protocol": 1, "model_id": "test/model", "metadata_version": "v1", "output_size": 2,
+            })
+
+            def __init__(self):
+                self.calls = []
+
+            def predict_images(self, images):
+                self.calls.append(len(images))
+                return [np.asarray([0.25, 0.75], dtype=np.float32) for _ in images]
+
+        runtime = Runtime()
+        with tempfile.TemporaryDirectory() as directory, patch.object(TagServerHandler, "runtime", runtime):
+            good = Path(directory) / "good.png"
+            bad = Path(directory) / "bad.png"
+            Image.new("RGB", (2, 2)).save(good)
+            bad.write_bytes(b"\0" * 128)
+            server = ParallelTagServer(("127.0.0.1", 0), TagServerHandler, 2)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                metadata = SimpleNamespace(repo_id="test/model", metadata_version="v1", label_count=2)
+                url = f"http://127.0.0.1:{server.server_port}"
+                result = client_predict_batch(url, [str(good), str(bad)], metadata, 5)
+                self.assertIsInstance(result, PartialBatchPredictions)
+                np.testing.assert_array_equal(result.predictions[0], [0.25, 0.75])
+                self.assertIsNone(result.predictions[1])
+                self.assertTrue(result.errors[1])
+                all_bad = client_predict_batch(url, [str(bad)], metadata, 5)
+                self.assertIsNone(all_bad.predictions[0])
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
+        self.assertEqual(runtime.calls, [1])
+
+    def test_tensor_batch_skips_corrupt_image_before_upload(self):
+        metadata = SimpleNamespace(repo_id="test/model", metadata_version="v1", label_count=2)
+        preprocessor = DBV4Preprocessor({"test": [{"type": "Resize", "size": [8, 8]}]})
+        payload = {"protocol": 1, "model_id": "test/model", "metadata_version": "v1",
+                   "output_size": 2, "probabilities": [[0.25, 0.75]]}
+
+        class Response:
+            headers = {}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def read(self):
+                return json.dumps(payload).encode("utf-8")
+
+        with tempfile.TemporaryDirectory() as directory:
+            good = Path(directory) / "good.png"
+            bad = Path(directory) / "bad.png"
+            Image.new("RGB", (2, 2)).save(good)
+            bad.write_bytes(b"\0" * 128)
+            with patch("urllib.request.urlopen", return_value=Response()) as urlopen:
+                result = client_predict_tensor_batch(
+                    "http://server:5000", [str(bad), str(good)], metadata, preprocessor, 5
+                )
+                self.assertIsInstance(result, PartialBatchPredictions)
+                self.assertIsNone(result.predictions[0])
+                np.testing.assert_array_equal(result.predictions[1], [0.25, 0.75])
+                self.assertEqual(json.loads(urlopen.call_args.args[0].headers["X-tensor-shape"])[0], 1)
+                urlopen.reset_mock()
+                all_bad = client_predict_tensor_batch(
+                    "http://server:5000", [str(bad)], metadata, preprocessor, 5
+                )
+                self.assertIsNone(all_bad.predictions[0])
+                urlopen.assert_not_called()
 
     def test_server_batch_preserves_image_order(self):
         image_bytes = []
