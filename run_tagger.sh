@@ -51,54 +51,44 @@ configure_storage_paths() {
 show_help() {
     echo "DBV4 Tagger Universal (日本語ヘルプ)"
     echo ""
-    echo "使い方: ./run_tagger.sh [オプション] [パス]"
+    echo "使い方: ./run_tagger.sh [スイッチ] [値付きオプション] <画像パス>"
     echo ""
     echo "  引数なしで実行すると「環境構築モード」となり、セットアップのみを行います。"
     echo ""
-    echo "主なオプション:"
-    echo "    -p, --path <path>   処理対象ファイル/フォルダ"
-    echo "    -g, --gpu           GPUを使用する（自動判別）"
-    echo "    --webgpu            Vulkan経由のWebGPUを使用する"
-    echo "    --provider NAME     cpu/cuda/tensorrt/intel/webgpu/migraphxを明示"
-    echo "    --gpu-index N       CUDA/TensorRT/MIGraphXのデバイス番号"
-    echo "    --webgpu-device-index N  WebGPUのデバイス番号"
-    echo "    --target-vendor NAME     nvidia/intel/amdを検証"
-    echo "    --openvino-device GPU.N  Intel GPUの指定"
-    echo "    --tensorrt-lib-dir DIR   TensorRT 10のライブラリ場所"
-    echo "    -I, --force-intel   Intel GPUを強制的に使用する"
-    echo "    -N, --force-nvidia  NVIDIA GPUを強制的に使用する"
-    echo "    -A, --force-amd     AMD GPUを強制的に使用する"
-    echo "    -o, --organize      フォルダ整理のみ行う（タグ付けOFF）"
-    echo "    -t, --tag           タグ付けも行う（--organize併用時）"
-    echo "    -x, --pixiv         Pixiv整理モード（末端フォルダ単位で判定し、対象フォルダの全画像を一括移動）"
-    echo "    -R, --no-report     レポート作成なし"
-    echo "    -r, --recursive     再帰検索ON"
-    echo "    -n, --no-recursive  再帰検索OFF"
-    echo "    -b, --batch-size <n> 推論バッチサイズ（デフォルト: 4 / 非対応時は 1）"
-    echo "    -w, --io-workers <n> 前処理の並列ワーカー数（デフォルト: 自動）"
-    echo "    -m, --model-profile <name> モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
-    echo "    -e, --model-repo <repo> DBV4モデル/タグのHFリポジトリIDを明示指定"
-    echo "    -M, --model-file <file> モデルファイル名またはパス"
-    echo "    -T, --tags-file <file> タグCSVファイル名またはパス"
-    echo "    -q, --thresh <0.0-1.0> DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
-    echo "    -f, --force         既存タグがあっても強制的に再解析・上書きする"
-    echo "    -s, --sensitive-split-mode <2|4|6>"
-    echo "                        旧CLI互換（DBV4ではR-15/R-17の5段階固定・非推奨）"
-    echo "    -c, --record-ratio  全レーティングのRAW・割合スコアタグを記録する"
-    echo "    -C, --no-record-ratio RAW・割合スコアタグを記録しない"
-    echo "    -S, --server        サーバーモード"
-    echo "    -K, --client        クライアントモード"
-    echo "    --client-upload-mode MODE  preprocessed=縮小・可逆圧縮 / original=元画像送信"
-    echo "                        前処理済み転送が使えない場合は元画像送信で続行"
-    echo "    -L, --login         Hugging Faceログインモード（認証後に終了）"
-    echo "    -H, --host <ip>     サーバーのIPアドレス"
-    echo "    -P, --port <port>   ポート番号"
-    echo "    -d, --debug         GPU/OpenVINOの詳細デバッグログを有効化"
-    echo "    -h, --help          ヘルプ表示"
+    echo "処理時に必要な入力:"
+    echo "    <画像パス> または -p, --path <画像パス>  処理対象ファイル/フォルダ"
+    echo "    Client接続先は -H で指定。省略時は設定済み候補から選択"
+    echo ""
+    echo "値を指定するオプション（<>内の値が必要）:"
+    echo "  ★ -U, -um <p|o>       p=前処理・可逆圧縮 / o=元画像送信（初期設定 p）"
+    echo "  ★ -b <枚数>           バッチサイズ（既定 4、モデル上限で調整）"
+    echo "  ★ -w <数>             読込ワーカー数（既定 -1=自動、Clientは0）"
+    echo "    -H <host> / -P <port>       Client接続先 / ポート（既定 5000）"
+    echo "    -m <name> / -e <repo>       モデルプロファイル / HFリポジトリ"
+    echo "    -M <file> / -T <file>       モデルファイル / タグCSV"
+    echo "    -q <値> / -s <2|4|6>        閾値 / 旧センシティブ分割"
+    echo "    -ep <name> / -gi <n>        GPUプロバイダ / GPU番号"
+    echo "    -di <n> / -wi <n>           DirectML / WebGPU番号"
+    echo "    -tv <name> / -od <GPU.N>    対象ベンダー / OpenVINOデバイス"
+    echo "    -td <dir>                  TensorRTライブラリ場所"
+    echo ""
+    echo "値を指定しないスイッチ:"
+    echo "    -S / -K / -L        Server / Client / Hugging Faceログイン"
+    echo "    -g / -wg            GPU自動判別 / WebGPU"
+    echo "    -I / -N / -A        Intel / NVIDIA / AMDを強制"
+    echo "    -o / -t / -x        整理 / タグ付け併用 / Pixiv整理"
+    echo "    -r / -n            再帰検索ON / OFF"
+    echo "    -R / -f            レポートなし / 強制再解析"
+    echo "    -c / -C            RAWスコア記録ON / OFF"
+    echo "    -d / -h            デバッグ / ヘルプ"
+    echo ""
+    echo "★ は初期設定。-U未指定時は既存config.jsonの設定を使用。"
+    echo "  ★ 通常解析ではタグ付けとレポート作成が有効（-oでタグ付けOFF、-RでレポートOFF）。"
+    echo "  前処理済み転送に失敗した場合は元画像送信で続行。"
     echo ""
     echo "Client転送モードの例:"
-    echo "    ./run_tagger.sh -K -H google-colab -p /path/to/images --client-upload-mode preprocessed"
-    echo "    ./run_tagger.sh -K -H google-colab -p /path/to/images --client-upload-mode original"
+    echo "    ./run_tagger.sh -K -H google-colab -p /path/to/images -U p"
+    echo "    ./run_tagger.sh -K -H google-colab -p /path/to/images -U o"
     echo ""
 }
 
@@ -322,15 +312,15 @@ fi
 # 引数解析
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --provider|--gpu-index|--directml-device-index|--webgpu-device-index|--target-vendor|--openvino-device|--tensorrt-lib-dir)
-            if [ "$#" -lt 2 ] || [[ "$2" == --* ]]; then
+        -U|-um|--client-upload-mode|-ep|--provider|-gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|-td|--tensorrt-lib-dir)
+            if [ "$#" -lt 2 ] || [[ "$2" == -* ]]; then
                 echo "[ERROR] $1には値が必要です。"; exit 1
             fi ;;
     esac
     case $1 in
         -S|--server) PY_ARGS+=("--mode" "server"); shift ;;
         -K|--client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
-        --client-upload-mode) PY_ARGS+=("--client-upload-mode" "$2"); shift 2 ;;
+        -U|-um|--client-upload-mode) PY_ARGS+=("--client-upload-mode" "$2"); shift 2 ;;
         -L|--login) LOGIN_MODE=1; shift ;;
         -o|--organize) DO_ORGANIZE=1; shift ;;
         -t|--tag) DO_TAG=1; shift ;; 
@@ -346,7 +336,7 @@ while [[ $# -gt 0 ]]; do
         -T|--tags-file) PY_ARGS+=("--tags-file" "$2"); shift 2 ;;
         -q|--thresh) PY_ARGS+=("--thresh" "$2"); shift 2 ;;
         -g|--gpu) USE_GPU=1; shift ;;
-        --provider)
+        -ep|--provider)
             PROVIDER="$2"; PY_ARGS+=("--provider" "$2"); USE_GPU=1
             case "$2" in
                 cpu) USE_GPU=0 ;;
@@ -357,10 +347,10 @@ while [[ $# -gt 0 ]]; do
                 *) echo "[ERROR] Linux provider: cpu/cuda/tensorrt/intel/webgpu/migraphx"; exit 1 ;;
             esac
             shift 2 ;;
-        --tensorrt-lib-dir) TENSORRT_LIB_DIR_ARG="$2"; PY_ARGS+=("$1" "$2"); shift 2 ;;
-        --gpu-index|--directml-device-index|--webgpu-device-index|--target-vendor|--openvino-device)
+        -td|--tensorrt-lib-dir) TENSORRT_LIB_DIR_ARG="$2"; PY_ARGS+=("--tensorrt-lib-dir" "$2"); shift 2 ;;
+        -gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device)
             PY_ARGS+=("$1" "$2"); shift 2 ;;
-        --webgpu) USE_GPU=1; WEBGPU_MODE=1; shift ;;
+        -wg|--webgpu) USE_GPU=1; WEBGPU_MODE=1; shift ;;
         -I|--force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
         -N|--force-nvidia) USE_GPU=1; FORCE_TYPE="nvidia"; shift ;;
         -A|--force-amd) USE_GPU=1; FORCE_TYPE="amd"; shift ;;

@@ -220,10 +220,10 @@ class GPUInitializationTests(unittest.TestCase):
                 for name2, content in [('python', python_stub), ('pip', '#!/bin/sh\nexit 0\n')]:
                     exe = bindir/name2; exe.write_text(content); exe.chmod(0o755)
             env = dict(os.environ, GPU_TEST_ARGS=str(log), HF_HOME=str(root/'hf'))
-            for provider, options in [('cuda', ['--gpu-index','2']), ('intel',['--openvino-device','GPU.1']),
-                                      ('webgpu',['--webgpu-device-index','1','--target-vendor','intel'])]:
+            for provider, options in [('cuda', ['-gi','2']), ('intel',['-od','GPU.1']),
+                                      ('webgpu',['-wi','1','-tv','intel'])]:
                 with self.subTest(provider=provider):
-                    result = subprocess.run(['bash', str(launcher), '--provider', provider, *options, '/tmp/images with spaces'],
+                    result = subprocess.run(['bash', str(launcher), '-ep', provider, *options, '/tmp/images with spaces'],
                                             env=env, capture_output=True, text=True, timeout=20)
                     self.assertEqual(result.returncode, 7, result.stdout+result.stderr)
                     args = json.loads(log.read_text())

@@ -1712,6 +1712,7 @@ def process_images(args: argparse.Namespace) -> None:
 
     assert metadata is not None
     upload_mode = str(getattr(args, "client_upload_mode", None) or APP_CONFIG.get("client_upload_mode", "preprocessed"))
+    upload_mode = {"p": "preprocessed", "o": "original"}.get(upload_mode, upload_mode)
     if is_client and upload_mode == "optimized":
         print("[WARN] 旧optimized転送は結果が変わり得るため廃止しました。元画像送信に切り替えます。")
         upload_mode = "original"
@@ -2274,54 +2275,61 @@ def process_images(args: argparse.Namespace) -> None:
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="DBV4 Tagger Universal (日本語版)")
-    parser.add_argument("images", nargs="*", help="処理対象の画像またはフォルダパス")
-    parser.add_argument("-D", "--mode", choices=["standalone", "server", "client"], default="standalone")
-    parser.add_argument("-Z", "--no-tag", action="store_true", help="タグ付け処理を行わない")
-    parser.add_argument("-o", "--organize", action="store_true", help="レーティングに基づきフォルダ整理を行う")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(
+        description="DBV4 Tagger Universal (日本語版)", add_help=False,
+        epilog="★は初期設定。通常解析ではタグ付けとレポート作成が有効。転送方式は既存config.jsonがあればその値を使用し、-Uで上書きします。",
+    )
+    required = parser.add_argument_group("処理時に必要な入力（引数なしは環境構築）")
+    values = parser.add_argument_group("値を指定するオプション（<>内の値が必要）")
+    switches = parser.add_argument_group("値を指定しないスイッチ")
+    required.add_argument("images", nargs="*", help="処理対象の画像またはフォルダパス")
+    values.add_argument("-D", "--mode", choices=["standalone", "server", "client"], default="standalone", help="実行モード（★standalone）")
+    switches.add_argument("-Z", "--no-tag", action="store_true", help="タグ付け処理を行わない")
+    switches.add_argument("-o", "--organize", action="store_true", help="レーティングに基づきフォルダ整理を行う")
+    switches.add_argument(
         "-x",
         "--pixiv",
         action="store_true",
         help="Pixiv整理モード（画像を含むフォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
     )
-    parser.add_argument("-z", "--no-report", action="store_true", help="HTMLレポートを作成しない")
-    parser.add_argument(
+    switches.add_argument("-z", "--no-report", action="store_true", help="HTMLレポートを作成しない")
+    values.add_argument(
         "-q",
         "--thresh",
         type=float,
         default=None,
         help="DBV4のtag best_thresholdを上書きする明示的な閾値",
     )
-    parser.add_argument("-g", "--gpu", action="store_true", help="GPUを使用する")
-    parser.add_argument("--webgpu", action="store_true", help="WebGPUを使用する")
-    parser.add_argument("--provider", choices=["cpu", "cuda", "tensorrt", "intel", "directml", "webgpu", "migraphx"], help="実行EPを明示（利用不可時は停止）")
-    parser.add_argument("--gpu-index", type=int, default=0)
-    parser.add_argument("--directml-device-index", type=int, default=0)
-    parser.add_argument("--webgpu-device-index", type=int)
-    parser.add_argument("--target-vendor", choices=["nvidia", "intel", "amd"])
-    parser.add_argument("--openvino-device", help="Intel実機名を検証するGPU.N")
-    parser.add_argument("--tensorrt-lib-dir", help="TensorRT 10ライブラリディレクトリ")
-    parser.add_argument("-b", "--batch-size", type=int, default=4, help="推論バッチサイズ")
-    parser.add_argument("-w", "--io-workers", type=int, default=-1, help="画像読込みの並列数（-1=自動）")
-    parser.add_argument("-f", "--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
-    parser.add_argument("-r", "--recursive", action="store_const", const=True, default=None, help="再帰検索ON")
-    parser.add_argument("-n", "--no-recursive", action="store_const", const=False, dest="recursive", help="再帰検索OFF")
-    parser.add_argument(
+    switches.add_argument("-g", "--gpu", action="store_true", help="GPUを使用する")
+    switches.add_argument("-wg", "--webgpu", action="store_true", help="WebGPUを使用する")
+    values.add_argument("-ep", "--provider", choices=["cpu", "cuda", "tensorrt", "intel", "directml", "webgpu", "migraphx"], help="実行EPを明示（利用不可時は停止）")
+    values.add_argument("-gi", "--gpu-index", type=int, default=0, help="★GPU番号 0")
+    values.add_argument("-di", "--directml-device-index", type=int, default=0, help="★DirectML番号 0")
+    values.add_argument("-wi", "--webgpu-device-index", type=int)
+    values.add_argument("-tv", "--target-vendor", choices=["nvidia", "intel", "amd"])
+    values.add_argument("-od", "--openvino-device", help="Intel実機名を検証するGPU.N")
+    values.add_argument("-td", "--tensorrt-lib-dir", help="TensorRT 10ライブラリディレクトリ")
+    values.add_argument("-b", "--batch-size", type=int, default=4, help="★推論バッチサイズ 4（モデル上限で調整）")
+    values.add_argument("-w", "--io-workers", type=int, default=-1, help="★画像読込みの並列数 -1=自動（Clientは0）")
+    switches.add_argument("-f", "--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
+    switches.add_argument("-r", "--recursive", action="store_const", const=True, default=None, help="再帰検索ON")
+    switches.add_argument("-n", "--no-recursive", action="store_const", const=False, dest="recursive", help="再帰検索OFF")
+    values.add_argument(
         "-m",
         "--model-profile",
         default=None,
         metavar="NAME",
         help="DBV4モデルプロファイル（configのカスタム定義も指定可）",
     )
-    parser.add_argument("-e", "--model-repo", default=None, help="DBV4モデル/metadataのHugging FaceリポジトリID")
-    parser.add_argument("-l", "--model-file", default=None, help="ONNXモデルファイル名またはパス")
-    parser.add_argument("-y", "--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
-    parser.add_argument("-j", "--host", default=None, help="Client接続先ホスト")
-    parser.add_argument("--client-upload-mode", choices=["original", "preprocessed"],
-                        help="Client転送方式（config.jsonより優先。preprocessed失敗時はoriginalで続行）")
-    parser.add_argument("-u", "--port", type=int, default=None, help="Server/Clientポート")
-    parser.add_argument(
+    values.add_argument("-e", "--model-repo", default=None, help="DBV4モデル/metadataのHugging FaceリポジトリID")
+    values.add_argument("-l", "--model-file", default=None, help="ONNXモデルファイル名またはパス")
+    values.add_argument("-y", "--tags-file", default=None, help="selected_tags.csvのファイル名またはパス")
+    values.add_argument("-j", "--host", default=None, help="Client接続先ホスト")
+    values.add_argument("-U", "-um", "--client-upload-mode",
+                        choices=["p", "o", "original", "preprocessed"],
+                        help="★初期設定p=前処理・可逆圧縮、o=元画像送信（config.jsonより優先）")
+    values.add_argument("-u", "--port", type=int, default=None, help="★Server/Clientポート 5000")
+    values.add_argument(
         "-v",
         "--sensitive-split-mode",
         choices=[2, 4, 6],
@@ -2329,11 +2337,12 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="旧CLI互換（DBV4ではR-15/R-17の5段階固定）",
     )
-    parser.add_argument("-a", "--record-ratio", action="store_true", default=None, help="rating scoreをXMPへ保存")
-    parser.add_argument("-k", "--no-record-ratio", action="store_false", dest="record_ratio", help="rating scoreのXMP保存を無効化")
-    parser.add_argument("-d", "--rating-thresh", type=float, default=None, help="非General rating判定閾値（旧CLI互換）")
-    parser.add_argument("-i", "--ignore-sensitive", action="store_true", help="Sensitive判定をGeneralとして扱う")
-    parser.add_argument("-G", "--gen-config", action="store_true", help="config.jsonを生成・更新")
+    switches.add_argument("-a", "--record-ratio", action="store_true", default=None, help="rating scoreをXMPへ保存")
+    switches.add_argument("-k", "--no-record-ratio", action="store_false", dest="record_ratio", help="rating scoreのXMP保存を無効化")
+    values.add_argument("-d", "--rating-thresh", type=float, default=None, help="非General rating判定閾値（旧CLI互換）")
+    switches.add_argument("-i", "--ignore-sensitive", action="store_true", help="Sensitive判定をGeneralとして扱う")
+    switches.add_argument("-G", "--gen-config", action="store_true", help="config.jsonを生成・更新")
+    switches.add_argument("-h", "--help", action="help", help="このヘルプを表示")
     return parser
 
 

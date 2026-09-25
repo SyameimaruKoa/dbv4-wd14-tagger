@@ -151,7 +151,8 @@
 param (
     [Alias('p')]
     [string]$Path,
-    [ValidateSet('original', 'preprocessed')]
+    [Alias('um')]
+    [ValidateSet('original', 'preprocessed', 'o', 'p')]
     [string]$ClientUploadMode,
     [Alias('o')]
     [switch]$Organize,
@@ -209,16 +210,25 @@ param (
     [Alias('h')]
     [switch]$Help,
 
+    [Alias('lo')]
     [switch]$Login,
 
+    [Alias('ep')]
     [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu')]
     [string]$Provider,
+    [Alias('wg')]
     [switch]$WebGpu,
+    [Alias('gi')]
     [ValidateRange(0,2147483647)][int]$GpuIndex = 0,
+    [Alias('di')]
     [ValidateRange(0,2147483647)][int]$DirectMlDeviceIndex = 0,
+    [Alias('wi')]
     [ValidateRange(0,2147483647)][int]$WebGpuDeviceIndex,
+    [Alias('tv')]
     [ValidateSet('nvidia','intel','amd')][string]$TargetVendor,
+    [Alias('od')]
     [string]$OpenVinoDevice,
+    [Alias('td')]
     [string]$TensorRtLibDir,
 
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -229,43 +239,40 @@ param (
 function Show-Help {
     Write-Host "DBV4 Tagger Universal (日本語ヘルプ)" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "使い方: .\run_tagger.ps1 [オプション] [パス]" -ForegroundColor Yellow
+    Write-Host "使い方: .\run_tagger.ps1 [スイッチ] [値付きオプション] -Path <画像パス>" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "  引数なしで実行すると「環境構築モード」となり、セットアップのみを行います。" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "主なオプション:" -ForegroundColor Yellow
-    Write-Host "    -Path (-p) <path>     処理対象ファイル/フォルダ"
-    Write-Host "    -Gpu (-g)             GPUを使用する（TensorRT/CUDA等→DirectML→WebGPUの順で自動選択）"
-    Write-Host "    -Organize (-o)        フォルダ整理のみ行う（タグ付けOFF）"
-    Write-Host "    -Tag (-t)             タグ付けも行う（-Organize併用時）"
-    Write-Host "    -Pixiv (-x)           Pixiv整理モード（末端フォルダ単位で全画像を一括移動）"
-    Write-Host "    -NoReport (-z)        レポート作成なし"
-    Write-Host "    -Recursive (-r)       再帰検索ON"
-    Write-Host "    -NoRecursive (-n)     再帰検索OFF"
-    Write-Host "    -Thresh (-q) <0.0-1.0> DBV4のtag best_thresholdを一括上書き（省略時はタグ固有値）"
-    Write-Host "    -BatchSize (-b) <n>   推論バッチサイズ"
-    Write-Host "    -IoWorkers (-w) <n>   前処理の並列ワーカー数"
-    Write-Host "    -ModelProfile (-m) <name> モデルプロファイル (compact_manual/lightweight/medium_manual/balanced/high/ultra/wd14_v3/future_1b)"
-    Write-Host "    -ModelRepo (-e) <repo> DBV4モデル/タグのHFリポジトリIDを明示指定"
-    Write-Host "    -ModelFile (-l) <file> モデルファイル名またはパス"
-    Write-Host "    -TagsFile (-y) <file> タグCSVファイル名またはパス"
-    Write-Host "    -Force (-f)           既存タグがあっても強制的に再解析・上書き"
-    Write-Host "    -Server (-s)          サーバーモード（推論待機）"
-    Write-Host "    -Client (-c)          クライアントモード"
-    Write-Host "    -ClientUploadMode <preprocessed|original>  縮小・可逆圧縮 / 元画像送信"
-    Write-Host "                         前処理済み転送が使えない場合は元画像送信で続行"
-    Write-Host "    -HostIP (-j) <ip>     サーバーのIPアドレス"
-    Write-Host "    -Port (-u) <port>     ポート番号"
-    Write-Host "    -SensitiveSplitMode (-v) <2|4|6> 旧CLI互換（DBV4では5段階固定・非推奨）"
-    Write-Host "    -RecordRatio (-a)     メタデータにRAWスコア・割合スコアを記録"
-    Write-Host "    -NoRecordRatio (-k)   メタデータへのスコア記録を無効化"
-    Write-Host "    -Help (-h, --help)    このヘルプを表示"
-    Write-Host "    -Login               Hugging Faceへログインして終了"
-    Write-Host "    -Provider NAME       cpu/cuda/tensorrt/intel/directml/webgpu"
-    Write-Host "    -GpuIndex N / -DirectMlDeviceIndex N / -WebGpuDeviceIndex N"
-    Write-Host "    -TargetVendor NAME / -OpenVinoDevice GPU.N / -TensorRtLibDir DIR"
-    Write-Host "    -RatingThresh (-d)    旧CLI互換: 非General rating判定閾値"
-    Write-Host "    -IgnoreSensitive (-i) 旧CLI互換: SensitiveをGeneralとして扱う"
+    Write-Host "処理時に必要な入力:" -ForegroundColor Yellow
+    Write-Host "    -Path (-p) <画像パス>  処理対象ファイル/フォルダ"
+    Write-Host "    Client接続先は -HostIP で指定。省略時は設定済み候補から選択"
+    Write-Host ""
+    Write-Host "値を指定するオプション（<>内の値が必要）:" -ForegroundColor Yellow
+    Write-Host "  ★ -um <p|o>         p=前処理・可逆圧縮 / o=元画像送信（初期設定 p）"
+    Write-Host "  ★ -b <枚数>         バッチサイズ（既定 4、モデル上限で調整）"
+    Write-Host "  ★ -w <数>           読込ワーカー数（既定 -1=自動、Clientは0）"
+    Write-Host "    -j <host> / -u <port>       Client接続先 / ポート（既定 5000）"
+    Write-Host "    -m <name> / -e <repo>       モデルプロファイル / HFリポジトリ"
+    Write-Host "    -l <file> / -y <file>       モデルファイル / タグCSV"
+    Write-Host "    -q <値> / -v <2|4|6>        閾値 / 旧センシティブ分割"
+    Write-Host "    -d <値>                    旧rating閾値"
+    Write-Host "    -ep <name> / -gi <n>        GPUプロバイダ / GPU番号"
+    Write-Host "    -di <n> / -wi <n>           DirectML / WebGPU番号"
+    Write-Host "    -tv <name> / -od <GPU.N>    対象ベンダー / OpenVINOデバイス"
+    Write-Host "    -td <dir>                  TensorRTライブラリ場所"
+    Write-Host ""
+    Write-Host "値を指定しないスイッチ:" -ForegroundColor Yellow
+    Write-Host "    -s / -c / -lo       Server / Client / Hugging Faceログイン"
+    Write-Host "    -g / -wg            GPU自動判別 / WebGPU"
+    Write-Host "    -o / -t / -x        整理 / タグ付け併用 / Pixiv整理"
+    Write-Host "    -r / -n            再帰検索ON / OFF"
+    Write-Host "    -z / -f            レポートなし / 強制再解析"
+    Write-Host "    -a / -k            RAWスコア記録ON / OFF"
+    Write-Host "    -i / -h            旧センシティブ判定 / ヘルプ"
+    Write-Host ""
+    Write-Host "★ は初期設定。-um未指定時は既存config.jsonの設定を使用。"
+    Write-Host "  ★ 通常解析ではタグ付けとレポート作成が有効（-oでタグ付けOFF、-zでレポートOFF）。"
+    Write-Host "  前処理済み転送に失敗した場合は元画像送信で続行。"
     Write-Host ""
     Write-Host "実行例:" -ForegroundColor Yellow
     Write-Host "    # 初回セットアップ（何もしない）"
@@ -279,7 +286,7 @@ function Show-Help {
     Write-Host ""
     Write-Host "    # フォルダ整理のみ（タグ付けなし）"
     Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize"
-    Write-Host "    .\run_tagger.ps1 -Client -HostIP google-colab -Path C:\Images -ClientUploadMode preprocessed"
+    Write-Host "    .\run_tagger.ps1 -Client -HostIP google-colab -Path C:\Images -um p"
     Write-Host ""
     Write-Host "    # 全部入り（タグ付け＋整理＋レポート＋GPU）"
     Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -Tag -Gpu"

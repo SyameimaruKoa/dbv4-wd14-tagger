@@ -40,6 +40,8 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertEqual(DEFAULT_CONFIG["client_upload_mode"], "preprocessed")
         args = create_parser().parse_args(["--client-upload-mode", "original"])
         self.assertEqual(args.client_upload_mode, "original")
+        self.assertEqual(create_parser().parse_args(["-U", "p"]).client_upload_mode, "p")
+        self.assertEqual(create_parser().parse_args(["-um", "o"]).client_upload_mode, "o")
 
     def test_server_http_error_includes_response_detail(self):
         error = urllib.error.HTTPError(

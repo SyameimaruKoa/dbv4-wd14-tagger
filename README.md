@@ -337,11 +337,12 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 
 Clientも`--batch-size`（既定4）で複数画像を1回の通信と推論にまとめられる。ServerとClientの両方をこの機能に対応する版へ更新し、Serverを再起動すること。古いServerに接続した場合は自動的に1枚ずつ処理する。モデルの入力が固定バッチ1枚なら、Clientも1枚ずつ処理する。
 Clientは最大2バッチの通信を並行させ、次のバッチのアップロードと前のバッチの推論・タグ書き込みを重ねる。バッチ推論に非対応の場合、この先読みは行わない。
-既定の`client_upload_mode: "preprocessed"`では、ClientがServerと同じ前処理を実行し、モデル入力のfloat32テンソルを可逆圧縮して送る。元画像送信と同じテンソルが推論に渡る。Client側のCPU負荷を抑えたい場合は`"original"`を選ぶ。既存の`config.json`に`"original"`が保存されている場合、その設定は自動変更されない。`--client-upload-mode preprocessed`（PowerShellは`-ClientUploadMode preprocessed`）で今回の実行だけ切り替えられる。前処理済みモードには対応する新しいServerが必要。ライブラリの版が異なる場合はClient仮想環境内のPillow・NumPy・AVIFプラグインをServerの版へ自動更新してClientを再起動する。準備・再照合・転送のいずれかで前処理済みモードを使用できなければ理由を警告し、元画像送信で処理を続ける。
+既定の`client_upload_mode: "preprocessed"`では、ClientがServerと同じ前処理を実行し、モデル入力のfloat32テンソルを可逆圧縮して送る。元画像送信と同じテンソルが推論に渡る。Client側のCPU負荷を抑えたい場合は`"original"`を選ぶ。既存の`config.json`に`"original"`が保存されている場合、その設定は自動変更されない。Bashでは`-U p`、PowerShellでは`-um p`で今回だけ前処理済み転送を選べる。`o`で元画像送信を選べる。長い名前と`preprocessed`・`original`も引き続き使える。前処理済みモードには対応する新しいServerが必要。ライブラリの版が異なる場合はClient仮想環境内のPillow・NumPy・AVIFプラグインをServerの版へ自動更新してClientを再起動する。準備・再照合・転送のいずれかで前処理済みモードを使用できなければ理由を警告し、元画像送信で処理を続ける。
 新しいClientとServer間のバッチ応答は、サイズが大きい場合にgzipで圧縮する。古いServerからの非圧縮応答も引き続き利用できる。圧縮を有効にするにはServerの更新と再起動が必要。
 バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
+追加のGPU指定にも短縮形を使える。実行プロバイダは`-ep`、WebGPUは`-wg`、GPU番号は`-gi`、DirectML番号は`-di`、WebGPU番号は`-wi`、対象ベンダーは`-tv`、OpenVINOデバイスは`-od`、TensorRTライブラリ場所は`-td`。Bash・PowerShell・Python CLIで同じ短縮形を使える。
 
 ### Linux実機検証
 
