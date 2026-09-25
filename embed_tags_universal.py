@@ -22,7 +22,7 @@ import urllib.request
 import uuid
 import warnings
 import webbrowser
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -1319,6 +1319,28 @@ def inference_timing_summary(
     }
 
 
+class ClientBatchPipeline:
+    """Send the next batch while the main thread handles the previous result."""
+
+    def __init__(self) -> None:
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.pending: Optional[Tuple[List[Dict[str, Any]], Future]] = None
+
+    def submit(self, items: Sequence[Dict[str, Any]], request: Any, consume: Any) -> None:
+        previous = self.pending
+        self.pending = (list(items), self.executor.submit(request, list(items)))
+        if previous is not None:
+            consume(*previous)
+
+    def finish(self, consume: Any) -> None:
+        previous, self.pending = self.pending, None
+        if previous is not None:
+            consume(*previous)
+
+    def close(self) -> None:
+        self.executor.shutdown(wait=True, cancel_futures=True)
+
+
 def process_images(args: argparse.Namespace) -> None:
     is_client = args.mode == "client"
     try:
@@ -1426,6 +1448,7 @@ def process_images(args: argparse.Namespace) -> None:
         if runtime and batch_size > 1 and io_workers > 0
         else None
     )
+    client_pipeline = ClientBatchPipeline() if is_client and batch_size > 1 else None
     pending: List[Dict[str, Any]] = []
     report_data: List[Dict[str, Any]] = []
     fatal_client_error: Optional[ClientCompatibilityError] = None
@@ -1501,7 +1524,17 @@ def process_images(args: argparse.Namespace) -> None:
         except Exception as exc:
             return None, exc
 
-    def run_batch(items: Sequence[Dict[str, Any]]) -> None:
+    def request_client_batch(items: Sequence[Dict[str, Any]]) -> Tuple[np.ndarray, float]:
+        started = time.time()
+        paths = [item["path"] for item in items]
+        timeout = int(APP_CONFIG.get("client_timeout", 15))
+        batch_timeout = max(timeout * len(items), int(APP_CONFIG.get("client_batch_timeout", 120)))
+        predictions = client_predict_batch(
+            f"http://{args.host}:{args.port}", paths, metadata, batch_timeout
+        )
+        return predictions, time.time() - started
+
+    def run_batch(items: Sequence[Dict[str, Any]], future: Optional[Future] = None) -> None:
         nonlocal inferred, inferred_time, batch_size
         if not items:
             return
@@ -1514,8 +1547,8 @@ def process_images(args: argparse.Namespace) -> None:
             )
             server_url = f"http://{args.host}:{args.port}"
             try:
-                predictions = client_predict_batch(
-                    server_url, [item["path"] for item in items], metadata, batch_timeout
+                predictions, request_elapsed = (
+                    future.result() if future is not None else request_client_batch(items)
                 )
             except urllib.error.HTTPError as exc:
                 if exc.code == 404:
@@ -1562,7 +1595,7 @@ def process_images(args: argparse.Namespace) -> None:
                         safe_write(f"エラー {os.path.basename(item['path'])}: {single_exc}")
                         progress.update(1)
                 return
-            elapsed = time.time() - started
+            elapsed = request_elapsed
             inferred += len(items)
             inferred_time += elapsed
             batch_history.append({"count": len(items), "time": elapsed})
@@ -1651,6 +1684,8 @@ def process_images(args: argparse.Namespace) -> None:
 
                 item = {"path": image_path, "existing_tags": existing_tags}
                 if is_client and batch_size == 1:
+                    if client_pipeline:
+                        client_pipeline.finish(run_batch)
                     prediction = client_predict(
                         f"http://{args.host}:{args.port}",
                         image_path,
@@ -1665,7 +1700,10 @@ def process_images(args: argparse.Namespace) -> None:
                     pending.append(item)
                     if len(pending) >= batch_size:
                         current_batch = pending[:batch_size]
-                        run_batch(current_batch)
+                        if client_pipeline:
+                            client_pipeline.submit(current_batch, request_client_batch, run_batch)
+                        else:
+                            run_batch(current_batch)
                         pending = pending[len(current_batch):]
             except ClientCompatibilityError as exc:
                 safe_write(f"互換性エラー: {exc}")
@@ -1694,7 +1732,16 @@ def process_images(args: argparse.Namespace) -> None:
         aborted = True
     finally:
         if pending and not aborted:
-            run_batch(pending)
+            if client_pipeline:
+                client_pipeline.submit(pending, request_client_batch, run_batch)
+            else:
+                run_batch(pending)
+        if client_pipeline:
+            try:
+                if not aborted:
+                    client_pipeline.finish(run_batch)
+            finally:
+                client_pipeline.close()
         if executor:
             executor.shutdown(wait=True)
         if need_exiftool:

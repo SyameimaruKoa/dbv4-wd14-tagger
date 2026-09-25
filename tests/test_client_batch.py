@@ -15,6 +15,7 @@ import numpy as np
 from PIL import Image
 
 from embed_tags_universal import (
+    ClientBatchPipeline,
     ClientCompatibilityError,
     ParallelTagServer,
     TagServerHandler,
@@ -24,6 +25,29 @@ from embed_tags_universal import (
 
 
 class BatchProtocolTests(unittest.TestCase):
+    def test_pipeline_sends_next_batch_while_consuming_previous(self):
+        second_started = threading.Event()
+        consumed = []
+
+        def request(items):
+            if items == [2]:
+                second_started.set()
+            return items
+
+        def consume(items, future):
+            if items == [1]:
+                self.assertTrue(second_started.wait(2))
+            consumed.append(future.result())
+
+        pipeline = ClientBatchPipeline()
+        try:
+            pipeline.submit([1], request, consume)
+            pipeline.submit([2], request, consume)
+            pipeline.finish(consume)
+        finally:
+            pipeline.close()
+        self.assertEqual(consumed, [[1], [2]])
+
     def test_unresolved_host_has_actionable_error(self):
         args = SimpleNamespace(host="ubuntu-komeiziaya", port=5000)
         error = urllib.error.URLError(socket.gaierror(-3, "Temporary failure in name resolution"))
