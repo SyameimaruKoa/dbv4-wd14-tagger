@@ -194,8 +194,52 @@ class BatchProtocolTests(unittest.TestCase):
             thread.join()
         self.assertEqual(ObservedHandler.runtime.calls, 2)
 
+    def test_metadata_responds_while_inference_slot_is_busy(self):
+        entered = threading.Event()
+        release = threading.Event()
+
+        class Runtime:
+            batch_limit = 2
+            metadata = SimpleNamespace(summary=lambda: {
+                "protocol": 1, "model_id": "test/model", "metadata_version": "v1", "output_size": 2,
+            })
+
+            def predict_images(self, images):
+                entered.set()
+                release.wait(5)
+                return [np.asarray([1, 0], dtype=np.float32)]
+
+        class Handler(TagServerHandler):
+            runtime = Runtime()
+
+        image = io.BytesIO()
+        Image.new("RGB", (2, 2)).save(image, format="PNG")
+        server = ParallelTagServer(("127.0.0.1", 0), Handler, 1)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with ThreadPoolExecutor(max_workers=1) as requests:
+                pending = requests.submit(
+                    lambda: urllib.request.urlopen(
+                        f"http://127.0.0.1:{server.server_port}/", data=image.getvalue(), timeout=5
+                    ).close()
+                )
+                self.assertTrue(entered.wait(3))
+                with urllib.request.urlopen(
+                    f"http://127.0.0.1:{server.server_port}/metadata", timeout=2
+                ) as response:
+                    self.assertEqual(json.load(response)["model_id"], "test/model")
+                release.set()
+                pending.result(timeout=3)
+        finally:
+            release.set()
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
     def test_server_rejects_oversized_body_before_reading(self):
         handler = TagServerHandler.__new__(TagServerHandler)
+        handler.server = SimpleNamespace(_worker_slots=threading.BoundedSemaphore(2))
         handler.runtime = SimpleNamespace(batch_limit=4)
         handler.path = "/batch"
         handler.client_address = ("127.0.0.1", 1000)
@@ -398,6 +442,7 @@ class BatchProtocolTests(unittest.TestCase):
                 return [np.asarray([image.getpixel((0, 0))[0] / 255, 0], dtype=np.float32) for image in images]
 
         handler = TagServerHandler.__new__(TagServerHandler)
+        handler.server = SimpleNamespace(_worker_slots=threading.BoundedSemaphore(2))
         handler.runtime = Runtime()
         handler.path = "/batch"
         handler.client_address = ("127.0.0.1", 1000)

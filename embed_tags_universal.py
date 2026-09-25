@@ -110,6 +110,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "server_workers": 2,
     "server_max_request_mib": 128,
     "server_max_batch_images": 8,
+    "server_tensorrt_batch_size": 2,
     "server_max_image_pixels": 20000000,
     "client_max_request_mib": 128,
     "client_upload_mode": "preprocessed",
@@ -1084,11 +1085,17 @@ class TagServerHandler(BaseHTTPRequestHandler):
     runtime: Optional[RuntimeModel] = None
     startup_stage = "モデルを読み込んでいます"
     startup_error: Optional[str] = None
+    batch_limit_override: Optional[int] = None
 
     def _batch_limit(self) -> int:
         configured = max(1, int(APP_CONFIG.get("server_max_batch_images", 8)))
         model_limit = getattr(self.runtime, "batch_limit", None)
-        return min(configured, model_limit) if model_limit is not None else configured
+        limits = [configured]
+        if model_limit is not None:
+            limits.append(model_limit)
+        if self.batch_limit_override is not None:
+            limits.append(self.batch_limit_override)
+        return min(limits)
 
     def _decode_image(self, data: bytes) -> Image.Image:
         with Image.open(io.BytesIO(data)) as image:
@@ -1157,6 +1164,10 @@ class TagServerHandler(BaseHTTPRequestHandler):
         return body
 
     def do_POST(self) -> None:
+        with self.server._worker_slots:
+            self._handle_post()
+
+    def _handle_post(self) -> None:
         if not self.runtime:
             body = json.dumps({"status": "error" if self.startup_error else "loading",
                                "stage": self.startup_stage, "error": self.startup_error},
@@ -1211,12 +1222,20 @@ class TagServerHandler(BaseHTTPRequestHandler):
                 if len(data) != expected_bytes:
                     raise ValueError("前処理済みテンソルのバイト数が一致しません。")
                 tensor = np.frombuffer(data, dtype="<f4").reshape(shape)
+                print(f"[INFO] {client_ip} | 推論開始: {shape[0]}枚", flush=True)
+                inference_started = time.monotonic()
                 predictions = self.runtime.predict_preprocessed(tensor)
+                print(
+                    f"[INFO] {client_ip} | 推論完了: {shape[0]}枚 / "
+                    f"{time.monotonic() - inference_started:.2f}s",
+                    flush=True,
+                )
                 body = json.dumps({
                     **self.runtime.metadata.summary(),
                     "probabilities": [prediction.astype(float).tolist() for prediction in predictions],
                 }, ensure_ascii=False).encode("utf-8")
-                self._send_json_response(200, body)
+                if self._send_json_response(200, body):
+                    print(f"[INFO] {client_ip} | 結果送信完了: {shape[0]}枚", flush=True)
                 return
             if self.path == "/batch":
                 request = json.loads(self._read_request_body(length, client_ip, image_name).decode("utf-8"))
@@ -1296,21 +1315,22 @@ class ParallelTagServer(ThreadingMixIn, HTTPServer):
 
     def __init__(self, server_address: Tuple[str, int], handler_class: Any, workers: int) -> None:
         self._worker_slots = threading.BoundedSemaphore(workers)
+        self._connection_slots = threading.BoundedSemaphore(workers + 8)
         super().__init__(server_address, handler_class)
 
     def process_request(self, request: Any, client_address: Any) -> None:
-        self._worker_slots.acquire()
+        self._connection_slots.acquire()
         try:
             super().process_request(request, client_address)
         except Exception:
-            self._worker_slots.release()
+            self._connection_slots.release()
             raise
 
     def process_request_thread(self, request: Any, client_address: Any) -> None:
         try:
             super().process_request_thread(request, client_address)
         finally:
-            self._worker_slots.release()
+            self._connection_slots.release()
 
 
 def run_server(args: argparse.Namespace) -> None:
@@ -1319,6 +1339,7 @@ def run_server(args: argparse.Namespace) -> None:
         "runtime": None,
         "startup_stage": "モデル読み込み・GPU起動検証中",
         "startup_error": None,
+        "batch_limit_override": None,
     })
     server = ParallelTagServer(("0.0.0.0", args.port), handler, workers)
     print(f"\n[INFO] Port: {server.server_port} で待受開始。モデル読み込み中はClientを待機させます。", flush=True)
@@ -1331,6 +1352,23 @@ def run_server(args: argparse.Namespace) -> None:
                 status_callback=lambda stage: setattr(handler, "startup_stage", stage),
                 **runtime_cli_options(args),
             )
+            if "TensorrtExecutionProvider" in runtime.session.get_providers():
+                batch_limit = min(
+                    max(1, int(APP_CONFIG.get("server_max_batch_images", 8))),
+                    max(1, int(APP_CONFIG.get("server_tensorrt_batch_size", 2))),
+                    runtime.batch_limit or 2,
+                )
+                handler.startup_stage = f"TensorRTの{batch_limit}枚バッチを準備しています"
+                print(f"[INFO] {handler.startup_stage}。完了後にClientの処理を開始します。", flush=True)
+                started = time.monotonic()
+                image = Image.new("RGB", (512, 512), (0, 0, 0))
+                runtime.predict_images([image] * batch_limit)
+                print(
+                    f"[INFO] TensorRTバッチ準備完了: {batch_limit}枚 / "
+                    f"{time.monotonic() - started:.1f}s",
+                    flush=True,
+                )
+                handler.batch_limit_override = batch_limit
             handler.runtime = runtime
             print(f"\n[INFO] DBV4推論サーバー稼働中 Port: {server.server_port}", flush=True)
             print(f"[INFO] 同時処理数: {workers}")

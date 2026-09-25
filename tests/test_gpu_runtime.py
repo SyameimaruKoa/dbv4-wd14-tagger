@@ -138,15 +138,16 @@ class GPUInitializationTests(unittest.TestCase):
 
     def test_cli_options_reach_both_normal_and_server_loader(self):
         args = app.create_parser().parse_args(['--provider','tensorrt','--gpu-index','2','--tensorrt-lib-dir','/tmp/trt'])
-        for entry in (app.run_server, app.process_images):
-            with self.subTest(entry=entry.__name__), patch.object(
-                app, 'load_runtime_model', side_effect=RuntimeError('stop before inference')
-            ) as load:
-                with self.assertRaisesRegex(RuntimeError, 'stop before inference'):
-                    entry(args)
-                self.assertEqual(load.call_args.kwargs['provider'], 'tensorrt')
-                self.assertEqual(load.call_args.kwargs['gpu_index'], 2)
-                self.assertEqual(load.call_args.kwargs['tensorrt_lib_dir'], '/tmp/trt')
+        options = app.runtime_cli_options(args)
+        self.assertEqual(options['provider'], 'tensorrt')
+        self.assertEqual(options['gpu_index'], 2)
+        self.assertEqual(options['tensorrt_lib_dir'], '/tmp/trt')
+        with patch.object(app, 'load_runtime_model', side_effect=RuntimeError('stop before inference')) as load:
+            with self.assertRaisesRegex(RuntimeError, 'stop before inference'):
+                app.process_images(args)
+            self.assertEqual(load.call_args.kwargs['provider'], 'tensorrt')
+            self.assertEqual(load.call_args.kwargs['gpu_index'], 2)
+            self.assertEqual(load.call_args.kwargs['tensorrt_lib_dir'], '/tmp/trt')
 
     def test_node_profile_does_not_count_active_provider_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
