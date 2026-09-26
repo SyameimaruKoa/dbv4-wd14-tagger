@@ -2333,17 +2333,30 @@ def process_images(args: argparse.Namespace) -> None:
                     f"[WARN] Pixiv画像フォルダは全画像のスキャンが完了していないため移動をスキップ: {source_dir}"
                 )
                 continue
-            target_rating = get_pixiv_move_rating(
-                [pixiv_rating_by_path[path] for path in absolute_files]
-            )
-            if target_rating is None:
-                continue
             pixiv_target_groups += 1
-            moved_paths, moved_count = organize_pixiv_folder(
-                absolute_files,
-                target_rating,
-                base_dirs,
-            )
+            if os.path.basename(os.path.normpath(source_dir)) == "条件未満":
+                moved_paths = {}
+                moved_count = 0
+                for path in absolute_files:
+                    target_rating = get_pixiv_move_rating([pixiv_rating_by_path[path]])
+                    if target_rating is None:
+                        continue
+                    file_moved_paths, file_moved_count = organize_pixiv_folder(
+                        [path], target_rating, base_dirs
+                    )
+                    moved_paths.update(file_moved_paths)
+                    moved_count += file_moved_count
+            else:
+                target_rating = get_pixiv_move_rating(
+                    [pixiv_rating_by_path[path] for path in absolute_files]
+                )
+                if target_rating is None:
+                    continue
+                moved_paths, moved_count = organize_pixiv_folder(
+                    absolute_files,
+                    target_rating,
+                    base_dirs,
+                )
             if moved_count:
                 pixiv_moved_groups += 1
             organized += moved_count
