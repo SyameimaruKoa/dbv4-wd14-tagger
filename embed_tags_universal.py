@@ -582,11 +582,18 @@ def compatible_preprocess_format(path: str, client: Any, server: Any) -> bool:
     if not isinstance(client, dict) or not isinstance(server, dict):
         return False
     extension = os.path.splitext(path)[1].lower()
-    codec = {
-        ".jpg": "jpg", ".jpeg": "jpg", ".webp": "webp",
-        ".png": "zlib", ".avif": "AVIF",
+    image_format = {
+        ".jpg": "JPEG", ".jpeg": "JPEG", ".webp": "WEBP",
+        ".png": "PNG", ".avif": "AVIF", ".bmp": "BMP",
     }.get(extension)
-    if extension == ".bmp":
+    if os.path.isfile(path):
+        try:
+            with Image.open(path) as image:
+                image_format = image.format
+        except (OSError, ValueError):
+            return False
+    codec = {"JPEG": "jpg", "WEBP": "webp", "PNG": "zlib", "AVIF": "AVIF"}.get(image_format)
+    if image_format == "BMP":
         return True
     return bool(codec and client.get(codec) and client.get(codec) == server.get(codec))
 
@@ -2461,7 +2468,7 @@ def create_parser() -> argparse.ArgumentParser:
     values.add_argument("-j", "--host", default=None, metavar="ホスト名/IP", help="Client接続先（例: google-colab）")
     values.add_argument("-U", "-um", "--client-upload-mode",
                         choices=["p", "o", "original", "preprocessed"],
-                        help="★p=互換形式のみ前処理、o=元画像送信")
+                        help="★初期設定p=互換形式のみ前処理、o=元画像送信")
     values.add_argument("-u", "--port", type=int, default=None, help="★Server/Clientポート 5000")
     values.add_argument(
         "-v",

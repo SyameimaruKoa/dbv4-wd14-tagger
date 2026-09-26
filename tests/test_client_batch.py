@@ -46,6 +46,16 @@ class BatchProtocolTests(unittest.TestCase):
         self.assertTrue(compatible_preprocess_format("c.png", client, server))
         self.assertTrue(compatible_preprocess_format("d.bmp", client, server))
 
+    def test_codec_check_uses_file_format_instead_of_extension(self):
+        client = {"jpg": "6.2", "zlib": "1.3.1"}
+        server = {"jpg": "8.0", "zlib": "1.3.1"}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "looks_like_jpeg.jpg"
+            Image.new("RGB", (4, 4)).save(path, format="PNG")
+            self.assertTrue(compatible_preprocess_format(str(path), client, server))
+            server["zlib"] = "1.3.1.zlib-ng"
+            self.assertFalse(compatible_preprocess_format(str(path), client, server))
+
     def test_legacy_probe_can_match_server_package_versions(self):
         preprocessor = DBV4Preprocessor({"test": [{"type": "Resize", "size": [8, 8]}]})
         server = {"Pillow": "11.0", "NumPy": "2.0"}
