@@ -60,7 +60,7 @@ DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`と�
 
 GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。
 
-Windowsで`-Gpu`だけを指定した場合は、専用かつ効率のよい実行経路を優先し、NVIDIAはTensorRT→CUDA、AMDはDirectML、IntelはOpenVINOを最初に確認する。利用できない場合は、DirectML、WebGPU、CPUの順に実行前の事前確認を行ってフォールバックする。AMDには専用ONNX Runtime経路がないためDirectMLが第一候補となる。WebGPUはDirectMLより後の最終GPUフォールバック、または`-Provider webgpu`による明示指定に限って使用する。`-Provider`を指定すれば選択を固定でき、自動フォールバックしない。CPU、Client、CUDA、TensorRT、Intel、DirectML、WebGPUはそれぞれ独立した`venv_*`を使い、別バックエンドのONNX Runtimeを同じ仮想環境へ混在させない。LinuxでもNVIDIAの自動選択はTensorRTを優先し、`--provider cuda`を明示すればCUDAだけを導入する。
+Windowsで`-Gpu`だけを指定した場合は、専用かつ効率のよい実行経路を優先し、NVIDIAはTensorRT→CUDA、AMDはDirectML、IntelはOpenVINOを最初に確認する。TensorRTの依存環境にはCUDA実行系も含まれるため、TensorRTだけが利用できない場合は同じ`venv_tensorrt`をCUDA用として再利用し、依存パッケージを別環境へ再インストールしない。それ以外で利用できない場合は、DirectML、WebGPU、CPUの順に実行前の事前確認を行ってフォールバックする。AMDには専用ONNX Runtime経路がないためDirectMLが第一候補となる。WebGPUはDirectMLより後の最終GPUフォールバック、または`-Provider webgpu`による明示指定に限って使用する。`-Provider`を指定すれば選択を固定でき、自動フォールバックしない。CPU、Client、CUDA、TensorRT、Intel、DirectML、WebGPUはそれぞれ独立した`venv_*`を使い、別バックエンドのONNX Runtimeを同じ仮想環境へ混在させない。LinuxでもNVIDIAの自動選択はTensorRTを優先し、`--provider cuda`を明示すればCUDAだけを導入する。
 
 ### 将来向け1B級
 
