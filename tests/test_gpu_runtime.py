@@ -21,6 +21,25 @@ def adapter(vendor_id, dxgi='0'):
 
 
 class GPUInitializationTests(unittest.TestCase):
+    def test_powershell_tensorrt_fallback_reuses_prepared_environment(self):
+        launcher = (Path(app.SCRIPT_DIR) / 'run_tagger.ps1').read_text(encoding='utf-8-sig')
+        fallback = "if ($Candidate -eq 'tensorrt' -and"
+        fallback_position = launcher.index(fallback)
+        next_candidate_position = launcher.index(
+            'Write-Warning "${Candidate}を利用できないため、次の候補を確認します。"',
+            fallback_position,
+        )
+        fallback_block = launcher[fallback_position:next_candidate_position]
+        self.assertIn("-SelectedProvider 'cuda'", fallback_block)
+        self.assertIn('$VenvPython = $CandidatePython', fallback_block)
+        self.assertNotIn('Prepare-Environment', fallback_block)
+        self.assertIn('Show-TensorRtInstallInstructions', fallback_block)
+        self.assertIn('https://developer.nvidia.com/tensorrt/download/10x', launcher)
+        self.assertIn('TensorRT-10.x.x.x\\bin\\nvinfer_10.dll', launcher)
+        self.assertIn('sys.path.insert(0,sys.argv[1])', launcher)
+        self.assertIn('gpu_runtime.prepare_tensorrt()', launcher)
+        self.assertIn('" $ScriptDir 2>&1', launcher)
+
     def test_webgpu_selects_only_requested_device_with_numeric_vendor(self):
         devices = [adapter(0x10DE), adapter(0x8086, '3')]
         options = MagicMock()

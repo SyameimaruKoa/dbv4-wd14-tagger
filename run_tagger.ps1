@@ -469,21 +469,34 @@ function Test-ProviderAvailability {
             & $PythonExecutable -c "import onnxruntime as ort,sys; sys.exit(0 if 'CUDAExecutionProvider' in ort.get_available_providers() else 1)" 2>$null | Out-Null
         }
         'tensorrt' {
-            & $PythonExecutable -c "import gpu_runtime,onnxruntime as ort,sys; gpu_runtime.prepare_tensorrt(); sys.exit(0 if 'TensorrtExecutionProvider' in ort.get_available_providers() else 1)" 2>$null | Out-Null
+            $ProviderCheckOutput = & $PythonExecutable -c "import sys; sys.path.insert(0,sys.argv[1]); import gpu_runtime,onnxruntime as ort; gpu_runtime.prepare_tensorrt(); sys.exit(0 if 'TensorrtExecutionProvider' in ort.get_available_providers() else 1)" $ScriptDir 2>&1
+            if ($LASTEXITCODE -ne 0 -and $ProviderCheckOutput) {
+                $ProviderCheckOutput | ForEach-Object { Write-Warning "TensorRT確認エラー: $_" }
+            }
         }
         'intel' {
             $Device = if ($OpenVinoDevice) { $OpenVinoDevice } else { 'GPU' }
-            & $PythonExecutable -c "import gpu_runtime,sys; gpu_runtime.prepare_openvino(sys.argv[1])" $Device 2>$null | Out-Null
+            & $PythonExecutable -c "import sys; sys.path.insert(0,sys.argv[1]); import gpu_runtime; gpu_runtime.prepare_openvino(sys.argv[2])" $ScriptDir $Device 2>$null | Out-Null
         }
         'directml' {
             & $PythonExecutable -c "import onnxruntime as ort,sys; sys.exit(0 if 'DmlExecutionProvider' in ort.get_available_providers() else 1)" 2>$null | Out-Null
         }
         'webgpu' {
-            & $PythonExecutable -c "import gpu_runtime,onnxruntime as ort,sys; gpu_runtime.configure_webgpu(ort.SessionOptions(),None,sys.argv[1] or None)" $Vendor 2>$null | Out-Null
+            & $PythonExecutable -c "import sys; sys.path.insert(0,sys.argv[1]); import gpu_runtime,onnxruntime as ort; gpu_runtime.configure_webgpu(ort.SessionOptions(),None,sys.argv[2] or None)" $ScriptDir $Vendor 2>$null | Out-Null
         }
         default { return $false }
     }
     return $LASTEXITCODE -eq 0
+}
+
+function Show-TensorRtInstallInstructions {
+    $RuntimeDirectory = Join-Path $PortableDataDir 'runtime'
+    Write-Warning 'TensorRT 10ランタイムを自動準備できませんでした。CUDAで処理を続行します。'
+    Write-Host '[案内] TensorRTを使用するには、NVIDIA TensorRT 10のWindows CUDA 12版ZIPを取得してください。' -ForegroundColor Yellow
+    Write-Host '       取得先: https://developer.nvidia.com/tensorrt/download/10x' -ForegroundColor Yellow
+    Write-Host "       配置先: $RuntimeDirectory\TensorRT-10.x.x.x\bin\nvinfer_10.dll" -ForegroundColor Yellow
+    Write-Host '       ZIP内のTensorRT-10.x.x.xフォルダを上記runtimeフォルダへ展開してください。' -ForegroundColor Yellow
+    Write-Host '       任意の場所へ展開する場合は -TensorRtLibDir <TensorRTのbinフォルダ> を指定してください。' -ForegroundColor Yellow
 }
 #endregion
 
@@ -556,6 +569,15 @@ if ($AutoProviderSelection) {
                 $VenvPython = $CandidatePython
                 if ($Candidate -eq 'webgpu' -and $CandidateVendor) { $TargetVendor = $CandidateVendor }
                 Write-Host "[INFO] 自動選択しました: $Candidate" -ForegroundColor Green
+                break
+            }
+            if ($Candidate -eq 'tensorrt' -and
+                (Test-ProviderAvailability -PythonExecutable $CandidatePython -SelectedProvider 'cuda' -Vendor $null)) {
+                $Provider = 'cuda'
+                $Gpu = $true
+                $VenvPython = $CandidatePython
+                Show-TensorRtInstallInstructions
+                Write-Host "[INFO] 自動選択しました: cuda (venv_tensorrtを再利用)" -ForegroundColor Green
                 break
             }
             Write-Warning "${Candidate}を利用できないため、次の候補を確認します。"
