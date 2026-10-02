@@ -6,6 +6,7 @@ process per provider keeps ONNX Runtime distributions isolated.
 
 import argparse
 import json
+import os
 import platform
 from pathlib import Path
 import statistics
