@@ -1,0 +1,42 @@
+﻿[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\.dbv4\models\53e96223459a3046
+[INFO] OpenVINO GPU.0: Intel(R) UHD Graphics 630 (iGPU)
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['OpenVINOExecutionProvider', 'CPUExecutionProvider']
+.\venv_intel\Scripts\python.exe : Traceback (most recent call last):
+発生場所 行:1 文字:424
++ ... -b'+$batch; .\venv_intel\Scripts\python.exe benchmark_ncnn.py --provi ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\benchmark_ncnn.py", line 251, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\benchmark_ncnn.py", line 242, in main
+    result, measured_start = run(args, monitor)
+                             ~~~^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\benchmark_ncnn.py", line 145, in run
+    runtime = load_runtime_model(
+        args.provider != "cpu", args.profile, provider=args.provider,
+    ...<2 lines>...
+        model_file=args.model_file,
+    )
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 742, in load_runtime_model
+    runtime.predict_images([Image.new("RGB", (640, 480), (127, 63, 191))]
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                           * (runtime.batch_limit or 1))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 482, in predict_images
+    return self._predict_input(self.preprocess_batch(images), len(images))
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 507, in _predict_input
+    return [infer_output_to_probabilities(row) for row in raw]
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。
+
