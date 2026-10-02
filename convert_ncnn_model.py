@@ -35,8 +35,27 @@ def replace_grn_addcmul(model) -> int:
     return count
 
 
+def _spatial_linear_forward(self, x):
+    import torch.nn.functional as functional
+
+    if x.ndim == 4:
+        # ConvNeXt MLP maps the last channel axis at each spatial position.
+        result = functional.conv2d(x.permute(0, 3, 1, 2),
+                                   self.weight[:, :, None, None], self.bias)
+        return result.permute(0, 2, 3, 1)
+    return functional.linear(x, self.weight, self.bias)
+
+
+def replace_spatial_linear(model) -> None:
+    import torch
+
+    for layer in model.modules():
+        if isinstance(layer, torch.nn.Linear):
+            layer.forward = types.MethodType(_spatial_linear_forward, layer)
+
+
 def trace_model(source_repo: str, destination: Path, input_size: int,
-                expected_labels: int) -> None:
+                expected_labels: int, spatial_linear_convolution: bool = False) -> None:
     import timm
     import torch
 
@@ -45,6 +64,8 @@ def trace_model(source_repo: str, destination: Path, input_size: int,
     # Persist inference-only parameters so it need not retain autograd history.
     model.requires_grad_(False)
     replace_grn_addcmul(model)
+    if spatial_linear_convolution:
+        replace_spatial_linear(model)
     dummy = torch.zeros((1, 3, input_size, input_size), dtype=torch.float32)
     with torch.inference_mode():
         output = model(dummy)
@@ -59,7 +80,7 @@ def trace_model(source_repo: str, destination: Path, input_size: int,
 
 
 def convert(source_repo: str, destination: Path, input_size: int,
-            expected_labels: int) -> tuple[Path, Path]:
+            expected_labels: int, spatial_linear_convolution: bool = False) -> tuple[Path, Path]:
     destination.mkdir(parents=True, exist_ok=True)
     param = destination / "model.ncnn.param"
     weights = destination / "model.ncnn.bin"
@@ -69,7 +90,8 @@ def convert(source_repo: str, destination: Path, input_size: int,
         if (cached.get("source_repo") == source_repo
                 and cached.get("input_size") == input_size
                 and cached.get("label_count") == expected_labels
-                and cached.get("fp16") is False):
+                and cached.get("fp16") is False
+                and bool(cached.get("spatial_linear_convolution")) == spatial_linear_convolution):
             return param, weights
 
     # pnnx writes several large intermediate files. Keep them outside the cache
@@ -78,11 +100,14 @@ def convert(source_repo: str, destination: Path, input_size: int,
         stem = Path(work) / "model"
         # End the trace worker before starting pnnx. Deleting torch objects
         # alone leaves allocator arenas resident and can exhaust APU RAM.
-        subprocess.run([
+        trace_arguments = [
             sys.executable, str(Path(__file__).resolve()), source_repo,
             str(stem.with_suffix(".pt")), "--input-size", str(input_size),
             "--labels", str(expected_labels), "--trace-only",
-        ], check=True)
+        ]
+        if spatial_linear_convolution:
+            trace_arguments.append('--spatial-linear-convolution')
+        subprocess.run(trace_arguments, check=True)
         pnnx_executable = Path(sys.executable).parent / ("pnnx.exe" if os.name == "nt" else "pnnx")
         if not pnnx_executable.is_file():
             raise RuntimeError(f"pnnx実行ファイルがありません: {pnnx_executable}")
@@ -117,6 +142,7 @@ def convert(source_repo: str, destination: Path, input_size: int,
             "converter": "pnnx CLI",
             "fp16": False,
             "grn_addcmul_replaced": True,
+            "spatial_linear_convolution": spatial_linear_convolution,
         }, indent=2) + "\n", encoding="utf-8")
     return param, weights
 
@@ -128,12 +154,16 @@ def main() -> None:
     parser.add_argument("--input-size", type=int, required=True)
     parser.add_argument("--labels", type=int, required=True)
     parser.add_argument("--trace-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument('--spatial-linear-convolution', action='store_true',
+                        help='Diagnostic: export spatial Linear as equivalent 1x1 convolution')
     args = parser.parse_args()
     if args.trace_only:
-        trace_model(args.source_repo, args.destination, args.input_size, args.labels)
+        trace_model(args.source_repo, args.destination, args.input_size, args.labels,
+                    args.spatial_linear_convolution)
         return
     print("\n".join(map(str, convert(args.source_repo, args.destination,
-                                     args.input_size, args.labels))))
+                                     args.input_size, args.labels,
+                                     args.spatial_linear_convolution))))
 
 
 if __name__ == "__main__":
