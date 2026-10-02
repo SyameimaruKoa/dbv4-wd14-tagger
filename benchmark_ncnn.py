@@ -145,6 +145,7 @@ def run(args, monitor):
     runtime = load_runtime_model(
         args.provider != "cpu", args.profile, provider=args.provider,
         gpu_index=args.gpu_index, ncnn_precision=args.ncnn_precision,
+        openvino_device=args.openvino_device,
         model_file=args.model_file,
     )
     load_seconds = time.perf_counter() - start
@@ -177,6 +178,7 @@ def run(args, monitor):
         "precision": args.ncnn_precision if args.provider == "ncnn" else None,
         "profile": args.profile,
         "gpu_index": args.gpu_index,
+        "openvino_device": args.openvino_device,
         "nvidia_smi_index": smi_index,
         "platform": platform.platform(),
         "gpu_environment": {name: os.environ[name] for name in (
@@ -221,6 +223,7 @@ def main():
     parser.add_argument("--profile", default="ultra")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--gpu-index", type=int, default=0)
+    parser.add_argument("--openvino-device", help="Explicit OpenVINO GPU.N device")
     parser.add_argument("--nvidia-smi-index", type=int,
                         help="NVIDIA memory counter index; Vulkan numbering can differ")
     parser.add_argument("--ncnn-precision", choices=("fp32", "fp16-storage",
