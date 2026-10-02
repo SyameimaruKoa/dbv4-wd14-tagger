@@ -3,6 +3,7 @@
 import importlib.util
 import hashlib
 import json
+import os
 from pathlib import Path
 import platform
 import subprocess
@@ -13,6 +14,24 @@ import numpy as np
 from PIL import Image
 
 from dbv4 import DBV4Metadata, DBV4Preprocessor, infer_output_to_probabilities
+
+
+def configure_vulkan_environment() -> None:
+    """Apply the measured RADV synchronization workaround before instance creation."""
+    if platform.system() != 'Linux':
+        return
+    for vendor in Path('/sys/class/drm').glob('card*/device/vendor'):
+        try:
+            is_amd = vendor.read_text().strip().lower() == '0x1002'
+        except OSError:
+            continue
+        if is_amd:
+            flags = [flag for flag in os.environ.get('RADV_DEBUG', '').split(',') if flag]
+            if 'syncshaders' not in flags:
+                flags.append('syncshaders')
+                os.environ['RADV_DEBUG'] = ','.join(flags)
+                print('[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。')
+            return
 
 
 def vulkan_device(ncnn, gpu_index: int) -> str:
@@ -83,6 +102,7 @@ class NcnnRuntimeModel:
     def __init__(self, metadata: DBV4Metadata, preprocessor: DBV4Preprocessor,
                  model_prefix: Path, gpu_index: int = 0,
                  precision: str = "fp32") -> None:
+        configure_vulkan_environment()
         try:
             import ncnn
         except ImportError as exc:

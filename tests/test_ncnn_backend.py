@@ -13,7 +13,27 @@ import numpy as np
 from PIL import Image
 
 from convert_ncnn_model import convert
-from ncnn_backend import NcnnRuntimeModel, ensure_ncnn_model, vulkan_device
+from ncnn_backend import (NcnnRuntimeModel, configure_vulkan_environment,
+                          ensure_ncnn_model, vulkan_device)
+
+
+class VulkanEnvironmentTests(unittest.TestCase):
+    def test_amd_sync_preserves_existing_flags_and_is_idempotent(self):
+        vendor = SimpleNamespace(read_text=lambda: '0x1002\n')
+        with patch('ncnn_backend.platform.system', return_value='Linux'), \
+                patch('ncnn_backend.Path.glob', return_value=[vendor]), \
+                patch.dict(os.environ, {'RADV_DEBUG': 'nocache'}, clear=True):
+            configure_vulkan_environment()
+            configure_vulkan_environment()
+            self.assertEqual(os.environ['RADV_DEBUG'], 'nocache,syncshaders')
+
+    def test_other_vendor_keeps_driver_environment(self):
+        vendor = SimpleNamespace(read_text=lambda: '0x8086\n')
+        with patch('ncnn_backend.platform.system', return_value='Linux'), \
+                patch('ncnn_backend.Path.glob', return_value=[vendor]), \
+                patch.dict(os.environ, {}, clear=True):
+            configure_vulkan_environment()
+            self.assertNotIn('RADV_DEBUG', os.environ)
 
 
 class FakeExtractor:

@@ -636,7 +636,8 @@ def load_runtime_model(
         print(f"[WARN] {profile['vram_warning']}")
     if provider == "ncnn":
         from pathlib import Path
-        from ncnn_backend import NcnnRuntimeModel, ensure_ncnn_model, vulkan_device
+        from ncnn_backend import (NcnnRuntimeModel, configure_vulkan_environment,
+                                  ensure_ncnn_model, vulkan_device)
 
         metadata = DBV4Metadata.load(
             profile, base_dir=SCRIPT_DIR, model_repo_override=model_repo,
@@ -652,6 +653,7 @@ def load_runtime_model(
             prefix = Path(str(prefix)[:-len(".ncnn.bin")])
         if status_callback:
             status_callback("ncnn Vulkanモデルを初期化しています")
+        configure_vulkan_environment()
         try:
             import ncnn
         except ImportError as exc:
