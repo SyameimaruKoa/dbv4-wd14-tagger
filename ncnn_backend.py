@@ -118,7 +118,8 @@ class NcnnRuntimeModel:
         self.options = {name: bool(getattr(self.net.opt, name)) for name in (
             'use_vulkan_compute', 'use_fp16_storage', 'use_fp16_packed', 'use_fp16_arithmetic',
             'use_packing_layout', 'use_subgroup_ops', 'use_winograd_convolution',
-            'use_sgemm_convolution', 'use_bf16_storage', 'use_bf16_packed')
+            'use_sgemm_convolution', 'use_bf16_storage', 'use_bf16_packed',
+            'use_shader_local_memory', 'use_local_pool_allocator')
             if hasattr(self.net.opt, name)}
         inputs = list(self.net.input_names())
         outputs = list(self.net.output_names())
