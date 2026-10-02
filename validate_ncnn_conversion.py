@@ -33,6 +33,7 @@ def run(args):
         net.opt.use_fp16_storage = False
         net.opt.use_fp16_packed = False
         net.opt.use_fp16_arithmetic = False
+        net.opt.use_packing_layout = not args.no_packing
         net.opt.num_threads = args.threads
         if (net.load_param(str(prefix.with_suffix('.ncnn.param'))) != 0
                 or net.load_model(str(prefix.with_suffix('.ncnn.bin'))) != 0):
@@ -54,6 +55,7 @@ def run(args):
         'provider': 'ncnn CPU (conversion validation only)',
         'precision': 'fp32', 'profile': args.profile, 'batch_size': 1,
         'warmup': 0, 'iterations': 1, 'num_threads': args.threads,
+        'use_packing_layout': not args.no_packing,
         'load_seconds': load_seconds, 'single_cold_inference_ms': inference_ms,
         'input_sha256': input_hash, 'metadata_version': metadata.metadata_version,
         'label_count': metadata.label_count, 'package_versions': package_versions(),
@@ -78,6 +80,8 @@ def main():
     parser.add_argument('--reference', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--threads', type=int, default=4)
+    parser.add_argument('--no-packing', action='store_true',
+                        help='Diagnostic: disable ncnn CPU packing')
     args = parser.parse_args()
     if args.threads < 1:
         parser.error('threads must be positive')
