@@ -2,17 +2,37 @@
 
 ## Issue #21: ncnn Vulkan 検証
 
-2026-10-02の実装環境はIntel HD Graphics 530をPCI上に検出したが、`/dev/dri`が公開されず、Vulkanの実GPUを利用できない。pnnx 20260526で元PyTorchの `convnextv2_huge.dbv4-full` をbatch 1・入力512×512・FP32で変換し、`model.ncnn.param`（約71 KiB）と `.bin`（約2.58 GiB）を生成した。ncnn 1.0.20260526で両ファイルの読み込みが成功し、入出力名 `in0` / `out0` を確認した。元のGlobalResponseNormの `torch.addcmul` は同値の基本演算に変えてからtraceし、pnnx未変換演算が残らないことを確認した。Mesa llvmpipe上の合成Sigmoidグラフでは入力CHW `(3,4,4)` → 出力48値の推論が成功した。llvmpipeはVulkanのCPUデバイスなので自動GPU選択から除外する。ncnn Vulkan**実機**の速度、ultra出力差、GPU使用率、GPUメモリはなお**未測定**。数値を推定値として補っていない。
+2026-10-02、Intel Core i5-6500T / HD Graphics 530、RAM約15 GiBのLinux環境で検証した。`/dev/dri`が公開されず、Vulkanの実GPUを利用できない。pnnx 20260526で元PyTorchの `convnextv2_huge.dbv4-full` をbatch 1・入力512×512・FP32で変換し、`model.ncnn.param`（約71 KiB）と `.bin`（約2.58 GiB）を生成した。ncnn 1.0.20260526で両ファイルの読み込みとCPU推論が成功し、入出力名 `in0` / `out0` を確認した。元のGlobalResponseNormの `torch.addcmul` は同値の基本演算に変えてからtraceし、pnnx未変換演算が残らないことを確認した。Mesa llvmpipe上の合成Sigmoidグラフでは入力CHW `(3,4,4)` → 出力48値の推論が成功した。llvmpipeはVulkanのCPUデバイスなので自動GPU選択から除外する。
+
+同じ合成640×480 RGB画像、同じDBV4前処理、metadata version `07cfcadc104847e8`、12,476ラベルを用いたCPU照合結果:
+
+| 比較 | 最大確率絶対差 | 平均確率絶対差 | Rating 4値の最大絶対差 | best_threshold採用タグの差 |
+| --- | ---: | ---: | ---: | --- |
+| ncnn FP32 CPU / ONNX Runtime CPU | 0.000228107 | 0.000000253157 | 0.00000144460 | 0件 |
+| 元PyTorch / ONNX Runtime CPU | 0.00000184774 | 0.00000000147093 | 0.0000000135042 | 0件 |
+
+一次資料は [ONNX CPU](benchmarks/ncnn_local_20261002/cpu-b1.json)、[ncnn CPU変換検証](benchmarks/ncnn_local_20261002/ncnn-cpu-conversion-check.json)、[元PyTorch照合](benchmarks/ncnn_local_20261002/torch-source-check.json)。全確率配列とratingを保存している。FP32の検証は `atol=1e-4, rtol=1e-3` で全ラベル成功し、rating最大差は1e-4未満、採用タグは一致した。元モデル全体でGRNを書き換える前後の最大確率差は0.000000730157だった。ncnnの入力にはNumPyバッファの寿命を保持する必要があるため、実装は連続したfloat32配列をextract完了まで保持する。
+
+ONNX CPU（onnxruntime-openvino 1.24.1のCPUExecutionProvider）のbatch 1はwarm-up 3回・20回の中央値 **8,063.17 ms/枚**、モデル取得・初期化を含むロード **128.50秒**、ピークRSS **3,578.36 MiB**。ncnn CPU照合は1回のコールド推論・4スレッドなので、速度比較に混ぜない。
+
+AMD Barcelo実機（RAM約14 GiB、swap約14 GiB）では元重み取得とTorchScript作成に成功したが、pnnxはカーネルのOOM killerで終了した（2026-10-02 18:19:39、pnnx pid 7741、ラッパー終了コード247）。trace用PyTorchプロセスを終了してからpnnxを実行するよう変換器を改善した。小さいモデルでこの変換経路と実ncnn推論の一致を確認したが、ultraのAMD再変換と実GPU推論は未完了。ncnn Vulkan実機の速度、GPU上の出力差、FP16、GPU使用率・メモリ、XMP、Server/Clientは**未検証**。NVIDIA/Intel/PS4/Switchの実GPU比較も未測定。
+
+AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`を列挙した。通常ランチャーで `--provider ncnn --gpu-index 42 --probe-provider -m ultra` は「GPU 42を利用できません（検出数2）」で停止し、CPUへ変更されなかった。`--gpu-index 1` も「ソフトウェアデバイス」として停止した。これらはデバイス選択と失敗時の検証であり、DBV4の実GPU推論成功を示すものではない。
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。例:
 
 ```bash
+bash benchmark_ncnn_matrix.sh benchmarks/ncnn_ultra
+# 個別測定ではランチャーと同じ保存先を指定する
+export DBV4_DATA_DIR="$PWD/.dbv4" HF_HOME="$PWD/.dbv4/huggingface"
 venv_std/bin/python benchmark_ncnn.py --provider cpu --profile ultra --batch-size 1 --output benchmarks/ncnn_ultra_cpu_b1.json
 venv_ncnn/bin/python benchmark_ncnn.py --provider ncnn --profile ultra --batch-size 1 --reference benchmarks/ncnn_ultra_cpu_b1.json --output benchmarks/ncnn_ultra_fp32_b1.json
 venv_ncnn/bin/python benchmark_ncnn.py --provider ncnn --profile ultra --batch-size 4 --ncnn-precision fp16-storage --reference benchmarks/ncnn_ultra_cpu_b1.json --output benchmarks/ncnn_ultra_fp16_storage_b4.json
 ```
 
-各JSONには初回ロード時間、warm-up 3回後の20回のms/枚、取得可能な場合のGPUメモリ、全ラベルの確率、rating 4値、best_threshold適用後のタグを記録する。`--reference` はCPUとの最大・平均絶対誤差、rating差、採用タグ差を記録する。batch 4のncnnはbatch 1グラフを順に実行する。TensorRT/CUDA/OpenVINO/MIGraphX/WebGPUも対応する仮想環境で同じスクリプトを実行できる。XMPとServer/Clientの確認は通常ランチャーで別途行う必要がある。
+各JSONにはモデル取得・初期化・起動検証を含むロード時間、warm-up 3回後の20回のms/枚、生の反復時間、全ラベルの確率、rating 4値、best_threshold適用後のタグを記録する。取得可能ならNVIDIAのGPUメモリ、AMDのVRAM/GTT/GPU使用率、LinuxプロセスRSSを取得する。AMDカウンターは200 ms間隔、デバイス全体の値で他プロセスも含む。複数AMD GPUでは `--drm-device /sys/class/drm/cardN/device` を明示する。`--reference` は入力SHA256とmetadata versionも照合する。batch 4のncnnはbatch 1グラフを順に実行する。TensorRT/CUDA/OpenVINO/MIGraphX/WebGPUも対応する仮想環境で同じスクリプトを実行できる。
+
+CPUでの変換照合は `python validate_ncnn_conversion.py --reference benchmarks/ncnn_ultra/cpu-b1.json --output benchmarks/ncnn_ultra/conversion-check.json`。実GPUの出力一致・XMP・Server/Client検証は `DBV4_NCNN_INTEGRATION=1 DBV4_NCNN_REFERENCE=benchmarks/ncnn_ultra/cpu-b1.json venv_ncnn/bin/python -m unittest discover -s tests -p test_ncnn_integration.py -v`。どちらも上記保存先の環境変数を指定する。XMP検証にはExifToolが必要。
 
 集計日: 2026-09-23。[README](README.md) / [全100条件の詳細](benchmarks/matrix_details_20260923.md) / [READMEから移動した旧測定](benchmarks/legacy_results.md)
 
@@ -251,4 +271,4 @@ AMD Linuxの今回と同条件のCPU/MIGraphX/WebGPUマトリクスは収録さ�
 - [測定ランナー](benchmark_matrix.py) / [速度・メモリ測定本体](benchmark_nvidia_ep.py) / [要約処理](summarize_benchmark_matrix.py)
 - [全100条件の数値・失敗理由と個別JSONへのリンク](benchmarks/matrix_details_20260923.md)
 
-今回の分析では再推論を行っていない。保存済みの生データを維持し、同一条件の照合・計算・文書化のみ実施した。
+2026-09-23マトリクスの分析では再推論を行っていない。保存済みの生データを維持し、同一条件の照合・計算・文書化のみ実施した。

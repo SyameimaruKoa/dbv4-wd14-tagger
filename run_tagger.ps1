@@ -489,7 +489,8 @@ function Test-ProviderAvailability {
             & $PythonExecutable -c "import sys; sys.path.insert(0,sys.argv[1]); import gpu_runtime,onnxruntime as ort; gpu_runtime.configure_webgpu(ort.SessionOptions(),None,sys.argv[2] or None)" $ScriptDir $Vendor 2>$null | Out-Null
         }
         'ncnn' {
-            & $PythonExecutable -c "import ncnn,sys; sys.exit(0 if ncnn.get_gpu_count() > 0 else 1)" 2>$null | Out-Null
+            # Let the full model probe report missing Vulkan support or driver errors.
+            return $true
         }
         default { return $false }
     }

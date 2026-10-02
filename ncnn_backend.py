@@ -15,6 +15,8 @@ from dbv4 import DBV4Metadata, DBV4Preprocessor, infer_output_to_probabilities
 
 
 def vulkan_device(ncnn, gpu_index: int) -> str:
+    if not all(callable(getattr(ncnn, name, None)) for name in ('get_gpu_count', 'get_gpu_info')):
+        raise RuntimeError('ncnn Python bindingにVulkan GPU APIがありません。Vulkan有効のビルドが必要です。')
     if gpu_index < 0:
         raise ValueError("GPU device index must be non-negative")
     count = ncnn.get_gpu_count()
@@ -103,6 +105,8 @@ class NcnnRuntimeModel:
             raise RuntimeError(f"ncnn paramの読み込みに失敗しました: {param}")
         if self.net.load_model(str(weights)) != 0:
             raise RuntimeError(f"ncnn binの読み込みに失敗しました: {weights}")
+        self.options = {name: bool(getattr(self.net.opt, name)) for name in (
+            'use_vulkan_compute', 'use_fp16_storage', 'use_fp16_packed', 'use_fp16_arithmetic')}
         inputs = list(self.net.input_names())
         outputs = list(self.net.output_names())
         if len(inputs) != 1 or len(outputs) != 1:
@@ -121,6 +125,7 @@ class NcnnRuntimeModel:
 
         results = []
         for sample in batch_nchw:
+            # ncnn.Mat borrows NumPy storage; keep this array alive through extract.
             sample = np.ascontiguousarray(sample, dtype=np.float32)
             if sample.ndim != 3 or sample.shape[0] != 3:
                 raise ValueError(f"ncnn入力はCHW 3チャネルが必要です: {sample.shape}")

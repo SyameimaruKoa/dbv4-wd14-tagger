@@ -2,6 +2,7 @@
 # Execute providers in separate processes so their runtime packages stay isolated.
 set -eu
 cd "$(dirname "${BASH_SOURCE[0]}")"
+export DBV4_DATA_DIR="$PWD/.dbv4"
 export HF_HOME="$PWD/.dbv4/huggingface"
 export HF_HUB_CACHE="$HF_HOME/hub"
 export HF_TOKEN_PATH="$HF_HOME/token"

@@ -341,7 +341,11 @@ select_auto_provider() {
         nvidia) candidates=(tensorrt cuda ncnn webgpu cpu) ;;
         intel) candidates=(intel ncnn webgpu cpu) ;;
         amd)
-            if command -v rocminfo >/dev/null 2>&1; then
+            if command -v rocminfo >/dev/null 2>&1 || [ -d /opt/rocm ] ||
+                [ -x "$SCRIPT_DIR/venv_migraphx/bin/python" ] ||
+                [ -x "$SCRIPT_DIR/venv_rocm/bin/python" ] ||
+                [ -x "$SCRIPT_DIR/venv_amd/bin/python" ] ||
+                ldconfig -p 2>/dev/null | grep -q 'libamdhip64'; then
                 candidates=(migraphx rocm ncnn webgpu cpu)
             else
                 candidates=(ncnn webgpu cpu)

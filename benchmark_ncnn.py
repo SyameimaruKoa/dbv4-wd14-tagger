@@ -142,23 +142,27 @@ def run(args, monitor):
         model_file=args.model_file,
     )
     load_seconds = time.perf_counter() - start
+    print(f'[benchmark] Model initialization and startup probe: {load_seconds:.2f}s', flush=True)
     loaded_memory = gpu_memory_mib(args.gpu_index)
     loaded_resources = monitor.snapshot()
     tensor = runtime.preprocessor(image)
     batch = np.repeat(tensor[None, ...], args.batch_size, axis=0)
     # The ncnn graph is batch one; its adapter executes a logical batch
     # sequentially so the default application batch can still be compared.
-    for _ in range(args.warmup):
+    for step in range(args.warmup):
         runtime.predict_preprocessed(batch)
+        print(f'[benchmark] Warm-up {step + 1}/{args.warmup}', flush=True)
     warm_memory = gpu_memory_mib(args.gpu_index)
     warmed_resources = monitor.snapshot()
     durations = []
     output = None
     measured_start = time.perf_counter()
-    for _ in range(args.iterations):
+    for step in range(args.iterations):
         start = time.perf_counter()
         output = runtime.predict_preprocessed(batch)
         durations.append((time.perf_counter() - start) * 1000 / args.batch_size)
+        print(f'[benchmark] Iteration {step + 1}/{args.iterations}: '
+              f'{durations[-1]:.2f} ms/img', flush=True)
     probabilities = np.asarray(output[0], dtype=np.float32)
     if probabilities.size != runtime.metadata.label_count:
         raise ValueError("DBV4ラベル数が一致しません")
@@ -187,6 +191,7 @@ def run(args, monitor):
         "package_versions": package_versions(),
         "input_sha256": hashlib.sha256(tensor.tobytes()).hexdigest(),
         "ncnn_device": getattr(runtime, 'device_name', None),
+        "ncnn_options": getattr(runtime, 'options', None),
         "active_providers": (runtime.session.get_providers()
                              if hasattr(runtime, 'session') else ['ncnn Vulkan']),
     }

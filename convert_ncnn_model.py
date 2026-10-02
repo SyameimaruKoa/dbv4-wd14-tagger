@@ -5,7 +5,6 @@ The source repository must be accessible to the current Hugging Face account.
 """
 
 import argparse
-import gc
 import json
 import os
 from pathlib import Path
@@ -36,6 +35,26 @@ def replace_grn_addcmul(model) -> int:
     return count
 
 
+def trace_model(source_repo: str, destination: Path, input_size: int,
+                expected_labels: int) -> None:
+    import timm
+    import torch
+
+    model = timm.create_model("hf-hub:" + source_repo, pretrained=True).eval()
+    replace_grn_addcmul(model)
+    dummy = torch.zeros((1, 3, input_size, input_size), dtype=torch.float32)
+    with torch.inference_mode():
+        output = model(dummy)
+    if output.numel() != expected_labels:
+        raise ValueError(
+            f"PyTorchモデルの出力数がDBV4 metadataと異なります: "
+            f"{output.numel()} != {expected_labels}"
+        )
+    with torch.inference_mode():
+        traced = torch.jit.trace(model, (dummy,), check_trace=False)
+    traced.save(str(destination))
+
+
 def convert(source_repo: str, destination: Path, input_size: int,
             expected_labels: int) -> tuple[Path, Path]:
     destination.mkdir(parents=True, exist_ok=True)
@@ -50,37 +69,32 @@ def convert(source_repo: str, destination: Path, input_size: int,
                 and cached.get("fp16") is False):
             return param, weights
 
-    import timm
-    import torch
-
     # pnnx writes several large intermediate files. Keep them outside the cache
     # and publish the two runtime files only after conversion has succeeded.
     with tempfile.TemporaryDirectory(prefix="dbv4-pnnx-", dir=destination) as work:
         stem = Path(work) / "model"
-        model = timm.create_model("hf-hub:" + source_repo, pretrained=True).eval()
-        replace_grn_addcmul(model)
-        dummy = torch.zeros((1, 3, input_size, input_size), dtype=torch.float32)
-        with torch.inference_mode():
-            output = model(dummy)
-        if output.numel() != expected_labels:
-            raise ValueError(
-                f"PyTorchモデルの出力数がDBV4 metadataと異なります: "
-                f"{output.numel()} != {expected_labels}"
-            )
-        with torch.inference_mode():
-            traced = torch.jit.trace(model, (dummy,), check_trace=False)
-        traced.save(str(stem.with_suffix(".pt")))
-        del traced, model, output
-        gc.collect()
-        del dummy
-        gc.collect()
+        # End the trace worker before starting pnnx. Deleting torch objects
+        # alone leaves allocator arenas resident and can exhaust APU RAM.
+        subprocess.run([
+            sys.executable, str(Path(__file__).resolve()), source_repo,
+            str(stem.with_suffix(".pt")), "--input-size", str(input_size),
+            "--labels", str(expected_labels), "--trace-only",
+        ], check=True)
         pnnx_executable = Path(sys.executable).parent / ("pnnx.exe" if os.name == "nt" else "pnnx")
         if not pnnx_executable.is_file():
             raise RuntimeError(f"pnnx実行ファイルがありません: {pnnx_executable}")
-        subprocess.run([
-            str(pnnx_executable), str(stem.with_suffix(".pt")),
-            f"inputshape=[1,3,{input_size},{input_size}]f32", "fp16=0",
-        ], cwd=work, check=True)
+        try:
+            subprocess.run([
+                str(pnnx_executable), str(stem.with_suffix(".pt")),
+                f"inputshape=[1,3,{input_size},{input_size}]f32", "fp16=0",
+            ], cwd=work, check=True)
+        except subprocess.CalledProcessError as exc:
+            if exc.returncode in (-9, 247):
+                raise RuntimeError(
+                    'pnnxが強制終了されました。RAM/swap不足によるOOMの可能性があります。'
+                    '空きメモリを確認するか、別のマシンで変換してください。'
+                ) from exc
+            raise
         generated_param = Path(str(stem) + ".ncnn.param")
         generated_weights = Path(str(stem) + ".ncnn.bin")
         if not generated_param.is_file() or not generated_weights.is_file():
@@ -110,7 +124,11 @@ def main() -> None:
     parser.add_argument("destination", type=Path)
     parser.add_argument("--input-size", type=int, required=True)
     parser.add_argument("--labels", type=int, required=True)
+    parser.add_argument("--trace-only", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.trace_only:
+        trace_model(args.source_repo, args.destination, args.input_size, args.labels)
+        return
     print("\n".join(map(str, convert(args.source_repo, args.destination,
                                      args.input_size, args.labels))))
 

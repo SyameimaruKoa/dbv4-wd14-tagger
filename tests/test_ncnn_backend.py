@@ -1,9 +1,12 @@
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
+import subprocess
 from types import SimpleNamespace
 import unittest
+import weakref
 from unittest.mock import patch
 
 import numpy as np
@@ -86,6 +89,39 @@ class NcnnBackendTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "ソフトウェアデバイス"):
             vulkan_device(ncnn, 0)
 
+    def test_borrowed_input_storage_survives_until_extraction(self):
+        class BorrowingExtractor:
+            def input(self, name, sample_reference):
+                self.sample_reference = sample_reference
+                return 0
+
+            def extract(self, name):
+                sample = self.sample_reference()
+                if sample is None:
+                    raise RuntimeError('ncnn input storage was released')
+                return 0, np.array([0.1, 0.4, 0.8, 0.9], np.float32)
+
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = Path(directory) / 'model'
+            prefix.with_suffix('.ncnn.param').write_text('param')
+            prefix.with_suffix('.ncnn.bin').write_bytes(b'bin')
+            net = FakeNet()
+            net.create_extractor = BorrowingExtractor
+            binding = SimpleNamespace(Net=lambda: net, Mat=weakref.ref,
+                                      get_gpu_count=lambda: 1,
+                                      get_gpu_info=lambda index: SimpleNamespace(
+                                          device_name=lambda: 'test GPU', type=lambda: 2))
+            metadata = SimpleNamespace(label_count=4, profile_name='ultra')
+            with patch.dict(sys.modules, {'ncnn': binding}):
+                runtime = NcnnRuntimeModel(metadata, None, prefix)
+                # Float16 forces allocation of new float32 input storage.
+                result = runtime.predict_preprocessed(np.zeros((2, 3, 4, 4), np.float16))
+            self.assertEqual(len(result), 2)
+
+    def test_cpu_only_binding_reports_missing_vulkan_support(self):
+        with self.assertRaisesRegex(RuntimeError, 'Vulkan GPU API'):
+            vulkan_device(SimpleNamespace(), 0)
+
     def test_cached_converter_files_do_not_require_conversion_dependencies(self):
         with tempfile.TemporaryDirectory() as directory:
             dest = Path(directory)
@@ -98,6 +134,24 @@ class NcnnBackendTests(unittest.TestCase):
             ensure_ncnn_model(dest / "model", "owner/model", 512, 4)
             self.assertEqual(convert("owner/model", dest, 512, 4),
                              (dest / "model.ncnn.param", dest / "model.ncnn.bin"))
+
+    def test_killed_converter_reports_memory_failure_without_publishing_cache(self):
+        for exit_code in (-9, 247):
+            with self.subTest(exit_code=exit_code), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / ('pnnx.exe' if os.name == 'nt' else 'pnnx')).write_text('stub')
+                destination = root / 'models'
+                with patch.object(sys, 'executable', str(root / 'python')), patch(
+                    'convert_ncnn_model.subprocess.run', side_effect=[
+                        subprocess.CompletedProcess([], 0),
+                        subprocess.CalledProcessError(exit_code, 'pnnx'),
+                    ]
+                ) as run:
+                    with self.assertRaisesRegex(RuntimeError, 'RAM/swap'):
+                        convert('owner/model', destination, 8, 4)
+                self.assertIn('--trace-only', run.call_args_list[0].args[0])
+                self.assertFalse((destination / 'model.ncnn.json').exists())
+                self.assertEqual(list(destination.iterdir()), [])
 
 
 if __name__ == "__main__":
