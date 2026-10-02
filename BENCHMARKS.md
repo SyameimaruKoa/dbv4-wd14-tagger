@@ -76,7 +76,7 @@ subgroup無効化時にshaderの機能マクロが有効のまま残る不整合
 
 [FP16 storageの起動検証](benchmarks/ncnn_amd_20261003/conv1x1-fp16-storage-probe.log)は非有限の確率出力を検出して停止した。速度測定結果は生成していない。
 
-### Windows実機確認（2026-10-03、Intel再確認待ち）
+### Windows実機確認（2026-10-03）
 
 WindowsのPython 3.13.15、ncnn 1.0.20260526で、同じultraモデル3ファイルのSHA256一致を確認した。Vulkan GPU 2はRTX 2070 Max-Q、GPU 0はIntel UHD 630。PowerShell 5.1でランチャーの構文解析エラーは0件だった。
 
@@ -84,7 +84,17 @@ RTXの[FP32 batch 1](benchmarks/ncnn_windows_20261003/rtx-fp32-b1.json)はwarm-u
 
 [別のメモリ確認](benchmarks/ncnn_windows_20261003/rtx-memory-check.json)はVulkan index 2に対してNVIDIA SMI index 0を指定した。GPU全体の使用量は開始前716 MiB、ロード後とwarm-up後は3,732 MiB。時点ごとの値でありピーク測定ではない。WindowsのRSS・Intel共有メモリ・GPU使用率はこの測定で取得していない。
 
-Intelは[実GPUでの全確率・rating・採用タグ比較](benchmarks/ncnn_windows_20261003/intel-integration.log)に成功した。ただし推論1回に約140秒かかり、Server/Clientは既定の15秒でタイムアウトした。[20回の速度測定](benchmarks/ncnn_windows_20261003/intel-fp32-b1.log)は途中で停止したため中央値を記録しない。`client_timeout`と`client_batch_timeout`を300秒にした原画像・前処理済み転送の再確認は実行中。この節は確認済み事項と残作業の記録であり、Intel統合テストの成功記録ではない。
+Intelは[実GPUでの全確率・rating・採用タグ比較](benchmarks/ncnn_windows_20261003/intel-integration.log)に成功した。ただし推論1回に約140秒かかり、Server/Clientは既定の15秒でタイムアウトした。[20回の速度測定](benchmarks/ncnn_windows_20261003/intel-fp32-b1.log)は途中で停止したため中央値を記録しない。`client_timeout`と`client_batch_timeout`を300秒にした[再確認](benchmarks/ncnn_windows_20261003/intel-integration-300s.log)は2件とも成功（771.317秒、終了コード0）。原画像・前処理済み転送と単独実行のXMP一致を確認した。アプリの既定タイムアウトは変更していない。
+
+RTXの同じultra・入力SHA256・metadata・warm-up 3回／20回の[比較](benchmarks/ncnn_windows_20261003/comparison-summary.json)は以下のとおり。全条件の12,476確率をCPU参照に対して `atol=1e-4, rtol=1e-3` で照合し成功した。ncnnとCUDA/TensorRTの採用タグ差は0件、rating最大差は0.000000119209。最新修正を含む[RTX統合テスト](benchmarks/ncnn_windows_20261003/rtx-integration-latest.log)も2件成功（18.680秒）。
+
+| RTX経路 | batch 1 ms/枚 | batch 4 ms/枚 | ncnn b1との最大確率差（b1 / b4） |
+| --- | --- | --- | --- |
+| ncnn FP32 | 1,131.62 | 1,128.64 | 0 / 0 |
+| CUDA | 490.67 | 472.30 | 0.000000894070 / 0.00000120699 |
+| TensorRT | 377.54 | 359.47 | 0.00000309944 / 0.00000309944 |
+
+TensorRT/CUDAは起動検証の実行EPも確認した。Intelのncnn統合試験は別GPUで並行実行されており、この表は完全な無負荷時の測定ではない。ncnn b4は固定batch 1グラフの逐次実行である。PowerShell 5.1で実際の[候補生成関数](benchmarks/ncnn_windows_20261003/launcher-priorities.json)をGPU列挙の置き換えで確認し、NVIDIAではTensorRT/CUDA、IntelではOpenVINO、Windows AMDでは既存DirectMLをncnnより優先することを確認した。この検証はGPU列挙を模擬した候補順の確認であり、全候補の実機成功を示さない。
 
 ### 再測定
 

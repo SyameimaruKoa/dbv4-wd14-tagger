@@ -362,7 +362,7 @@ Clientは最大2バッチの通信を並行させ、次のバッチのアップ�
 既定の`client_upload_mode: "preprocessed"`では、ClientがServerと同じ前処理を実行し、モデル入力のfloat32テンソルを可逆圧縮して送る。前処理の照合結果が一致した形式は元画像送信と同じテンソルが推論に渡る。Client側のCPU負荷を抑えたい場合は`"original"`を選ぶ。既存の`config.json`に`"original"`が保存されている場合、その設定は自動変更されない。Bashでは`-U p`、PowerShellでは`-um p`で今回だけ前処理済み転送を選べる。`o`で元画像送信を選べる。JPEG等のコーデック版差がある画像は結果を保つため元画像で送る。前処理済みモードには対応するServerが必要。前処理自体が一致しない場合はClient仮想環境内のPillow・NumPy・AVIFプラグインをServerの版へ自動更新してClientを再起動する。準備・再照合・転送のいずれかで前処理済みモードを使用できなければ理由を警告し、元画像送信で処理を続ける。
 新しいClientとServer間のバッチ応答は、サイズが大きい場合にgzipで圧縮する。古いServerからの非圧縮応答も引き続き利用できる。圧縮を有効にするにはServerの更新と再起動が必要。
 バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
-固定batch 1の単画像通信は`client_timeout`（既定15秒）を使う。WindowsのIntel UHD 630でultraをncnn実行すると1枚約140秒かかったため、クライアントの`config.json`で`client_timeout`と`client_batch_timeout`を例えば300秒に設定する。300秒でのIntel Server/Client再確認は未完了。
+固定batch 1の単画像通信は`client_timeout`（既定15秒）を使う。WindowsのIntel UHD 630でultraをncnn実行すると1枚約140秒かかったため、クライアントの`config.json`で`client_timeout`と`client_batch_timeout`を例えば300秒に設定する。300秒設定で原画像・前処理済み転送のXMP一致を確認した。
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
 追加のGPU指定にも短縮形を使える。実行プロバイダは`-ep`、WebGPUは`-wg`、GPU番号は`-gi`、DirectML番号は`-di`、WebGPU番号は`-wi`、対象ベンダーは`-tv`、OpenVINOデバイスは`-od`、TensorRTライブラリ場所は`-td`。Bash・PowerShell・Python CLIで同じ短縮形を使える。
