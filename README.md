@@ -78,6 +78,8 @@ Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn
 
 精度は `fp32`（既定）、`fp16-storage`、`fp16-packed`、`fp16-arithmetic`。モデル変換は共通で、実行時のncnn設定だけを切り替える。ncnn形式はbatch 1のグラフで、複数枚は順に推論する。VulkanドライバーとVulkan対応のncnn Python bindingが必要。Python wheelにVulkanが含まれない環境ではVulkan有効でncnnをビルドするか、WebGPUを使用する。既存のタグ、rating、XMP、Server/Client処理は同じ確率配列を利用する。実機比較の状態は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
+LinuxでAMD GPUを検出した場合、ncnnのVulkan初期化前に `RADV_DEBUG` へ `syncshaders` を追加する。AMD RADV実機で確認した連続演算時の確率差を抑える同期設定で、既存の環境変数のフラグは保持する。起動ログに適用を表示し、ベンチマークにも環境変数を記録する。
+
 初回変換は推論より多くのRAMを必要とする。保存するパラメーターの勾配を無効化し、pnnxが形状確認時に不要な勾配履歴を保持することを防ぐ。TorchScriptを作成するプロセスを終了してからpnnxを起動し、変換前半のメモリも解放する。pnnx自体がメモリ不足で終了する場合は、余裕のあるPCで変換してキャッシュ3ファイルを配置する。[CPUでの変換照合](validate_ncnn_conversion.py)、[ultra測定ランナー](benchmark_ncnn_matrix.sh)、[実GPUのXMP・Server/Client検証](tests/test_ncnn_integration.py)も用意している。
 
 ### 将来向け1B級
