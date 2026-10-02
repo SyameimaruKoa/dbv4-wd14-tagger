@@ -1,0 +1,54 @@
+[
+  {
+    "blob": "215",
+    "shape": [
+      1408,
+      32,
+      32
+    ],
+    "max_absolute_difference": 0.000213623046875,
+    "mean_absolute_difference": 1.907086016217363e-06,
+    "cpu_min": -155.96932983398438,
+    "cpu_max": 161.04885864257812,
+    "allclose": true
+  },
+  {
+    "blob": "563",
+    "shape": [
+      1408,
+      32,
+      32
+    ],
+    "max_absolute_difference": 41.034393310546875,
+    "mean_absolute_difference": 0.24163584411144257,
+    "cpu_min": -3032.05224609375,
+    "cpu_max": 3341.08935546875,
+    "allclose": false
+  },
+  {
+    "blob": "969",
+    "shape": [
+      1408,
+      32,
+      32
+    ],
+    "max_absolute_difference": 27917.03515625,
+    "mean_absolute_difference": 5.672790050506592,
+    "cpu_min": -260074.28125,
+    "cpu_max": 112067.375,
+    "allclose": false
+  },
+  {
+    "blob": "971",
+    "shape": [
+      32,
+      32,
+      1408
+    ],
+    "max_absolute_difference": 10.962520599365234,
+    "mean_absolute_difference": 0.013727911747992039,
+    "cpu_min": -13.382530212402344,
+    "cpu_max": 8.843587875366211,
+    "allclose": false
+  }
+]
