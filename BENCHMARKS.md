@@ -15,7 +15,19 @@
 
 ONNX CPU（onnxruntime-openvino 1.24.1のCPUExecutionProvider）のbatch 1はwarm-up 3回・20回の中央値 **8,063.17 ms/枚**、モデル取得・初期化を含むロード **128.50秒**、ピークRSS **3,578.36 MiB**。ncnn CPU照合は1回のコールド推論・4スレッドなので、速度比較に混ぜない。
 
-AMD Barcelo実機（RAM約14 GiB、swap約14 GiB）では元重み取得とTorchScript作成に成功したが、pnnxはカーネルのOOM killerで終了した（2026-10-02 18:19:39、pnnx pid 7741、ラッパー終了コード247）。trace用PyTorchプロセスを終了してからpnnxを実行するよう変換器を改善した。小さいモデルでこの変換経路と実ncnn推論の一致を確認したが、ultraのAMD再変換と実GPU推論は未完了。ncnn Vulkan実機の速度、GPU上の出力差、FP16、GPU使用率・メモリ、XMP、Server/Clientは**未検証**。NVIDIA/Intel/PS4/Switchの実GPU比較も未測定。
+AMD Barcelo実機（RAM約14 GiB、swap約14 GiBのzram）では元重み取得とTorchScript作成に成功したが、pnnxはカーネルのOOM killerで終了した（2026-10-02 18:19:39、pnnx pid 7741、ラッパー終了コード247）。trace用PyTorchプロセスを終了してからpnnxを実行し、保存するパラメーターの勾配も無効にするよう変換器を改善した。小さいモデルでこの変換経路と実ncnn推論の一致を確認し、勾配無効化の前後で生成したparam/binのSHA256も一致した。
+
+以後のAMD変換はsystemd user serviceで `MemoryHigh=9G, MemoryMax=9G, MemorySwapMax=2G, OOMPolicy=stop` を設定し、変換失敗後もSSH応答が維持されることを確認した。いずれも2026-10-02、pnnx 20260526、FP32、ultraでの試行。
+
+| 経路 | サービス実行時間 | メモリピーク / swap | 結果 |
+| --- | --- | --- | --- |
+| trace worker分離後のTorchScript | 6分48秒 | 9 GiB / 2 GiB | oom-kill |
+| 上記＋パラメーターの勾配無効化 | 1分40秒 | 9 GiB / 2 GiB | oom-kill |
+| 同じモデルのONNX＋外部重み | 21.866秒 | 9 GiB / 2 GiB | shape_inference中にoom-kill |
+
+ONNX経路は既存の実機内ファイルをハードリンクして使用した。外部重みのシンボリックリンクはONNX Runtimeのパス検証で拒否された。ONNX経路ではpnnxが入力形状を再取得しており、形状と変換結果の妥当性は未確認。各経路とも有効なultraキャッシュは公開していない。上限付き試行の失敗は、より多いRAMでの変換不可能を示すものではない。
+
+ultraのAMD変換と実GPU推論は未完了。ncnn Vulkan実機の速度、GPU上の出力差、FP16、GPU使用率・メモリ、XMP、Server/Clientは**未検証**。NVIDIA/Intel/PS4/Switchの実GPU比較も未測定。Windows用ランチャーはPowerShell 7.5.2の構文解析に成功したが、Windows実機動作は未確認。
 
 AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`を列挙した。通常ランチャーで `--provider ncnn --gpu-index 42 --probe-provider -m ultra` は「GPU 42を利用できません（検出数2）」で停止し、CPUへ変更されなかった。`--gpu-index 1` も「ソフトウェアデバイス」として停止した。これらはデバイス選択と失敗時の検証であり、DBV4の実GPU推論成功を示すものではない。
 
