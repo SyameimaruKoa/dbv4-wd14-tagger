@@ -125,11 +125,15 @@ def package_versions():
     return versions
 
 
-def run(args, monitor):
+def benchmark_image():
     y, x = np.indices((480, 640), dtype=np.uint16)
     pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
                        (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
-    image = Image.fromarray(pixels, "RGB")
+    return Image.fromarray(pixels, "RGB")
+
+
+def run(args, monitor):
+    image = benchmark_image()
     before_memory = gpu_memory_mib(args.gpu_index)
     start = time.perf_counter()
     runtime = load_runtime_model(
