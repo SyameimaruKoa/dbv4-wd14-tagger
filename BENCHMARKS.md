@@ -96,6 +96,8 @@ RTXの同じultra・入力SHA256・metadata・warm-up 3回／20回の[比較](be
 
 TensorRT/CUDAは起動検証の実行EPも確認した。Intelのncnn統合試験は別GPUで並行実行されており、この表は完全な無負荷時の測定ではない。ncnn b4は固定batch 1グラフの逐次実行である。PowerShell 5.1で実際の[候補生成関数](benchmarks/ncnn_windows_20261003/launcher-priorities.json)をGPU列挙の置き換えで確認し、NVIDIAではTensorRT/CUDA、IntelではOpenVINO、Windows AMDでは既存DirectMLをncnnより優先することを確認した。この検証はGPU列挙を模擬した候補順の確認であり、全候補の実機成功を示さない。
 
+Intelの[OpenVINO比較](benchmarks/ncnn_windows_20261003/openvino-b1.log)はORT 1.24.1・OpenVINO 2025.4.1、実名確認済みのGPU.0 `Intel(R) UHD Graphics 630 (iGPU)`で実行した。GPU EPがactiveでも起動検証で非有限出力を検出し終了コード1で停止したため、確率差・速度JSONは生成していない。batch 4は同じ起動検証の失敗後には実行していない。GPU.1のNVIDIAに取り違えた結果ではない。OpenVINOの成功値として扱わず、同じIntel GPUで成功したncnnを代替候補として維持する。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。

@@ -65,7 +65,7 @@ def vulkan_device(ncnn, gpu_index: int) -> str:
         raise RuntimeError(f"ncnn Vulkan GPU {gpu_index} を利用できません (検出数: {count})")
     info = ncnn.get_gpu_info(gpu_index)
     name = info.device_name()
-    # VkPhysicalDeviceType 3 is a CPU device (e.g. Mesa llvmpipe).
+    # Reject ncnn CPU devices and known Mesa software implementations.
     if info.type() == 3 or any(part in name.lower() for part in ("llvmpipe", "softpipe", "lavapipe")):
         raise RuntimeError(f"ncnn Vulkan {gpu_index} はソフトウェアデバイスです: {name}")
     return name
