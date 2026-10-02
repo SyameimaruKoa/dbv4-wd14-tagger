@@ -33,7 +33,7 @@ AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`
 
 ### 2026-10-03 AMD Vulkan実測と精度差
 
-許可を受けてローカル変換済みモデル3ファイルをAMD実機へ転送し、全ファイルのSHA256一致を確認した。ncnn Vulkan GPU 0 `AMD Radeon Graphics (RADV RENOIR)` でultra FP32の実推論に成功した。ただし、以下の精度差が残るため検証合格とはしていない。
+許可を受けてローカル変換済みモデル3ファイルをAMD実機へ転送し、全ファイルのSHA256一致を確認した。ncnn Vulkan GPU 0 `AMD Radeon Graphics (RADV RENOIR)` でultra FP32の実推論に成功した。以下は同期修正前の不合格の測定であり、修正後の合格結果は「RADV shader同期」の節に記録する。
 
 | 条件 | warm-up / 反復 | 中央値 ms/枚 | ONNX CPUとの最大確率差 | 採用タグ差 |
 | --- | --- | --- | --- | --- |
@@ -54,7 +54,15 @@ AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`
 
 [WebGPU b1](benchmarks/ncnn_amd_20261003/webgpu-b1.json)は同じ入力SHA256・metadataで20回測定した。ロード11.74秒、rating最大差0.000000119209、VRAMピーク501.94 MiB、GTTピーク3,507.48 MiB、GPU使用率平均98.45%。ログでAMD GPUの選択と起動検証のWebGpuExecutionProvider実行を確認した。[WebGPU b4](benchmarks/ncnn_amd_20261003/webgpu-b4.log)はwarm-up中に `Device is lost` で停止し、速度JSONは生成していない。batch 4の成功値として扱わない。
 
-実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。例:
+### RADV shader同期による精度一致
+
+CPU中間テンソルをCPU/Vulkanの両方へ入力した[再生診断](benchmarks/ncnn_amd_20261003/replay278.json)ではReshapeが完全一致し、次のGemmも最大差0.00000143051で許容差内だった。一方、モデル全体でLayerNorm・Reduction・Reshapeの各演算種だけをCPUにしても精度差は解消しなかった。
+
+AMD RADVの `RADV_DEBUG=syncshaders` で[同じultraの標準FP32](benchmarks/ncnn_amd_20261003/sync-default-fp32-b1.json)が全12,476ラベルで `atol=1e-4, rtol=1e-3` に一致した。最大確率差0.00000274181、rating最大差0.0000000135042、採用タグ差0件。warm-up 3回・20回の中央値 **6,505.56 ms/枚**、ロード10.30秒、RSSピーク219.16 MiB、VRAM500.02 MiB、GTT2,841.51 MiB、GPU使用率平均98.17%。通常のpacking/Winograd/subgroup設定を保持し、診断用CPU演算マスクは使用していない。
+
+同期設定をAMD LinuxでVulkan初期化前に適用するよう実装した。[実GPU統合テスト](benchmarks/ncnn_amd_20261003/sync-integration.log)は確率・rating・閾値の照合と、単独実行／Server-Clientの原画像転送／前処理済み転送のXMP一致の2件とも成功した。変更後の通常テストは109件成功（実GPU用2件skip）。
+
+実機のMesaは26.0.8。最初に試した `fullsync` は実機のdriver binaryに含まれず、その試行は同期の効果を示さない。`syncshaders` は実機で対応を確認した。[Mesa公式資料](https://docs.mesa3d.org/envvars.html#radv-driver-environment-variables)に記載されたdispatch間の同期を利用している。これは演算間同期に関係する問題を示すが、ncnnとdriverのどの処理が原因かまでは特定していない。WebGPU b1（4,964.40 ms/枚）の方が今回のncnn標準FP32より速く、性能優位は確認できていない。
 
 ### ネイティブncnnと中間テンソルの診断
 
@@ -65,6 +73,8 @@ subgroup無効化時にshaderの機能マクロが有効のまま残る不整合
 [FP16 storageの起動検証](benchmarks/ncnn_amd_20261003/conv1x1-fp16-storage-probe.log)は非有限の確率出力を検出して停止した。速度測定結果は生成していない。
 
 ### 再測定
+
+実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。
 
 ```bash
 bash benchmark_ncnn_matrix.sh benchmarks/ncnn_ultra
