@@ -16,7 +16,7 @@ def compare_blobs(args):
     root = Path(__file__).resolve().parent
     metadata = DBV4Metadata.load(MODEL_PROFILES['ultra'], base_dir=str(root), load_model=False)
     tensor = np.ascontiguousarray(DBV4Preprocessor.from_metadata(metadata)(benchmark_image()))
-    prefix = root / '.dbv4/models/ultra/model'
+    prefix = args.model_prefix or root / '.dbv4/models/ultra/model'
     reference = {}
     comparisons = []
     for gpu in (False, True):
@@ -69,6 +69,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--model-prefix', type=Path,
+                        help='Use an alternate converted model for diagnostics')
     parser.add_argument('--blobs', nargs='+', help='Compare named intermediate blobs on CPU/Vulkan')
     parser.add_argument('--disable', action='append', default=[],
                         choices=('use_winograd_convolution', 'use_sgemm_convolution',
@@ -86,7 +88,8 @@ def main():
         return net
 
     options = argparse.Namespace(provider='ncnn', profile='ultra', gpu_index=0,
-                                 ncnn_precision='fp32', model_file=None,
+                                 ncnn_precision='fp32',
+                                 model_file=str(args.model_prefix) if args.model_prefix else None,
                                  batch_size=1, warmup=1, iterations=3,
                                  reference=args.reference)
     with patch.object(ncnn, 'Net', configured_net), ResourceMonitor(None) as monitor:
