@@ -27,7 +27,7 @@ AMD Barcelo実機（RAM約14 GiB、swap約14 GiBのzram）では元重み取得�
 
 ONNX経路は既存の実機内ファイルをハードリンクして使用した。外部重みのシンボリックリンクはONNX Runtimeのパス検証で拒否された。ONNX経路ではpnnxが入力形状を再取得しており、形状と変換結果の妥当性は未確認。各経路とも有効なultraキャッシュは公開していない。上限付き試行の失敗は、より多いRAMでの変換不可能を示すものではない。
 
-ultraのAMD変換と実GPU推論は未完了。ncnn Vulkan実機の速度、GPU上の出力差、FP16、GPU使用率・メモリ、XMP、Server/Clientは**未検証**。NVIDIA/Intel/PS4/Switchの実GPU比較も未測定。Windows用ランチャーはPowerShell 7.5.2の構文解析に成功したが、Windows実機動作は未確認。
+この時点ではultraのAMD変換と実GPU推論は未完了だった。後日の実GPU測定・精度差は次節に記録する。NVIDIA/Intel/PS4/Switchの実GPU比較も未測定。Windows用ランチャーはPowerShell 7.5.2の構文解析に成功したが、Windows実機動作は未確認。
 
 AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`を列挙した。通常ランチャーで `--provider ncnn --gpu-index 42 --probe-provider -m ultra` は「GPU 42を利用できません（検出数2）」で停止し、CPUへ変更されなかった。`--gpu-index 1` も「ソフトウェアデバイス」として停止した。これらはデバイス選択と失敗時の検証であり、DBV4の実GPU推論成功を示すものではない。
 
@@ -46,15 +46,25 @@ AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`
 
 同じAMD実機の[ncnn CPU照合](benchmarks/ncnn_amd_20261003/ncnn-cpu-check.json)は全12,476ラベルが `atol=1e-4, rtol=1e-3` 内、最大確率差0.000157028、rating最大差0.00000387430、採用タグ差0件で成功した。[初段の中間層比較](benchmarks/ncnn_amd_20261003/first-block-blobs.json)では畳み込みは一致し、LayerNorm後に差が出た。[packing無効化](benchmarks/ncnn_amd_20261003/no-packing-blobs.json)では調べた初段中間層が一致したが、[モデル全体](benchmarks/ncnn_amd_20261003/no-packing.json)の確率差は解消していない。subgroup無効化はshaderコンパイル失敗と終了コード139で停止したため採用しない。
 
-[実GPU統合テスト](benchmarks/ncnn_amd_20261003/integration.log)は確率照合とXMPスコア照合の2件とも失敗した。FP16、batch 4、WebGPUとの同条件比較、統合テスト合格は引き続き未完了。通常テストは2026-10-03に107件実行して成功（実GPU用2件skip）。localhostソケット禁止のsandboxではServer/Clientテストが失敗したため、ループバック通信を許可して実行した。実機診断は継続中であり、この結果を成功済みの精度・XMP検証として扱わない。
+[実GPU統合テスト](benchmarks/ncnn_amd_20261003/integration.log)は確率照合とXMPスコア照合の2件とも失敗した。FP16の精度合格、ncnn batch 4、統合テスト合格は引き続き未完了。WebGPU b1の同条件測定とb4の失敗は以下に記録する。通常テストは2026-10-03に107件実行して成功（実GPU用2件skip）。localhostソケット禁止のsandboxではServer/Clientテストが失敗したため、ループバック通信を許可して実行した。実機診断は継続中であり、この結果を成功済みの精度・XMP検証として扱わない。
 
 追加診断の[第3ステージ4ブロック目](benchmarks/ncnn_amd_20261003/block4-blobs.json)ではLayerNorm出力（blob 278）が一致し、その次のGemm（blob 280）で大きな差が出た。そこで同じLinearパラメーターを保持した別クラスをtraceし、空間Linearを同値の1×1 Convolutionへ変換する診断オプションを追加した。単にnn.Linear.forwardを変更するとpnnxがLinearとして扱い、Gemmが残ったため、その方式は採用しない。修正版ではGemm残存を検査し、76個のConvolutionを含むultraのncnnモデルを生成した。重みはFP32のまま、モデルとラベル数は変更していない。
 
-修正版の[CPU照合](benchmarks/ncnn_local_20261002/conv1x1-cpu-check.json)は全12,476ラベルが許容差内、最大確率差0.00000546873、rating最大差0.0000000160653、採用タグ差0件で成功した（packing無効）。pnnxの中間ONNXはprotobufの2 GiB制限で書き出せなかったが、必要なncnn param/binは生成・読み込み・推論に成功した。修正版のVulkan精度はまだ未検証であり、既定変換には採用していない。
+修正版の[CPU照合](benchmarks/ncnn_local_20261002/conv1x1-cpu-check.json)は全12,476ラベルが許容差内、最大確率差0.00000546873、rating最大差0.0000000160653、採用タグ差0件で成功した（packing無効）。pnnxの中間ONNXはprotobufの2 GiB制限で書き出せなかったが、必要なncnn param/binは生成・読み込み・推論に成功した。修正版の[Vulkan FP32測定](benchmarks/ncnn_amd_20261003/conv1x1-fp32-b1.json)も最大確率差0.08614275、採用タグ差1件で不合格だった（warm-up 3回・20回、中央値4,882.48 ms/枚）。既定変換には採用していない。
 
 [WebGPU b1](benchmarks/ncnn_amd_20261003/webgpu-b1.json)は同じ入力SHA256・metadataで20回測定した。ロード11.74秒、rating最大差0.000000119209、VRAMピーク501.94 MiB、GTTピーク3,507.48 MiB、GPU使用率平均98.45%。ログでAMD GPUの選択と起動検証のWebGpuExecutionProvider実行を確認した。[WebGPU b4](benchmarks/ncnn_amd_20261003/webgpu-b4.log)はwarm-up中に `Device is lost` で停止し、速度JSONは生成していない。batch 4の成功値として扱わない。
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。例:
+
+### ネイティブncnnと中間テンソルの診断
+
+upstream ncnn `9f9d4ec8150d840b570e735323499b12a354483a` をAMD実機上でVulkan有効・Python binding付きでビルドした。別のsource checkoutをPYTHONPATHで指定し、既存wheelを維持した。[未修正nativeのFP32](benchmarks/ncnn_amd_20261003/candidate-fp32.json)は最大確率差0.05907771で不合格だった。
+
+subgroup無効化時にshaderの機能マクロが有効のまま残る不整合を[依存ライブラリ用パッチ](patches/README.md)で修正した。[パッチ後の測定](benchmarks/ncnn_amd_20261003/patched-no-subgroup.json)はshaderエラーなく終了したが、最大確率差0.19295597、採用タグ差3件で不合格。これはコンパイルエラーの修正であり、確率一致の修正には至っていない。JSONにはnative bindingのSHA256も記録する。
+
+[FP16 storageの起動検証](benchmarks/ncnn_amd_20261003/conv1x1-fp16-storage-probe.log)は非有限の確率出力を検出して停止した。速度測定結果は生成していない。
+
+### 再測定
 
 ```bash
 bash benchmark_ncnn_matrix.sh benchmarks/ncnn_ultra
