@@ -1,5 +1,19 @@
 # ベンチマーク結果と分析
 
+## Issue #21: ncnn Vulkan 検証
+
+2026-10-02の実装環境はIntel HD Graphics 530をPCI上に検出したが、`/dev/dri`が公開されず、Vulkanの実GPUを利用できない。pnnx 20260526で元PyTorchの `convnextv2_huge.dbv4-full` をbatch 1・入力512×512・FP32で変換し、`model.ncnn.param`（約71 KiB）と `.bin`（約2.58 GiB）を生成した。ncnn 1.0.20260526で両ファイルの読み込みが成功し、入出力名 `in0` / `out0` を確認した。元のGlobalResponseNormの `torch.addcmul` は同値の基本演算に変えてからtraceし、pnnx未変換演算が残らないことを確認した。Mesa llvmpipe上の合成Sigmoidグラフでは入力CHW `(3,4,4)` → 出力48値の推論が成功した。llvmpipeはVulkanのCPUデバイスなので自動GPU選択から除外する。ncnn Vulkan**実機**の速度、ultra出力差、GPU使用率、GPUメモリはなお**未測定**。数値を推定値として補っていない。
+
+実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。例:
+
+```bash
+venv_std/bin/python benchmark_ncnn.py --provider cpu --profile ultra --batch-size 1 --output benchmarks/ncnn_ultra_cpu_b1.json
+venv_ncnn/bin/python benchmark_ncnn.py --provider ncnn --profile ultra --batch-size 1 --reference benchmarks/ncnn_ultra_cpu_b1.json --output benchmarks/ncnn_ultra_fp32_b1.json
+venv_ncnn/bin/python benchmark_ncnn.py --provider ncnn --profile ultra --batch-size 4 --ncnn-precision fp16-storage --reference benchmarks/ncnn_ultra_cpu_b1.json --output benchmarks/ncnn_ultra_fp16_storage_b4.json
+```
+
+各JSONには初回ロード時間、warm-up 3回後の20回のms/枚、取得可能な場合のGPUメモリ、全ラベルの確率、rating 4値、best_threshold適用後のタグを記録する。`--reference` はCPUとの最大・平均絶対誤差、rating差、採用タグ差を記録する。batch 4のncnnはbatch 1グラフを順に実行する。TensorRT/CUDA/OpenVINO/MIGraphX/WebGPUも対応する仮想環境で同じスクリプトを実行できる。XMPとServer/Clientの確認は通常ランチャーで別途行う必要がある。
+
 集計日: 2026-09-23。[README](README.md) / [全100条件の詳細](benchmarks/matrix_details_20260923.md) / [READMEから移動した旧測定](benchmarks/legacy_results.md)
 
 [速度比較](#速度比較) · [CPU比とbatch効果](#cpu比とbatch効果) · [メモリ](#メモリと起動時間) · [失敗条件](#失敗と追加確認が必要な条件) · [過去の結果](#過去の結果)

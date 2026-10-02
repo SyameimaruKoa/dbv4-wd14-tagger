@@ -60,7 +60,23 @@ DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`と�
 
 GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。
 
-Windowsで`-Gpu`だけを指定した場合は、専用かつ効率のよい実行経路を優先し、NVIDIAはTensorRT→CUDA、AMDはDirectML、IntelはOpenVINOを最初に確認する。TensorRTの依存環境にはCUDA実行系も含まれるため、TensorRTだけが利用できない場合は同じ`venv_tensorrt`をCUDA用として再利用し、依存パッケージを別環境へ再インストールしない。それ以外で利用できない場合は、DirectML、WebGPU、CPUの順に実行前の事前確認を行ってフォールバックする。AMDには専用ONNX Runtime経路がないためDirectMLが第一候補となる。WebGPUはDirectMLより後の最終GPUフォールバック、または`-Provider webgpu`による明示指定に限って使用する。`-Provider`を指定すれば選択を固定でき、自動フォールバックしない。CPU、Client、CUDA、TensorRT、Intel、DirectML、WebGPUはそれぞれ独立した`venv_*`を使い、別バックエンドのONNX Runtimeを同じ仮想環境へ混在させない。LinuxでもNVIDIAの自動選択はTensorRTを優先し、`--provider cuda`を明示すればCUDAだけを導入する。
+Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、AMDはDirectML→ncnn Vulkanを先に確認する。その後はDirectML（利用可能な場合）、WebGPU、CPUへフォールバックする。LinuxではNVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、ROCm利用可能なAMDはMIGraphX→ncnn Vulkan、旧AMD・PS4 Linux・Switch Linuxはncnn Vulkanから確認する。ncnnの次はWebGPU、CPUの順に起動検証する。`--provider` / `-Provider`を指定すると選択を固定し、初期化に失敗した場合は理由を表示して停止する。TensorRTだけが利用できずCUDAが使える場合は、同じ`venv_tensorrt`をCUDA用に再利用する。各バックエンドは独立した`venv_*`を使用する。
+
+### ncnn Vulkan
+
+```bash
+./run_tagger.sh --provider ncnn --gpu -m ultra -p /path/to/images
+./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-precision fp16-storage -p /path/to/images
+```
+
+```powershell
+.\run_tagger.ps1 -Provider ncnn -Gpu -ModelProfile ultra -Path "C:\Images"
+.\run_tagger.ps1 -Provider ncnn -Gpu -ModelProfile ultra -NcnnPrecision fp16-storage -Path "C:\Images"
+```
+
+初回は `animetimm/convnextv2_huge.dbv4-full` の同一PyTorch重みを `timm` と `pnnx` で変換し、`.dbv4/models/ultra/model.ncnn.param` と `.bin` に保存する。2回目以降はこのキャッシュを再利用し、ONNX用ファイルは保持する。変換用 `torch`・`timm`・`pnnx` は必要時に導入する。変換にはモデルのHugging Faceアクセス権と十分なメインメモリ・空き容量が必要。小メモリ環境では別のPCで `python convert_ncnn_model.py animetimm/convnextv2_huge.dbv4-full .dbv4/models/ultra --input-size 512 --labels 12476` を実行し、生成された `.param`、`.bin`、`.json` の3ファイルを同じパスにコピーできる。2ファイルだけを配置する場合は `--model-file` / `-ModelFile` で `model.ncnn.param` のパスを明示する。
+
+精度は `fp32`（既定）、`fp16-storage`、`fp16-packed`、`fp16-arithmetic`。モデル変換は共通で、実行時のncnn設定だけを切り替える。ncnn形式はbatch 1のグラフで、複数枚は順に推論する。VulkanドライバーとVulkan対応のncnn Python bindingが必要。Python wheelにVulkanが含まれない環境ではVulkan有効でncnnをビルドするか、WebGPUを使用する。既存のタグ、rating、XMP、Server/Client処理は同じ確率配列を利用する。実機比較の状態は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
 ### 将来向け1B級
 
