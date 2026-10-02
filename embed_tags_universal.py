@@ -1221,7 +1221,7 @@ class TagServerHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return True
-        except (BrokenPipeError, ConnectionResetError):
+        except ConnectionError:
             return False
 
     def _read_request_body(self, length: int, client_ip: str, image_name: str) -> bytes:

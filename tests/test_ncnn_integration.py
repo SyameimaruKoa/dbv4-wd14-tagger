@@ -58,6 +58,11 @@ class NcnnIntegrationTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as directory, patch.object(
                 app, 'APP_CONFIG', copy.deepcopy(app.DEFAULT_CONFIG)
             ):
+                # Slow physical GPUs can exceed the application's default
+                # single-request deadline; exercise its existing config knob.
+                timeout = int(os.environ.get('DBV4_NCNN_CLIENT_TIMEOUT', '300'))
+                app.APP_CONFIG['client_timeout'] = timeout
+                app.APP_CONFIG['client_batch_timeout'] = timeout
                 written = []
                 for mode in ('standalone', 'original', 'preprocessed'):
                     path = Path(directory) / (mode + '.png')

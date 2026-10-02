@@ -76,6 +76,14 @@ subgroup無効化時にshaderの機能マクロが有効のまま残る不整合
 
 [FP16 storageの起動検証](benchmarks/ncnn_amd_20261003/conv1x1-fp16-storage-probe.log)は非有限の確率出力を検出して停止した。速度測定結果は生成していない。
 
+### Windows実機確認（2026-10-03、Intel再確認待ち）
+
+WindowsのPython 3.13.15、ncnn 1.0.20260526で、同じultraモデル3ファイルのSHA256一致を確認した。Vulkan GPU 2はRTX 2070 Max-Q、GPU 0はIntel UHD 630。PowerShell 5.1でランチャーの構文解析エラーは0件だった。
+
+RTXのFP32 batch 1はwarm-up 3回・20回の中央値1,131.62 ms/枚、最大確率差0.00000357628、rating最大差0.0000000200234、採用タグ差0件。実GPU統合テスト2件は16.104秒で成功し、単独実行とServer/Clientの原画像・前処理済み転送でXMP一致を確認した。既存のCUDA経路も起動検証でCUDAExecutionProviderの実行を確認した。Windows終了時はNetを解放してからVulkan instanceを破棄し、正常終了コード0を確認した。
+
+Intelは実GPUでの全確率・rating・採用タグ比較に成功した。ただし推論1回に約140秒かかり、Server/Clientは既定の15秒でタイムアウトした。20回の速度測定は途中で停止したため中央値を記録しない。`client_timeout`と`client_batch_timeout`を300秒にした原画像・前処理済み転送の再確認は未実行。Windowsの生ログ・JSONはまだ実機側にあり、Git経由の取得と公開は未完了。この節は確認済み事項と残作業の記録であり、Intel統合テストの成功記録ではない。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。
