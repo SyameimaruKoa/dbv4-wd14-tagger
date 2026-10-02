@@ -1,6 +1,7 @@
 """ncnn Vulkan inference using the existing DBV4 preprocessing and metadata."""
 
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import platform
@@ -94,6 +95,9 @@ class NcnnRuntimeModel:
             'package_path': getattr(ncnn, '__file__', None),
             'binding_path': getattr(binding, '__file__', None),
         }
+        binding_path = self.binding_info['binding_path']
+        if binding_path and Path(binding_path).is_file():
+            self.binding_info['sha256'] = hashlib.sha256(Path(binding_path).read_bytes()).hexdigest()
         param = model_prefix.with_suffix(".ncnn.param")
         weights = model_prefix.with_suffix(".ncnn.bin")
         missing = [str(path) for path in (param, weights) if not path.is_file()]
