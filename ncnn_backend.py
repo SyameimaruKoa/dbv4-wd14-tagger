@@ -1,6 +1,7 @@
 """ncnn Vulkan inference using the existing DBV4 preprocessing and metadata."""
 
 import importlib.util
+import atexit
 import hashlib
 import json
 import os
@@ -8,12 +9,31 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
+import weakref
 from typing import Sequence
 
 import numpy as np
 from PIL import Image
 
 from dbv4 import DBV4Metadata, DBV4Preprocessor, infer_output_to_probabilities
+
+_runtimes = weakref.WeakSet()
+
+
+def _shutdown_vulkan(ncnn) -> None:
+    # Windows can unload the Vulkan DLL before ncnn's native static destructor.
+    # Release nets while the device still exists, then destroy the instance.
+    for runtime in list(_runtimes):
+        runtime.close()
+    ncnn.destroy_gpu_instance()
+
+
+def _register_vulkan_shutdown(ncnn) -> None:
+    if (platform.system() == 'Windows'
+            and callable(getattr(ncnn, 'destroy_gpu_instance', None))
+            and not getattr(ncnn, '_dbv4_shutdown_registered', False)):
+        atexit.register(_shutdown_vulkan, ncnn)
+        ncnn._dbv4_shutdown_registered = True
 
 
 def configure_vulkan_environment() -> None:
@@ -39,6 +59,7 @@ def vulkan_device(ncnn, gpu_index: int) -> str:
         raise RuntimeError('ncnn Python bindingにVulkan GPU APIがありません。Vulkan有効のビルドが必要です。')
     if gpu_index < 0:
         raise ValueError("GPU device index must be non-negative")
+    _register_vulkan_shutdown(ncnn)
     count = ncnn.get_gpu_count()
     if gpu_index >= count:
         raise RuntimeError(f"ncnn Vulkan GPU {gpu_index} を利用できません (検出数: {count})")
@@ -126,6 +147,7 @@ class NcnnRuntimeModel:
         self.metadata = metadata
         self.preprocessor = preprocessor
         self.net = ncnn.Net()
+        _runtimes.add(self)
         self.net.opt.use_vulkan_compute = True
         self.net.opt.use_fp16_storage = precision != "fp32"
         self.net.opt.use_fp16_packed = precision in ("fp16-packed", "fp16-arithmetic")
@@ -153,6 +175,12 @@ class NcnnRuntimeModel:
         return self.predict_preprocessed(
             np.stack([self.preprocessor(image) for image in images])
         ) if images else []
+
+    def close(self) -> None:
+        net = getattr(self, 'net', None)
+        if net is not None:
+            net.clear()
+            self.net = None
 
     def predict_preprocessed(self, batch_nchw: np.ndarray):
         import ncnn

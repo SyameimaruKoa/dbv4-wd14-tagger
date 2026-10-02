@@ -14,7 +14,32 @@ from PIL import Image
 
 from convert_ncnn_model import convert
 from ncnn_backend import (NcnnRuntimeModel, configure_vulkan_environment,
-                          ensure_ncnn_model, vulkan_device)
+                          ensure_ncnn_model, vulkan_device, _register_vulkan_shutdown)
+
+
+class VulkanShutdownTests(unittest.TestCase):
+    def test_windows_shutdown_releases_models_before_instance_once(self):
+        events = []
+        binding = SimpleNamespace(destroy_gpu_instance=lambda: events.append('instance'))
+        runtime = SimpleNamespace(close=lambda: events.append('model'))
+        with patch('ncnn_backend.platform.system', return_value='Windows'), \
+                patch('ncnn_backend.atexit.register') as register, \
+                patch('ncnn_backend._runtimes', [runtime]):
+            _register_vulkan_shutdown(binding)
+            _register_vulkan_shutdown(binding)
+            register.assert_called_once()
+            callback, module = register.call_args.args
+            callback(module)
+        self.assertEqual(events, ['model', 'instance'])
+
+    def test_close_releases_net_and_can_be_repeated(self):
+        events = []
+        runtime = NcnnRuntimeModel.__new__(NcnnRuntimeModel)
+        runtime.net = SimpleNamespace(clear=lambda: events.append('clear'))
+        runtime.close()
+        runtime.close()
+        self.assertIsNone(runtime.net)
+        self.assertEqual(events, ['clear'])
 
 
 class VulkanEnvironmentTests(unittest.TestCase):
