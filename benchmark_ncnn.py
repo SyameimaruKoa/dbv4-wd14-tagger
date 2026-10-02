@@ -10,7 +10,10 @@ import platform
 from pathlib import Path
 import statistics
 import subprocess
+import threading
 import time
+import importlib.metadata
+import hashlib
 
 import numpy as np
 from PIL import Image
@@ -28,6 +31,66 @@ def gpu_memory_mib(index):
         return float(result.strip().splitlines()[0])
     except (FileNotFoundError, ValueError, subprocess.SubprocessError):
         return None
+
+
+class ResourceMonitor:
+    """Sample Linux process RAM and AMD VRAM/GTT while inference runs."""
+
+    def __init__(self, device=None):
+        candidates = sorted(Path('/sys/class/drm').glob('card[0-9]*/device'))
+        self.device = device or next(
+            (path for path in candidates if (path / 'mem_info_gtt_used').is_file()), None)
+        self.samples = []
+        self.stop = threading.Event()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+
+    def snapshot(self):
+        result = {'time': time.perf_counter()}
+        try:
+            for line in Path('/proc/self/status').read_text().splitlines():
+                if line.startswith('VmRSS:'):
+                    result['rss_mib'] = int(line.split()[1]) / 1024
+        except OSError:
+            pass
+        if self.device:
+            for filename, key, divisor in (
+                ('mem_info_vram_used', 'vram_mib', 1048576),
+                ('mem_info_gtt_used', 'gtt_mib', 1048576),
+                ('gpu_busy_percent', 'gpu_busy_percent', 1),
+            ):
+                try:
+                    result[key] = int((self.device / filename).read_text()) / divisor
+                except (OSError, ValueError):
+                    pass
+        return result
+
+    def _run(self):
+        while not self.stop.wait(0.2):
+            self.samples.append(self.snapshot())
+
+    def __enter__(self):
+        self.samples.append(self.snapshot())
+        self.thread.start()
+        return self
+
+    def __exit__(self, *_):
+        self.stop.set()
+        self.thread.join()
+        self.samples.append(self.snapshot())
+
+    def summary(self, measured_start):
+        result = {'drm_device': str(self.device) if self.device else None,
+                  'sample_interval_seconds': 0.2,
+                  'baseline': self.samples[0]}
+        for key in ('rss_mib', 'vram_mib', 'gtt_mib'):
+            values = [sample[key] for sample in self.samples if key in sample]
+            result['peak_' + key] = max(values) if values else None
+        busy = [sample['gpu_busy_percent'] for sample in self.samples
+                if sample['time'] >= measured_start and 'gpu_busy_percent' in sample]
+        result['measured_gpu_busy_percent_mean'] = statistics.mean(busy) if busy else None
+        result['measured_gpu_busy_percent_peak'] = max(busy) if busy else None
+        result['gpu_counters_scope'] = 'whole device, including other processes'
+        return result
 
 
 def compare(reference, probabilities, metadata):
@@ -51,7 +114,18 @@ def compare(reference, probabilities, metadata):
     }
 
 
-def run(args):
+def package_versions():
+    versions = {}
+    for name in ('numpy', 'pillow', 'ncnn', 'onnxruntime', 'onnxruntime-gpu',
+                 'onnxruntime-openvino', 'onnxruntime-ep-webgpu', 'timm', 'pnnx'):
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            pass
+    return versions
+
+
+def run(args, monitor):
     y, x = np.indices((480, 640), dtype=np.uint16)
     pixels = np.stack(((x * 7 + y * 11) % 256, (x * 13 + y * 3) % 256,
                        (x * 5 + y * 17) % 256), axis=2).astype(np.uint8)
@@ -65,6 +139,7 @@ def run(args):
     )
     load_seconds = time.perf_counter() - start
     loaded_memory = gpu_memory_mib(args.gpu_index)
+    loaded_resources = monitor.snapshot()
     tensor = runtime.preprocessor(image)
     batch = np.repeat(tensor[None, ...], args.batch_size, axis=0)
     # The ncnn graph is batch one; its adapter executes a logical batch
@@ -72,8 +147,10 @@ def run(args):
     for _ in range(args.warmup):
         runtime.predict_preprocessed(batch)
     warm_memory = gpu_memory_mib(args.gpu_index)
+    warmed_resources = monitor.snapshot()
     durations = []
     output = None
+    measured_start = time.perf_counter()
     for _ in range(args.iterations):
         start = time.perf_counter()
         output = runtime.predict_preprocessed(batch)
@@ -92,6 +169,9 @@ def run(args):
         "load_seconds": load_seconds,
         "first_measured_ms_per_image": durations[0],
         "median_ms_per_image": statistics.median(durations),
+        "durations_ms_per_image": durations,
+        "resources_loaded": loaded_resources,
+        "resources_after_warmup": warmed_resources,
         "gpu_memory_mib_before": before_memory,
         "gpu_memory_mib_loaded": loaded_memory,
         "gpu_memory_mib_after_warmup": warm_memory,
@@ -100,11 +180,18 @@ def run(args):
         "rating_scores": runtime.metadata.get_rating_scores(probabilities),
         "selected_tags": runtime.metadata.decode_tags(probabilities),
         "probabilities": probabilities.tolist(),
+        "package_versions": package_versions(),
+        "input_sha256": hashlib.sha256(tensor.tobytes()).hexdigest(),
+        "ncnn_device": getattr(runtime, 'device_name', None),
+        "active_providers": (runtime.session.get_providers()
+                             if hasattr(runtime, 'session') else ['ncnn Vulkan']),
     }
     if args.reference:
         reference = json.loads(args.reference.read_text(encoding="utf-8"))
+        if reference.get('input_sha256') != result['input_sha256']:
+            raise ValueError('基準と前処理済み入力が異なります')
         result["comparison"] = compare(reference, probabilities, runtime.metadata)
-    return result
+    return result, measured_start
 
 
 def main():
@@ -121,11 +208,14 @@ def main():
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--reference", type=Path)
+    parser.add_argument("--drm-device", type=Path, help="AMD counters, e.g. /sys/class/drm/card1/device")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if min(args.batch_size, args.warmup, args.iterations) < 1:
         parser.error("batch-size, warmup, iterations must be positive")
-    result = run(args)
+    with ResourceMonitor(args.drm_device) as monitor:
+        result, measured_start = run(args, monitor)
+    result['resources'] = monitor.summary(measured_start)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")

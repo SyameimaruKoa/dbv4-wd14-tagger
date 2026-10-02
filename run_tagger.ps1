@@ -571,10 +571,11 @@ if ($AutoProviderSelection) {
             $CandidatePython = Prepare-Environment -UseGpu ($Candidate -ne 'cpu') -IsClient $false -SelectedProvider $Candidate
             $CandidateVendor = if ($Candidate -eq 'webgpu') { $AutoSelection.Vendor } else { $null }
             $Available = Test-ProviderAvailability -PythonExecutable $CandidatePython -SelectedProvider $Candidate -Vendor $CandidateVendor
-            if ($Available -and -not $Client) {
+            if (-not $Client) {
                 $ProbeArgs = @($PythonScript, '--probe-provider', '--provider', $Candidate,
                     '--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex",
                     '--ncnn-precision', $NcnnPrecision)
+                if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $ProbeArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
                 if ($ModelProfile) { $ProbeArgs += @('--model-profile', $ModelProfile) }
                 if ($ModelRepo) { $ProbeArgs += @('--model-repo', $ModelRepo) }
                 if ($ModelFile) { $ProbeArgs += @('--model-file', $ModelFile) }
@@ -582,8 +583,10 @@ if ($AutoProviderSelection) {
                 if ($OpenVinoDevice) { $ProbeArgs += @('--openvino-device', $OpenVinoDevice) }
                 if ($TensorRtLibDir) { $ProbeArgs += @('--tensorrt-lib-dir', $TensorRtLibDir) }
                 if ($Candidate -eq 'webgpu' -and $CandidateVendor) { $ProbeArgs += @('--target-vendor', $CandidateVendor) }
-                & $CandidatePython @ProbeArgs
-                $Available = $LASTEXITCODE -eq 0
+                if ($Available) {
+                    & $CandidatePython @ProbeArgs
+                    $Available = $LASTEXITCODE -eq 0
+                }
             }
             if ($Available) {
                 $Provider = $Candidate
@@ -595,12 +598,20 @@ if ($AutoProviderSelection) {
             }
             if ($Candidate -eq 'tensorrt' -and
                 (Test-ProviderAvailability -PythonExecutable $CandidatePython -SelectedProvider 'cuda' -Vendor $null)) {
-                $Provider = 'cuda'
-                $Gpu = $true
-                $VenvPython = $CandidatePython
                 Show-TensorRtInstallInstructions
-                Write-Host "[INFO] 自動選択しました: cuda (venv_tensorrtを再利用)" -ForegroundColor Green
-                break
+                $CudaAvailable = $true
+                if (-not $Client) {
+                    $ProbeArgs[3] = 'cuda'
+                    & $CandidatePython @ProbeArgs
+                    $CudaAvailable = $LASTEXITCODE -eq 0
+                }
+                if ($CudaAvailable) {
+                    $Provider = 'cuda'
+                    $Gpu = $true
+                    $VenvPython = $CandidatePython
+                    Write-Host "[INFO] 自動選択しました: cuda (venv_tensorrtを再利用)" -ForegroundColor Green
+                    break
+                }
             }
             Write-Warning "${Candidate}を利用できないため、次の候補を確認します。"
         }

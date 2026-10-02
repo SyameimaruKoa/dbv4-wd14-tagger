@@ -60,7 +60,7 @@ DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`と�
 
 GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。
 
-Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、AMDはDirectML→ncnn Vulkanを先に確認する。その後はDirectML（利用可能な場合）、WebGPU、CPUへフォールバックする。LinuxではNVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、ROCm利用可能なAMDはMIGraphX→ncnn Vulkan、旧AMD・PS4 Linux・Switch Linuxはncnn Vulkanから確認する。ncnnの次はWebGPU、CPUの順に起動検証する。`--provider` / `-Provider`を指定すると選択を固定し、初期化に失敗した場合は理由を表示して停止する。TensorRTだけが利用できずCUDAが使える場合は、同じ`venv_tensorrt`をCUDA用に再利用する。各バックエンドは独立した`venv_*`を使用する。
+Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、AMDはDirectML→ncnn Vulkanを先に確認する。LinuxではNVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、ROCm利用可能なAMDはMIGraphX→ROCm→ncnn Vulkan、旧AMD・PS4 Linux・Switch Linuxはncnn Vulkanから確認する。両OSともncnnの次はWebGPU、CPUの順に起動検証する。`--provider` / `-Provider`を指定すると選択を固定し、初期化に失敗した場合は理由を表示して停止する。TensorRTだけが利用できずCUDAが使える場合は、同じ`venv_tensorrt`をCUDA用に再利用する。各バックエンドは独立した`venv_*`を使用する。
 
 ### ncnn Vulkan
 

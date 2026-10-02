@@ -85,6 +85,7 @@ class NcnnRuntimeModel:
         except ImportError as exc:
             raise RuntimeError("ncnn Python bindingがありません。ncnnをインストールしてください。") from exc
         device_name = vulkan_device(ncnn, gpu_index)
+        self.device_name = device_name
         param = model_prefix.with_suffix(".ncnn.param")
         weights = model_prefix.with_suffix(".ncnn.bin")
         missing = [str(path) for path in (param, weights) if not path.is_file()]
