@@ -18,6 +18,7 @@ def compare_blobs(args):
     tensor = np.ascontiguousarray(DBV4Preprocessor.from_metadata(metadata)(benchmark_image()))
     prefix = args.model_prefix or root / '.dbv4/models/ultra/model'
     reference = {}
+    replay_tensor = None
     comparisons = []
     for gpu in (False, True):
         net = ncnn.Net()
@@ -37,7 +38,21 @@ def compare_blobs(args):
             # Recompute each requested prefix rather than retaining every
             # activation of the huge graph across diagnostic extractions.
             extractor = net.create_extractor()
-            if extractor.input('in0', ncnn.Mat(tensor)) != 0:
+            sample = tensor
+            input_blob = 'in0'
+            if args.replay_from:
+                if replay_tensor is None:
+                    prefix_extractor = net.create_extractor()
+                    if prefix_extractor.input('in0', ncnn.Mat(tensor)) != 0:
+                        raise RuntimeError('ncnn prefix input failed')
+                    status, intermediate = prefix_extractor.extract(args.replay_from)
+                    if status != 0:
+                        raise RuntimeError(f'extract replay input: {status}')
+                    replay_tensor = np.ascontiguousarray(np.asarray(intermediate).copy())
+                    del intermediate, prefix_extractor
+                sample = replay_tensor
+                input_blob = args.replay_from
+            if extractor.input(input_blob, ncnn.Mat(sample)) != 0:
                 raise RuntimeError('ncnn input failed')
             status, output = extractor.extract(blob)
             if status != 0:
@@ -53,6 +68,7 @@ def compare_blobs(args):
                 raise ValueError(f'blob {blob}: {values.shape} != {expected.shape}')
             difference = np.abs(values - expected)
             item = dict(blob=blob, shape=list(values.shape),
+                        replay_from=args.replay_from,
                         max_absolute_difference=float(difference.max()),
                         mean_absolute_difference=float(difference.mean()),
                         cpu_min=float(expected.min()), cpu_max=float(expected.max()),
@@ -72,10 +88,13 @@ def main():
     parser.add_argument('--model-prefix', type=Path,
                         help='Use an alternate converted model for diagnostics')
     parser.add_argument('--blobs', nargs='+', help='Compare named intermediate blobs on CPU/Vulkan')
+    parser.add_argument('--replay-from', help='Feed the same CPU intermediate tensor to both backends')
     parser.add_argument('--disable', action='append', default=[],
                         choices=('use_winograd_convolution', 'use_sgemm_convolution',
                                  'use_packing_layout', 'use_subgroup_ops'))
     args = parser.parse_args()
+    if args.replay_from and not args.blobs:
+        parser.error('--replay-from requires --blobs')
     if args.blobs:
         compare_blobs(args)
         return
