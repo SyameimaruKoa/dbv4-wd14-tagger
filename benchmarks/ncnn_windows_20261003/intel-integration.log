@@ -1,0 +1,138 @@
+﻿[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+.\venv_ncnn\Scripts\python.exe : [0 Intel(R) UHD Graphics 630]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=10
+発生場所 行:1 文字:953
++ ... u-b1.json'; .\venv_ncnn\Scripts\python.exe -m unittest discover -s te ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([0 Intel(R) UHD...r=1  r-score=10:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[0 Intel(R) UHD Graphics 630]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 Intel(R) UHD Graphics 630]  subgroup=32(8~32)  ops=1/1/1/1/1/1/1/1/0/0
+[0 Intel(R) UHD Graphics 630]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 Intel(R) UHD Graphics 630]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=10
+[1 Intel(R) UHD Graphics 630]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 Intel(R) UHD Graphics 630]  subgroup=32(8~32)  ops=1/1/1/1/1/1/1/1/0/0
+[1 Intel(R) UHD Graphics 630]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  queueC=2[8]  queueT=1[2]  rebar=0  r-score=74
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/1
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  subgroup=32(32~32)  ops=1/1/1/1/1/1/1/1/1/1
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  fp16-cm=16x16x16/16x8x16/16x8x8  int8-cm=16x16x32/16x8x32  bf16-cm=16x16
+x16  fp8-cm=0
+[3 Intel(R) UHD Graphics 630]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=10
+[3 Intel(R) UHD Graphics 630]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[3 Intel(R) UHD Graphics 630]  subgroup=32(8~32)  ops=1/1/1/1/1/1/1/1/0/0
+[3 Intel(R) UHD Graphics 630]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (Intel(R) UHD Graphics 630): ultra, fp32, ラベル数 12476
+test_cpu_probability_rating_and_threshold_parity (test_ncnn_integration.NcnnIntegrationTests.test_cpu_probability_ratin
+g_and_threshold_parity) ... ok
+[WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。
+test_standalone_and_both_client_modes_write_same_xmp (test_ncnn_integration.NcnnIntegrationTests.test_standalone_and_bo
+th_client_modes_write_same_xmp) ... 
+  0%|          | 0/1 [00:00<?, ?img/s]
+  0%|          | 0/1 [02:23<?, ?img/s, 推論:1枚(0.0/s) Skip:0枚(0.0/s)]
+[standalone.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+                                                                       
+
+  0%|          | 0/1 [02:23<?, ?img/s, 推論:1枚(0.0/s) Skip:0枚(0.0/s)]
+100%|██████████| 1/1 [02:23<00:00, 143.76s/img, 推論:1枚(0.0/s) Skip:0枚(0.0/s)]C:\Users\kouki\Documents\MyApp\dbv4-wd14-ta
+gger\embed_tags_universal.py:329: ResourceWarning: unclosed file <_io.BufferedReader name=4>
+  self.process = None
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+
+100%|██████████| 1/1 [02:23<00:00, 143.78s/img, 推論:1枚(0.0/s) Skip:0枚(0.0/s)]
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 0.01 img/s (143261.2 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。
+
+[04:56:35] 127.0.0.1       | File: original.png | Size: 18.7 KB | Processing...
+[04:56:35] 127.0.0.1       | File: original.png | HTTP受信: 0.02 MiB / 0.000s = 1148.01 MiB/s
+  0%|          | 0/1 [00:00<?, ?img/s]
+接続エラー(タイムアウト含む): timed out
+                                      
+
+  0%|          | 0/1 [02:20<?, ?img/s]----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 54240)
+
+  0%|          | 0/1 [02:20<?, ?img/s]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 0 枚 | 速度: 測定対象なし
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+Traceback (most recent call last):
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 1367, in _handle_post
+    if self._send_json_response(200, body):
+       ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 1222, in _send_json_response
+    self.wfile.write(body)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionAbortedError: [WinError 10053] 確立された接続がホスト コンピューターのソウトウェアによって中止されました。
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\socketserver.py", line 697, in process_request_threa
+d
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\http\server.py", line 451, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\http\server.py", line 439, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 1249, in do_POST
+    self._handle_post()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 1382, in _handle_post
+    if not self._send_json_response(500, body):
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py", line 1221, in _send_json_response
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\http\server.py", line 553, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\http\server.py", line 557, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\AppData\Local\Python\pythoncore-3.13-64\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionAbortedError: [WinError 10053] 確立された接続がホスト コンピューターのソウトウェアによって中止されました。
+----------------------------------------
+C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\embed_tags_universal.py:329: ResourceWarning: unclosed file <_io.Buffer
+edReader name=5>
+  self.process = None
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+FAIL
+
+======================================================================
+FAIL: test_standalone_and_both_client_modes_write_same_xmp (test_ncnn_integration.NcnnIntegrationTests.test_standalone_
+and_both_client_modes_write_same_xmp)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\tests\test_ncnn_integration.py", line 77, in test_standalone_an
+d_both_client_modes_write_same_xmp
+    self.assertTrue(tags)
+    ~~~~~~~~~~~~~~~^^^^^^
+AssertionError: [] is not true
+
+----------------------------------------------------------------------
+Ran 2 tests in 573.487s
+
+FAILED (failures=1)
+

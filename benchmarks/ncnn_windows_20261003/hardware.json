@@ -1,0 +1,30 @@
+﻿{
+    "timestamp":  "2026-10-03T07:02:49.4519957+09:00",
+    "ram_bytes":  34207408128,
+    "tested_vulkan_indices":  {
+                                  "intel":  0,
+                                  "rtx":  2
+                              },
+    "rtx_nvidia_smi_index":  0,
+    "gpu":  [
+                {
+                    "Name":  "Virtual Display",
+                    "DriverVersion":  "0.4.0.0"
+                },
+                {
+                    "Name":  "StarDesk Virtual Display Adapter",
+                    "DriverVersion":  "18.43.12.322"
+                },
+                {
+                    "Name":  "NVIDIA GeForce RTX 2070 with Max-Q Design",
+                    "DriverVersion":  "32.0.16.1714"
+                },
+                {
+                    "Name":  "Intel(R) UHD Graphics 630",
+                    "DriverVersion":  "31.0.101.2145"
+                }
+            ],
+    "ncnn":  "1.0.20260526",
+    "source_commit":  "c6e03bc9bc0c12ab5ce64c711933df3adeec4216",
+    "python":  "3.13.15"
+}
