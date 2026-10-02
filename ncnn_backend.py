@@ -192,13 +192,18 @@ class NcnnRuntimeModel:
             if sample.ndim != 3 or sample.shape[0] != 3:
                 raise ValueError(f"ncnn入力はCHW 3チャネルが必要です: {sample.shape}")
             extractor = self.net.create_extractor()
-            status = extractor.input(self.input_name, ncnn.Mat(sample))
-            if status != 0:
-                raise RuntimeError(f"ncnn入力に失敗しました: status={status}")
-            status, output = extractor.extract(self.output_name)
-            if status != 0:
-                raise RuntimeError(f"ncnn推論に失敗しました: status={status}")
-            raw = np.asarray(output).reshape(-1)
+            try:
+                status = extractor.input(self.input_name, ncnn.Mat(sample))
+                if status != 0:
+                    raise RuntimeError(f"ncnn入力に失敗しました: status={status}")
+                status, output = extractor.extract(self.output_name)
+                if status != 0:
+                    raise RuntimeError(f"ncnn推論に失敗しました: status={status}")
+                # Retain only NumPy-owned output across validation errors.
+                raw = np.asarray(output).reshape(-1).copy()
+            finally:
+                output = None
+                extractor = None
             if raw.size != self.metadata.label_count:
                 raise ValueError(
                     f"ncnn出力ラベル数が一致しません: {raw.size} != {self.metadata.label_count}"
