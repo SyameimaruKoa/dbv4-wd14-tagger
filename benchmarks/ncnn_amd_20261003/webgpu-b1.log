@@ -1,0 +1,42 @@
+Running as unit: dbv4-webgpu-b1-20261003.service; invocation ID: cbf6536233754fe3a1369163ccd32870
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: /opt/dbv4-wd14-tagger/.dbv4/models/53e96223459a3046
+[INFO] WebGPU選択デバイス: {'vendor': 'amd', 'vendor_id': 4098, 'device_id': 5607, 'metadata': {'card_idx': '1', 'pci_bus_id': '0000:06:00.0'}}
+Warning: maxDynamicUniformBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+Warning: maxDynamicStorageBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['WebGpuExecutionProvider', 'CPUExecutionProvider']
+[INFO] 起動検証で実行されたEP: ['WebGpuExecutionProvider']
+[benchmark] Model initialization and startup probe: 11.74s
+[benchmark] Warm-up 1/3
+[benchmark] Warm-up 2/3
+[benchmark] Warm-up 3/3
+[benchmark] Iteration 1/20: 4964.15 ms/img
+[benchmark] Iteration 2/20: 5015.71 ms/img
+[benchmark] Iteration 3/20: 4959.23 ms/img
+[benchmark] Iteration 4/20: 4971.00 ms/img
+[benchmark] Iteration 5/20: 4963.24 ms/img
+[benchmark] Iteration 6/20: 4972.70 ms/img
+[benchmark] Iteration 7/20: 4961.68 ms/img
+[benchmark] Iteration 8/20: 4972.60 ms/img
+[benchmark] Iteration 9/20: 4957.95 ms/img
+[benchmark] Iteration 10/20: 4964.40 ms/img
+[benchmark] Iteration 11/20: 4965.80 ms/img
+[benchmark] Iteration 12/20: 4960.51 ms/img
+[benchmark] Iteration 13/20: 4964.40 ms/img
+[benchmark] Iteration 14/20: 4968.42 ms/img
+[benchmark] Iteration 15/20: 4966.91 ms/img
+[benchmark] Iteration 16/20: 4965.60 ms/img
+[benchmark] Iteration 17/20: 4960.68 ms/img
+[benchmark] Iteration 18/20: 4963.97 ms/img
+[benchmark] Iteration 19/20: 4958.76 ms/img
+[benchmark] Iteration 20/20: 4968.12 ms/img
+benchmarks/ncnn_amd_20261003/webgpu-b1.json: 4964.40 ms/img
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 2min 9.028s
+             CPU time consumed: 6.699s
+                   Memory peak: 2.8G (swap: 0B)
