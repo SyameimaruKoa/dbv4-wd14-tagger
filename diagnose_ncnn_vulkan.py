@@ -91,7 +91,8 @@ def main():
     parser.add_argument('--replay-from', help='Feed the same CPU intermediate tensor to both backends')
     parser.add_argument('--disable', action='append', default=[],
                         choices=('use_winograd_convolution', 'use_sgemm_convolution',
-                                 'use_packing_layout', 'use_subgroup_ops'))
+                                 'use_packing_layout', 'use_subgroup_ops',
+                                 'use_shader_local_memory', 'use_local_pool_allocator'))
     args = parser.parse_args()
     if args.replay_from and not args.blobs:
         parser.error('--replay-from requires --blobs')
