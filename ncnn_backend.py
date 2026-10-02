@@ -88,6 +88,12 @@ class NcnnRuntimeModel:
             raise RuntimeError("ncnn Python bindingがありません。ncnnをインストールしてください。") from exc
         device_name = vulkan_device(ncnn, gpu_index)
         self.device_name = device_name
+        binding = getattr(ncnn, 'ncnn', ncnn)
+        self.binding_info = {
+            'version': getattr(ncnn, '__version__', getattr(binding, '__version__', None)),
+            'package_path': getattr(ncnn, '__file__', None),
+            'binding_path': getattr(binding, '__file__', None),
+        }
         param = model_prefix.with_suffix(".ncnn.param")
         weights = model_prefix.with_suffix(".ncnn.bin")
         missing = [str(path) for path in (param, weights) if not path.is_file()]
@@ -106,7 +112,10 @@ class NcnnRuntimeModel:
         if self.net.load_model(str(weights)) != 0:
             raise RuntimeError(f"ncnn binの読み込みに失敗しました: {weights}")
         self.options = {name: bool(getattr(self.net.opt, name)) for name in (
-            'use_vulkan_compute', 'use_fp16_storage', 'use_fp16_packed', 'use_fp16_arithmetic')}
+            'use_vulkan_compute', 'use_fp16_storage', 'use_fp16_packed', 'use_fp16_arithmetic',
+            'use_packing_layout', 'use_subgroup_ops', 'use_winograd_convolution',
+            'use_sgemm_convolution', 'use_bf16_storage', 'use_bf16_packed')
+            if hasattr(self.net.opt, name)}
         inputs = list(self.net.input_names())
         outputs = list(self.net.output_names())
         if len(inputs) != 1 or len(outputs) != 1:

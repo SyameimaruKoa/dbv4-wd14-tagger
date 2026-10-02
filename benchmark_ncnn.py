@@ -192,6 +192,7 @@ def run(args, monitor):
         "input_sha256": hashlib.sha256(tensor.tobytes()).hexdigest(),
         "ncnn_device": getattr(runtime, 'device_name', None),
         "ncnn_options": getattr(runtime, 'options', None),
+        "ncnn_binding": getattr(runtime, 'binding_info', None),
         "active_providers": (runtime.session.get_providers()
                              if hasattr(runtime, 'session') else ['ncnn Vulkan']),
     }
