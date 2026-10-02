@@ -49,9 +49,21 @@ def _spatial_linear_forward(self, x):
 def replace_spatial_linear(model) -> None:
     import torch
 
-    for layer in model.modules():
+    class SpatialLinear(torch.nn.Module):
+        # pnnx recognizes nn.Linear by its scripted class and may ignore a
+        # patched forward method. A distinct class makes it inline this graph.
+        def __init__(self, linear):
+            super().__init__()
+            self.weight = linear.weight
+            self.bias = linear.bias
+
+        forward = _spatial_linear_forward
+
+    for name, layer in list(model.named_children()):
         if isinstance(layer, torch.nn.Linear):
-            layer.forward = types.MethodType(_spatial_linear_forward, layer)
+            setattr(model, name, SpatialLinear(layer))
+        else:
+            replace_spatial_linear(layer)
 
 
 def trace_model(source_repo: str, destination: Path, input_size: int,
@@ -91,7 +103,9 @@ def convert(source_repo: str, destination: Path, input_size: int,
                 and cached.get("input_size") == input_size
                 and cached.get("label_count") == expected_labels
                 and cached.get("fp16") is False
-                and bool(cached.get("spatial_linear_convolution")) == spatial_linear_convolution):
+                and bool(cached.get("spatial_linear_convolution")) == spatial_linear_convolution
+                and (not spatial_linear_convolution
+                     or cached.get("spatial_linear_convolution_version") == 2)):
             return param, weights
 
     # pnnx writes several large intermediate files. Keep them outside the cache
@@ -131,6 +145,9 @@ def convert(source_repo: str, destination: Path, input_size: int,
                               if line.startswith(("pnnx.", "aten::"))})
         if unsupported:
             raise RuntimeError("pnnxに未変換の演算が残っています: " + ", ".join(unsupported))
+        if spatial_linear_convolution and any(
+                line.startswith('Gemm ') for line in generated_param.read_text().splitlines()[2:]):
+            raise RuntimeError('空間Linearの畳み込み変換後にGemmが残っています。')
         shutil.copyfile(generated_param, param.with_suffix(".param.tmp"))
         shutil.copyfile(generated_weights, weights.with_suffix(".bin.tmp"))
         os.replace(param.with_suffix(".param.tmp"), param)
@@ -143,6 +160,7 @@ def convert(source_repo: str, destination: Path, input_size: int,
             "fp16": False,
             "grn_addcmul_replaced": True,
             "spatial_linear_convolution": spatial_linear_convolution,
+            "spatial_linear_convolution_version": 2 if spatial_linear_convolution else 0,
         }, indent=2) + "\n", encoding="utf-8")
     return param, weights
 
