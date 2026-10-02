@@ -171,6 +171,8 @@ def run(args, monitor):
         "precision": args.ncnn_precision if args.provider == "ncnn" else None,
         "profile": args.profile,
         "platform": platform.platform(),
+        "gpu_environment": {name: os.environ[name] for name in (
+            'RADV_DEBUG', 'RADV_PERFTEST', 'VK_DRIVER_FILES') if name in os.environ},
         "batch_size": args.batch_size,
         "warmup": args.warmup,
         "iterations": args.iterations,
