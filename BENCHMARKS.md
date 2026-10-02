@@ -46,7 +46,7 @@ AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`
 
 同じAMD実機の[ncnn CPU照合](benchmarks/ncnn_amd_20261003/ncnn-cpu-check.json)は全12,476ラベルが `atol=1e-4, rtol=1e-3` 内、最大確率差0.000157028、rating最大差0.00000387430、採用タグ差0件で成功した。[初段の中間層比較](benchmarks/ncnn_amd_20261003/first-block-blobs.json)では畳み込みは一致し、LayerNorm後に差が出た。[packing無効化](benchmarks/ncnn_amd_20261003/no-packing-blobs.json)では調べた初段中間層が一致したが、[モデル全体](benchmarks/ncnn_amd_20261003/no-packing.json)の確率差は解消していない。subgroup無効化はshaderコンパイル失敗と終了コード139で停止したため採用しない。
 
-[実GPU統合テスト](benchmarks/ncnn_amd_20261003/integration.log)は確率照合とXMPスコア照合の2件とも失敗した。FP16の精度合格、ncnn batch 4、統合テスト合格は引き続き未完了。WebGPU b1の同条件測定とb4の失敗は以下に記録する。通常テストは2026-10-03に107件実行して成功（実GPU用2件skip）。localhostソケット禁止のsandboxではServer/Clientテストが失敗したため、ループバック通信を許可して実行した。実機診断は継続中であり、この結果を成功済みの精度・XMP検証として扱わない。
+[修正前の実GPU統合テスト](benchmarks/ncnn_amd_20261003/integration.log)は確率照合とXMPスコア照合の2件とも失敗した。当初のFP16・batch 4・統合テストの確認は未完了だった。WebGPU b1の同条件測定とb4の失敗は以下に記録する。通常テストは2026-10-03に107件実行して成功（実GPU用2件skip）。localhostソケット禁止のsandboxではServer/Clientテストが失敗したため、ループバック通信を許可して実行した。修正前の失敗を成功済みの精度・XMP検証として扱わない。同期設定後の統合テスト成功は後述する。
 
 追加診断の[第3ステージ4ブロック目](benchmarks/ncnn_amd_20261003/block4-blobs.json)ではLayerNorm出力（blob 278）が一致し、その次のGemm（blob 280）で大きな差が出た。そこで同じLinearパラメーターを保持した別クラスをtraceし、空間Linearを同値の1×1 Convolutionへ変換する診断オプションを追加した。単にnn.Linear.forwardを変更するとpnnxがLinearとして扱い、Gemmが残ったため、その方式は採用しない。修正版ではGemm残存を検査し、76個のConvolutionを含むultraのncnnモデルを生成した。重みはFP32のまま、モデルとラベル数は変更していない。
 
@@ -61,6 +61,10 @@ CPU中間テンソルをCPU/Vulkanの両方へ入力した[再生診断](benchma
 AMD RADVの `RADV_DEBUG=syncshaders` で[同じultraの標準FP32](benchmarks/ncnn_amd_20261003/sync-default-fp32-b1.json)が全12,476ラベルで `atol=1e-4, rtol=1e-3` に一致した。最大確率差0.00000274181、rating最大差0.0000000135042、採用タグ差0件。warm-up 3回・20回の中央値 **6,505.56 ms/枚**、ロード10.30秒、RSSピーク219.16 MiB、VRAM500.02 MiB、GTT2,841.51 MiB、GPU使用率平均98.17%。通常のpacking/Winograd/subgroup設定を保持し、診断用CPU演算マスクは使用していない。
 
 同期設定をAMD LinuxでVulkan初期化前に適用するよう実装した。[実GPU統合テスト](benchmarks/ncnn_amd_20261003/sync-integration.log)は確率・rating・閾値の照合と、単独実行／Server-Clientの原画像転送／前処理済み転送のXMP一致の2件とも成功した。変更後の通常テストは109件成功（実GPU用2件skip）。
+
+[標準FP32 batch 4](benchmarks/ncnn_amd_20261003/sync-fp32-b4.json)もwarm-up 3回・20回で成功し、中央値 **6,659.12 ms/枚**、最大確率差0.00000274181、採用タグ差0件だった。Vulkan初期化前の同期設定はアプリが自動適用した。4枚はbatch 1グラフを順に実行する。VRAMピーク500.02 MiB、GTT2,841.51 MiB、GPU使用率平均98.75%。
+
+同期設定後のFP16 storage・packed・arithmeticはbatch 1／4の6条件すべて起動検証で非有限出力を検出して停止した。[各条件の終了コード](benchmarks/ncnn_amd_20261003/sync-fp16-matrix.log)を保存し、速度JSONは生成していない。matrix用サービス自体の成功は6条件の成功を意味しない。今回のAMD ultraではFP32を推奨する。
 
 実機のMesaは26.0.8。最初に試した `fullsync` は実機のdriver binaryに含まれず、その試行は同期の効果を示さない。`syncshaders` は実機で対応を確認した。[Mesa公式資料](https://docs.mesa3d.org/envvars.html#radv-driver-environment-variables)に記載されたdispatch間の同期を利用している。これは演算間同期に関係する問題を示すが、ncnnとdriverのどの処理が原因かまでは特定していない。WebGPU b1（4,964.40 ms/枚）の方が今回のncnn標準FP32より速く、性能優位は確認できていない。
 
