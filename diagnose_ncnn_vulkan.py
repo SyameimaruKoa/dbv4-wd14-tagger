@@ -33,15 +33,17 @@ def compare_blobs(args):
         if net.load_param(str(prefix.with_suffix('.ncnn.param'))) != 0 or net.load_model(
                 str(prefix.with_suffix('.ncnn.bin'))) != 0:
             raise RuntimeError('ncnn model load failed')
-        extractor = net.create_extractor()
-        extractor.set_light_mode(False)
-        if extractor.input('in0', ncnn.Mat(tensor)) != 0:
-            raise RuntimeError('ncnn input failed')
         for blob in args.blobs:
+            # Recompute each requested prefix rather than retaining every
+            # activation of the huge graph across diagnostic extractions.
+            extractor = net.create_extractor()
+            if extractor.input('in0', ncnn.Mat(tensor)) != 0:
+                raise RuntimeError('ncnn input failed')
             status, output = extractor.extract(blob)
             if status != 0:
                 raise RuntimeError(f'extract {blob}: {status}')
             values = np.asarray(output).copy()
+            del extractor
             if not gpu:
                 reference[blob] = values
                 print(f'CPU blob {blob}: {values.shape}', flush=True)
@@ -57,7 +59,6 @@ def compare_blobs(args):
                         allclose=bool(np.allclose(values, expected, atol=1e-4, rtol=1e-3)))
             comparisons.append(item)
             print(json.dumps(item), flush=True)
-        del extractor
         net.clear()
         del net
     args.output.parent.mkdir(parents=True, exist_ok=True)
