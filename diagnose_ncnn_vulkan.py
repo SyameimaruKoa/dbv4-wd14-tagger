@@ -71,7 +71,7 @@ def main():
     parser.add_argument('--blobs', nargs='+', help='Compare named intermediate blobs on CPU/Vulkan')
     parser.add_argument('--disable', action='append', default=[],
                         choices=('use_winograd_convolution', 'use_sgemm_convolution',
-                                 'use_shader_pack8', 'use_shader_local_memory'))
+                                 'use_packing_layout', 'use_subgroup_ops'))
     args = parser.parse_args()
     if args.blobs:
         compare_blobs(args)
