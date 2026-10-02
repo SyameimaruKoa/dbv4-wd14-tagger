@@ -1,0 +1,47 @@
+Running as unit: dbv4-webgpu-b4-20261003.service; invocation ID: 2e577aeaa3374824a34e1bfc7ffd30b6
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: /opt/dbv4-wd14-tagger/.dbv4/models/53e96223459a3046
+[INFO] WebGPU選択デバイス: {'vendor': 'amd', 'vendor_id': 4098, 'device_id': 5607, 'metadata': {'card_idx': '1', 'pci_bus_id': '0000:06:00.0'}}
+Warning: maxDynamicUniformBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+Warning: maxDynamicStorageBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['WebGpuExecutionProvider', 'CPUExecutionProvider']
+[INFO] 起動検証で実行されたEP: ['WebGpuExecutionProvider']
+[benchmark] Model initialization and startup probe: 8.96s
+radv/amdgpu: Not enough memory for command submission.
+Warning: ../src/amd/vulkan/radv_queue.c:1893: vkQueueSubmit() failed (VK_ERROR_DEVICE_LOST)
+Traceback (most recent call last):
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 235, in <module>
+    main()
+    ~~~~^^
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 226, in main
+    result, measured_start = run(args, monitor)
+                             ~~~^^^^^^^^^^^^^^^
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 153, in run
+    runtime.predict_preprocessed(batch)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/opt/dbv4-wd14-tagger/embed_tags_universal.py", line 489, in predict_preprocessed
+    return self._predict_input(batch, len(batch_nchw))
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/dbv4-wd14-tagger/embed_tags_universal.py", line 492, in _predict_input
+    raw = self.session.run(
+          ~~~~~~~~~~~~~~~~^
+        [self.output_name],
+        ^^^^^^^^^^^^^^^^^^^
+        {self.input_name: batch},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    )[0]
+    ^
+  File "/opt/dbv4-wd14-tagger/venv_webgpu/lib/python3.13/site-packages/onnxruntime/capi/onnxruntime_inference_collection.py", line 395, in run
+    return self._sess.run(output_names, input_feed, run_options)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+onnxruntime.capi.onnxruntime_pybind11_state.Fail: [ONNXRuntimeError] : 1 : FAIL : /onnxruntime_src/onnxruntime/core/providers/webgpu/buffer_manager.cc:641 void onnxruntime::webgpu::BufferManager::Download(WGPUBuffer, void*, size_t) const map_async_result.status == wgpu::MapAsyncStatus::Success was false. Failed to download data from buffer. wgpu::MapAsyncStatus value: 4, message: [Device] is lost.
+
+          Finished with result: exit-code
+Main processes terminated with: code=exited, status=1/FAILURE
+               Service runtime: 15.494s
+             CPU time consumed: 8.307s
+                   Memory peak: 2.5G (swap: 0B)
