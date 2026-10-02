@@ -31,6 +31,22 @@ ultraのAMD変換と実GPU推論は未完了。ncnn Vulkan実機の速度、GPU�
 
 AMD実機のncnnはGPU 0 `AMD Radeon Graphics (RADV RENOIR)` とGPU 1 `llvmpipe`を列挙した。通常ランチャーで `--provider ncnn --gpu-index 42 --probe-provider -m ultra` は「GPU 42を利用できません（検出数2）」で停止し、CPUへ変更されなかった。`--gpu-index 1` も「ソフトウェアデバイス」として停止した。これらはデバイス選択と失敗時の検証であり、DBV4の実GPU推論成功を示すものではない。
 
+### 2026-10-03 AMD Vulkan実測と精度差
+
+許可を受けてローカル変換済みモデル3ファイルをAMD実機へ転送し、全ファイルのSHA256一致を確認した。ncnn Vulkan GPU 0 `AMD Radeon Graphics (RADV RENOIR)` でultra FP32の実推論に成功した。ただし、以下の精度差が残るため検証合格とはしていない。
+
+| 条件 | warm-up / 反復 | 中央値 ms/枚 | ONNX CPUとの最大確率差 | 採用タグ差 |
+| --- | --- | --- | --- | --- |
+| ncnn Vulkan FP32 b1 | 3 / 20 | 6,614.24 | 0.122703 | 4件 |
+| Winograd無効化 FP32 b1（診断） | 1 / 3 | 6,557.02 | 0.159602 | 4件 |
+| packing無効化 FP32 b1（診断） | 1 / 3 | 6,617.08 | 0.0645395 | 0件 |
+
+最初の[FP32測定](benchmarks/ncnn_amd_20261003/fp32-b1.json)ではロード・起動検証11.43秒、RSSピーク225.63 MiB、VRAMピーク503.32 MiB、GTTピーク2,982.07 MiB、測定中GPU使用率平均98.0%・最大99%。GPUメモリ・負荷はデバイス全体の値であり、RSSにはGPU共有メモリの全量は含まれない。rating最大差は0.000444293で、精度条件を満たしていない。
+
+同じAMD実機の[ncnn CPU照合](benchmarks/ncnn_amd_20261003/ncnn-cpu-check.json)は全12,476ラベルが `atol=1e-4, rtol=1e-3` 内、最大確率差0.000157028、rating最大差0.00000387430、採用タグ差0件で成功した。[初段の中間層比較](benchmarks/ncnn_amd_20261003/first-block-blobs.json)では畳み込みは一致し、LayerNorm後に差が出た。[packing無効化](benchmarks/ncnn_amd_20261003/no-packing-blobs.json)では調べた初段中間層が一致したが、[モデル全体](benchmarks/ncnn_amd_20261003/no-packing.json)の確率差は解消していない。subgroup無効化はshaderコンパイル失敗と終了コード139で停止したため採用しない。
+
+[実GPU統合テスト](benchmarks/ncnn_amd_20261003/integration.log)は確率照合とXMPスコア照合の2件とも失敗した。FP16、batch 4、WebGPUとの同条件比較、統合テスト合格は引き続き未完了。通常テストは2026-10-03に107件実行して成功（実GPU用2件skip）。localhostソケット禁止のsandboxではServer/Clientテストが失敗したため、ループバック通信を許可して実行した。実機診断は継続中であり、この結果を成功済みの精度・XMP検証として扱わない。
+
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。例:
 
 ```bash
