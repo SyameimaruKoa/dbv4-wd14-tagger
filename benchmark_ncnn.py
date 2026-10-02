@@ -23,6 +23,8 @@ from embed_tags_universal import load_runtime_model
 
 
 def gpu_memory_mib(index):
+    if index is None:
+        return None
     try:
         result = subprocess.check_output(
             ["nvidia-smi", "-i", str(index), "--query-gpu=memory.used",
@@ -135,7 +137,10 @@ def benchmark_image():
 
 def run(args, monitor):
     image = benchmark_image()
-    before_memory = gpu_memory_mib(args.gpu_index)
+    smi_index = getattr(args, 'nvidia_smi_index', None)
+    if smi_index is None and args.provider in ('cuda', 'tensorrt'):
+        smi_index = args.gpu_index
+    before_memory = gpu_memory_mib(smi_index)
     start = time.perf_counter()
     runtime = load_runtime_model(
         args.provider != "cpu", args.profile, provider=args.provider,
@@ -144,7 +149,7 @@ def run(args, monitor):
     )
     load_seconds = time.perf_counter() - start
     print(f'[benchmark] Model initialization and startup probe: {load_seconds:.2f}s', flush=True)
-    loaded_memory = gpu_memory_mib(args.gpu_index)
+    loaded_memory = gpu_memory_mib(smi_index)
     loaded_resources = monitor.snapshot()
     tensor = runtime.preprocessor(image)
     batch = np.repeat(tensor[None, ...], args.batch_size, axis=0)
@@ -153,7 +158,7 @@ def run(args, monitor):
     for step in range(args.warmup):
         runtime.predict_preprocessed(batch)
         print(f'[benchmark] Warm-up {step + 1}/{args.warmup}', flush=True)
-    warm_memory = gpu_memory_mib(args.gpu_index)
+    warm_memory = gpu_memory_mib(smi_index)
     warmed_resources = monitor.snapshot()
     durations = []
     output = None
@@ -171,6 +176,8 @@ def run(args, monitor):
         "provider": args.provider,
         "precision": args.ncnn_precision if args.provider == "ncnn" else None,
         "profile": args.profile,
+        "gpu_index": args.gpu_index,
+        "nvidia_smi_index": smi_index,
         "platform": platform.platform(),
         "gpu_environment": {name: os.environ[name] for name in (
             'RADV_DEBUG', 'RADV_PERFTEST', 'VK_DRIVER_FILES') if name in os.environ},
@@ -214,6 +221,8 @@ def main():
     parser.add_argument("--profile", default="ultra")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--gpu-index", type=int, default=0)
+    parser.add_argument("--nvidia-smi-index", type=int,
+                        help="NVIDIA memory counter index; Vulkan numbering can differ")
     parser.add_argument("--ncnn-precision", choices=("fp32", "fp16-storage",
                                                       "fp16-packed", "fp16-arithmetic"),
                         default="fp32")
