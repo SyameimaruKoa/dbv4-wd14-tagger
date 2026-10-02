@@ -1,0 +1,28 @@
+[
+  {
+    "blob": "279",
+    "shape": [
+      1024,
+      1408
+    ],
+    "replay_from": "278",
+    "max_absolute_difference": 0.0,
+    "mean_absolute_difference": 0.0,
+    "cpu_min": -0.9532749056816101,
+    "cpu_max": 0.7514486312866211,
+    "allclose": true
+  },
+  {
+    "blob": "280",
+    "shape": [
+      1024,
+      5632
+    ],
+    "replay_from": "278",
+    "max_absolute_difference": 1.430511474609375e-06,
+    "mean_absolute_difference": 1.2898357226731605e-07,
+    "cpu_min": -7.082428932189941,
+    "cpu_max": 11.161949157714844,
+    "allclose": true
+  }
+]

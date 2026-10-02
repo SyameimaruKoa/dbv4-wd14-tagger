@@ -1,0 +1,18 @@
+Running as unit: dbv4-replay278.service; invocation ID: 3f3306cfbfa2461c8a06a2b7eddd9b77
+CPU blob 279: (1024, 1408)
+CPU blob 280: (1024, 5632)
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+{"blob": "279", "shape": [1024, 1408], "replay_from": "278", "max_absolute_difference": 0.0, "mean_absolute_difference": 0.0, "cpu_min": -0.9532749056816101, "cpu_max": 0.7514486312866211, "allclose": true}
+{"blob": "280", "shape": [1024, 5632], "replay_from": "278", "max_absolute_difference": 1.430511474609375e-06, "mean_absolute_difference": 1.2898357226731605e-07, "cpu_min": -7.082428932189941, "cpu_max": 11.161949157714844, "allclose": true}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 8.124s
+             CPU time consumed: 17.373s
+                   Memory peak: 3.3G (swap: 0B)
