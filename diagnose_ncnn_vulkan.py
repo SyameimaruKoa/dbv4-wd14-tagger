@@ -89,6 +89,8 @@ def main():
                         help='Use an alternate converted model for diagnostics')
     parser.add_argument('--blobs', nargs='+', help='Compare named intermediate blobs on CPU/Vulkan')
     parser.add_argument('--replay-from', help='Feed the same CPU intermediate tensor to both backends')
+    parser.add_argument('--cpu-layer-types', nargs='+', default=[],
+                        help='Diagnostic only: force named layer types to CPU with ncnn feature mask')
     parser.add_argument('--disable', action='append', default=[],
                         choices=('use_winograd_convolution', 'use_sgemm_convolution',
                                  'use_packing_layout', 'use_subgroup_ops',
@@ -96,13 +98,33 @@ def main():
     args = parser.parse_args()
     if args.replay_from and not args.blobs:
         parser.error('--replay-from requires --blobs')
+    if args.cpu_layer_types and args.blobs:
+        parser.error('--cpu-layer-types currently requires full-model mode')
     if args.blobs:
         compare_blobs(args)
         return
     original_net = ncnn.Net
 
+    class DiagnosticNet(original_net):
+        def load_param(self, path):
+            if not args.cpu_layer_types:
+                return super().load_param(path)
+            lines = Path(path).read_text().splitlines()
+            count = 0
+            for index, line in enumerate(lines):
+                fields = line.split()
+                if fields and fields[0] in args.cpu_layer_types:
+                    if any(field.startswith('31=') for field in fields):
+                        raise ValueError('Diagnostic graph already contains a feature mask')
+                    lines[index] = line + ' 31=16'
+                    count += 1
+            if not count:
+                raise ValueError('No matching layers for CPU diagnostic')
+            print(f'Diagnostic CPU layers: {count} {args.cpu_layer_types}', flush=True)
+            return self.load_param_mem('\n'.join(lines) + '\n')
+
     def configured_net():
-        net = original_net()
+        net = DiagnosticNet()
         for name in args.disable:
             setattr(net.opt, name, False)
         return net
@@ -116,6 +138,7 @@ def main():
         result, measured_start = run(options, monitor)
     result['resources'] = monitor.summary(measured_start)
     result['disabled_options'] = args.disable
+    result['diagnostic_cpu_layer_types'] = args.cpu_layer_types
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(result['comparison'], indent=2))
