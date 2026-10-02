@@ -27,6 +27,7 @@ class NcnnIntegrationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.runtime = app.load_runtime_model(
             True, 'ultra', provider='ncnn',
+            gpu_index=int(os.environ.get('DBV4_NCNN_GPU_INDEX', '0')),
             model_file=os.environ.get('DBV4_NCNN_MODEL_PREFIX'))
         cls.image = benchmark_image()
         cls.probabilities = cls.runtime.predict_images([cls.image])[0]
