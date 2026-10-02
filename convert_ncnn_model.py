@@ -41,6 +41,9 @@ def trace_model(source_repo: str, destination: Path, input_size: int,
     import torch
 
     model = timm.create_model("hf-hub:" + source_repo, pretrained=True).eval()
+    # pnnx executes the saved module to infer shapes outside our inference_mode.
+    # Persist inference-only parameters so it need not retain autograd history.
+    model.requires_grad_(False)
     replace_grn_addcmul(model)
     dummy = torch.zeros((1, 3, input_size, input_size), dtype=torch.float32)
     with torch.inference_mode():
