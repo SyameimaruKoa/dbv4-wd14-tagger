@@ -1,0 +1,12 @@
+﻿Collecting openvino
+  Downloading openvino-2026.4.1-22982-cp313-cp313-win_amd64.whl.metadata (13 kB)
+Requirement already satisfied: numpy<2.6.0,>=1.16.6 in .\venv_intel\Lib\site-packages (from openvino) (2.5.3)
+Collecting openvino-telemetry>=2023.2.1 (from openvino)
+  Using cached openvino_telemetry-2025.2.0-py3-none-any.whl.metadata (2.3 kB)
+Downloading openvino-2026.4.1-22982-cp313-cp313-win_amd64.whl (85.0 MB)
+   ---------------------------------------- 85.0/85.0 MB 9.4 MB/s  0:00:09
+Using cached openvino_telemetry-2025.2.0-py3-none-any.whl (25 kB)
+Installing collected packages: openvino-telemetry, openvino
+
+Successfully installed openvino-2026.4.1 openvino-telemetry-2025.2.0
+

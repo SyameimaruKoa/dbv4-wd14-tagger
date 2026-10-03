@@ -1,0 +1,24 @@
+{
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.13.15",
+  "packages": {
+    "ncnn": "1.0.20260526",
+    "numpy": "2.5.3",
+    "Pillow": "12.3.0",
+    "huggingface-hub": "2.1.1"
+  },
+  "model_files": {
+    "model.ncnn.bin": {
+      "bytes": 2770470868,
+      "sha256": "86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6"
+    },
+    "model.ncnn.json": {
+      "bytes": 272,
+      "sha256": "7ac57bd2c0f7ccc66adcaf3bb8d23fe9f85b26b4677ba81489da37a50a2979c4"
+    },
+    "model.ncnn.param": {
+      "bytes": 72689,
+      "sha256": "ff906fe9a776d63b31fd738d1de65f3b2f8446501aec7a6c4b1ca497d24f579f"
+    }
+  }
+}

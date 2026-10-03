@@ -7,3 +7,7 @@ config.json
 
 *.ses
 *.kate-swp
+
+# Generated native GPU diagnostics and ONNX Runtime profiling
+/kernel.errors.txt
+/onnxruntime_profile*.json

@@ -1,0 +1,256 @@
+test_all_python_cli_short_options (test_cli.CliShortOptionTests.test_all_python_cli_short_options) ... ok
+test_help_separates_inputs_values_and_switches (test_cli.CliShortOptionTests.test_help_separates_inputs_values_and_switches) ... ok
+test_ncnn_provider_and_precision_reach_runtime (test_cli.CliShortOptionTests.test_ncnn_provider_and_precision_reach_runtime) ... ok
+test_negative_short_switches (test_cli.CliShortOptionTests.test_negative_short_switches) ... ok
+test_batch_http_roundtrip (test_client_batch.BatchProtocolTests.test_batch_http_roundtrip) ... [22:30:04] 127.0.0.1       | File: 画像 | Size: 0.2 KB | Processing...
+[22:30:04] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 178.20 MiB/s
+ok
+test_client_batch_accepts_compressed_response (test_client_batch.BatchProtocolTests.test_client_batch_accepts_compressed_response) ... ok
+test_client_batch_validates_response_shape (test_client_batch.BatchProtocolTests.test_client_batch_validates_response_shape) ... ok
+test_client_preprocessed_mode_matches_original_inference (test_client_batch.BatchProtocolTests.test_client_preprocessed_mode_matches_original_inference) ... [22:30:05] 127.0.0.1       | File: 画像 | Size: 20.4 KB | Processing...
+[22:30:05] 127.0.0.1       | File: 画像 | HTTP受信: 0.02 MiB / 0.000s = 115.02 MiB/s
+[22:30:05] 127.0.0.1       | File: 画像 | Size: 4.2 KB | Processing...
+[22:30:05] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 3108.87 MiB/s | 原本: 0.01 MiB
+[INFO] 127.0.0.1 | 推論開始: 2枚
+[INFO] 127.0.0.1 | 推論完了: 2枚 / 0.00s
+[INFO] 127.0.0.1 | 結果送信完了: 2枚
+ok
+test_client_rejects_oversized_batch_before_loading (test_client_batch.BatchProtocolTests.test_client_rejects_oversized_batch_before_loading) ... ok
+test_codec_check_uses_file_format_instead_of_extension (test_client_batch.BatchProtocolTests.test_codec_check_uses_file_format_instead_of_extension) ... ok
+test_codec_mismatch_only_disables_affected_format (test_client_batch.BatchProtocolTests.test_codec_mismatch_only_disables_affected_format) ... ok
+test_core_probe_uses_results_instead_of_package_versions (test_client_batch.BatchProtocolTests.test_core_probe_uses_results_instead_of_package_versions) ... ok
+test_corrupt_image_does_not_fail_batch (test_client_batch.BatchProtocolTests.test_corrupt_image_does_not_fail_batch) ... [22:30:06] 127.0.0.1       | File: 画像 | Size: 0.3 KB | Processing...
+[22:30:06] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 240.11 MiB/s
+[WARN] 127.0.0.1 | Batch image 2: cannot identify image file <_io.BytesIO object at 0x7c4b7f0c8900>
+[22:30:06] 127.0.0.1       | File: 画像 | Size: 0.2 KB | Processing...
+[22:30:06] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 7.90 MiB/s
+[WARN] 127.0.0.1 | Batch image 1: cannot identify image file <_io.BytesIO object at 0x7c4b7dd7a520>
+ok
+test_legacy_pixel_limit_is_migrated (test_client_batch.BatchProtocolTests.test_legacy_pixel_limit_is_migrated) ... ok
+test_legacy_probe_can_match_server_package_versions (test_client_batch.BatchProtocolTests.test_legacy_probe_can_match_server_package_versions) ... ok
+test_metadata_responds_while_inference_slot_is_busy (test_client_batch.BatchProtocolTests.test_metadata_responds_while_inference_slot_is_busy) ... [22:30:06] 127.0.0.1       | File: 画像 | Size: 0.1 KB | Processing...
+[22:30:06] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 37.84 MiB/s
+[22:30:06] 127.0.0.1       | File: 画像 | Processed OK (0.00s)
+ok
+test_old_lossy_upload_setting_migrates_to_original (test_client_batch.BatchProtocolTests.test_old_lossy_upload_setting_migrates_to_original) ... ok
+test_pipeline_sends_next_batch_while_consuming_previous (test_client_batch.BatchProtocolTests.test_pipeline_sends_next_batch_while_consuming_previous) ... ok
+test_preprocessed_tensor_matches_nhwc_model_input (test_client_batch.BatchProtocolTests.test_preprocessed_tensor_matches_nhwc_model_input) ... ok
+test_server_batch_preserves_image_order (test_client_batch.BatchProtocolTests.test_server_batch_preserves_image_order) ... [22:30:07] 127.0.0.1       | File: 画像 | Size: 0.2 KB | Processing...
+[22:30:07] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 99.99 MiB/s
+ok
+test_server_compresses_large_opted_in_response (test_client_batch.BatchProtocolTests.test_server_compresses_large_opted_in_response) ... ok
+test_server_http_error_includes_response_detail (test_client_batch.BatchProtocolTests.test_server_http_error_includes_response_detail) ... ok
+test_server_logs_http_receive_rate (test_client_batch.BatchProtocolTests.test_server_logs_http_receive_rate) ... ok
+test_server_receives_next_request_while_inference_runs (test_client_batch.BatchProtocolTests.test_server_receives_next_request_while_inference_runs) ... [22:30:07] 127.0.0.1       | File: 画像 | Size: 0.1 KB | Processing...
+[22:30:07] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 51.26 MiB/s
+[22:30:07] 127.0.0.1       | File: 画像 | Size: 0.1 KB | Processing...
+[22:30:07] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 60.61 MiB/s
+[22:30:07] 127.0.0.1       | File: 画像 | Processed OK (0.00s)
+[22:30:07] 127.0.0.1       | File: 画像 | Processed OK (0.00s)
+ok
+test_server_rejects_oversized_body_before_reading (test_client_batch.BatchProtocolTests.test_server_rejects_oversized_body_before_reading) ... [22:30:07] 127.0.0.1       | File: 画像 | Size: 129.00 MB | Processing...
+ok
+test_server_rejects_oversized_decoded_image (test_client_batch.BatchProtocolTests.test_server_rejects_oversized_decoded_image) ... ok
+test_tensor_batch_skips_corrupt_image_before_upload (test_client_batch.BatchProtocolTests.test_tensor_batch_skips_corrupt_image_before_upload) ... ok
+test_transfer_mode_defaults_to_preprocessed_and_has_override (test_client_batch.BatchProtocolTests.test_transfer_mode_defaults_to_preprocessed_and_has_override) ... ok
+test_unresolved_host_has_actionable_error (test_client_batch.BatchProtocolTests.test_unresolved_host_has_actionable_error) ... ok
+test_balanced_requires_hugging_face_access (test_dbv4.DBV4MetadataTests.test_balanced_requires_hugging_face_access) ... ok
+test_client_metadata_does_not_require_model_file (test_dbv4.DBV4MetadataTests.test_client_metadata_does_not_require_model_file) ... ok
+test_metadata_and_thresholds (test_dbv4.DBV4MetadataTests.test_metadata_and_thresholds) ... ok
+test_output_probability_normalization (test_dbv4.DBV4MetadataTests.test_output_probability_normalization) ... ok
+test_preprocess_and_layout (test_dbv4.DBV4MetadataTests.test_preprocess_and_layout) ... ok
+test_preprocess_with_flat_dbv4_parameters (test_dbv4.DBV4MetadataTests.test_preprocess_with_flat_dbv4_parameters) ... ok
+test_select_output_prefers_prediction_with_matching_label_count (test_dbv4.DBV4MetadataTests.test_select_output_prefers_prediction_with_matching_label_count) ... ok
+test_select_output_rejects_incompatible_shapes (test_dbv4.DBV4MetadataTests.test_select_output_rejects_incompatible_shapes) ... ok
+test_split_model_and_metadata_repositories_with_external_weights (test_dbv4.DBV4MetadataTests.test_split_model_and_metadata_repositories_with_external_weights) ... ok
+test_wd14_v3_inline_metadata_and_preprocess (test_dbv4.DBV4MetadataTests.test_wd14_v3_inline_metadata_and_preprocess) ... ok
+test_bash_launcher_forwards_provider_indices_and_exit_status (test_gpu_runtime.GPUInitializationTests.test_bash_launcher_forwards_provider_indices_and_exit_status) ... ok
+test_cli_options_reach_both_normal_and_server_loader (test_gpu_runtime.GPUInitializationTests.test_cli_options_reach_both_normal_and_server_loader) ... ok
+test_directml_caformer_workaround (test_gpu_runtime.GPUInitializationTests.test_directml_caformer_workaround) ... ok
+test_directml_checks_dxgi_index_not_webgpu_index (test_gpu_runtime.GPUInitializationTests.test_directml_checks_dxgi_index_not_webgpu_index) ... ok
+test_explicit_missing_migraphx_is_not_cpu_success (test_gpu_runtime.GPUInitializationTests.test_explicit_missing_migraphx_is_not_cpu_success) ... ok
+test_explicit_tensorrt_failure_is_not_cuda_success (test_gpu_runtime.GPUInitializationTests.test_explicit_tensorrt_failure_is_not_cuda_success) ... ok
+test_loader_accepts_verified_gpu_nodes (test_gpu_runtime.GPUInitializationTests.test_loader_accepts_verified_gpu_nodes) ... ok
+test_loader_rejects_cpu_only_execution_even_if_gpu_active (test_gpu_runtime.GPUInitializationTests.test_loader_rejects_cpu_only_execution_even_if_gpu_active) ... ok
+test_loader_rejects_session_creation_cpu_fallback (test_gpu_runtime.GPUInitializationTests.test_loader_rejects_session_creation_cpu_fallback) ... ok
+test_node_profile_does_not_count_active_provider_metadata (test_gpu_runtime.GPUInitializationTests.test_node_profile_does_not_count_active_provider_metadata) ... ok
+test_openvino_queries_in_subprocess (test_gpu_runtime.GPUInitializationTests.test_openvino_queries_in_subprocess) ... ok
+test_openvino_rejects_nvidia_gpu_zero (test_gpu_runtime.GPUInitializationTests.test_openvino_rejects_nvidia_gpu_zero) ... ok
+test_powershell_tensorrt_fallback_reuses_prepared_environment (test_gpu_runtime.GPUInitializationTests.test_powershell_tensorrt_fallback_reuses_prepared_environment) ... ok
+test_provider_indices_and_cpu_override (test_gpu_runtime.GPUInitializationTests.test_provider_indices_and_cpu_override) ... ok
+test_tensorrt_loads_plugin_and_ort_bridge (test_gpu_runtime.GPUInitializationTests.test_tensorrt_loads_plugin_and_ort_bridge) ... ok
+test_tensorrt_missing_explicit_dir_does_not_fall_back (test_gpu_runtime.GPUInitializationTests.test_tensorrt_missing_explicit_dir_does_not_fall_back) ... ok
+test_tensorrt_provider_options_use_portable_cache (test_gpu_runtime.GPUInitializationTests.test_tensorrt_provider_options_use_portable_cache) ... ok
+test_webgpu_auto_selects_first_duplicate_vendor_match (test_gpu_runtime.GPUInitializationTests.test_webgpu_auto_selects_first_duplicate_vendor_match) ... ok
+test_webgpu_auto_selects_unique_vendor_match (test_gpu_runtime.GPUInitializationTests.test_webgpu_auto_selects_unique_vendor_match) ... ok
+test_webgpu_rejects_wrong_vendor_invalid_index_and_ambiguity (test_gpu_runtime.GPUInitializationTests.test_webgpu_rejects_wrong_vendor_invalid_index_and_ambiguity) ... ok
+test_webgpu_selects_only_requested_device_with_numeric_vendor (test_gpu_runtime.GPUInitializationTests.test_webgpu_selects_only_requested_device_with_numeric_vendor) ... ok
+test_windows_cudnn_preloads_tensor_ir_and_keeps_handles (test_gpu_runtime.GPUInitializationTests.test_windows_cudnn_preloads_tensor_ir_and_keeps_handles) ... ok
+test_windows_openvino_keeps_dll_search_path (test_gpu_runtime.GPUInitializationTests.test_windows_openvino_keeps_dll_search_path) ... ok
+test_windows_tensorrt_detects_ambiguity (test_gpu_runtime.GPUInitializationTests.test_windows_tensorrt_detects_ambiguity) ... ok
+test_windows_tensorrt_discovers_runtime_in_portable_venv (test_gpu_runtime.GPUInitializationTests.test_windows_tensorrt_discovers_runtime_in_portable_venv) ... ok
+test_failing_gpu_initializations_follow_vendor_priorities (test_launcher_fallback.LauncherFallbackTests.test_failing_gpu_initializations_follow_vendor_priorities) ... ok
+test_healthy_dedicated_runtime_remains_first_choice (test_launcher_fallback.LauncherFallbackTests.test_healthy_dedicated_runtime_remains_first_choice) ... ok
+test_ncnn_initialization_failure_reaches_webgpu_before_cpu (test_launcher_fallback.LauncherFallbackTests.test_ncnn_initialization_failure_reaches_webgpu_before_cpu) ... ok
+test_borrowed_input_storage_survives_until_extraction (test_ncnn_backend.NcnnBackendTests.test_borrowed_input_storage_survives_until_extraction) ... ok
+test_cached_converter_files_do_not_require_conversion_dependencies (test_ncnn_backend.NcnnBackendTests.test_cached_converter_files_do_not_require_conversion_dependencies) ... ok
+test_cpu_only_binding_reports_missing_vulkan_support (test_ncnn_backend.NcnnBackendTests.test_cpu_only_binding_reports_missing_vulkan_support) ... ok
+test_killed_converter_reports_memory_failure_without_publishing_cache (test_ncnn_backend.NcnnBackendTests.test_killed_converter_reports_memory_failure_without_publishing_cache) ... ok
+test_runtime_returns_dbv4_probabilities_for_each_image (test_ncnn_backend.NcnnBackendTests.test_runtime_returns_dbv4_probabilities_for_each_image) ... ok
+test_software_vulkan_device_is_rejected (test_ncnn_backend.NcnnBackendTests.test_software_vulkan_device_is_rejected) ... ok
+test_amd_sync_preserves_existing_flags_and_is_idempotent (test_ncnn_backend.VulkanEnvironmentTests.test_amd_sync_preserves_existing_flags_and_is_idempotent) ... ok
+test_other_vendor_keeps_driver_environment (test_ncnn_backend.VulkanEnvironmentTests.test_other_vendor_keeps_driver_environment) ... ok
+test_close_releases_net_and_can_be_repeated (test_ncnn_backend.VulkanShutdownTests.test_close_releases_net_and_can_be_repeated) ... ok
+test_windows_shutdown_releases_models_before_instance_once (test_ncnn_backend.VulkanShutdownTests.test_windows_shutdown_releases_models_before_instance_once) ... ok
+test_cpu_probability_rating_and_threshold_parity (test_ncnn_integration.NcnnIntegrationTests.test_cpu_probability_rating_and_threshold_parity) ... skipped 'set DBV4_NCNN_INTEGRATION=1 on a Vulkan GPU host'
+test_standalone_and_both_client_modes_write_same_xmp (test_ncnn_integration.NcnnIntegrationTests.test_standalone_and_both_client_modes_write_same_xmp) ... skipped 'set DBV4_NCNN_INTEGRATION=1 on a Vulkan GPU host'
+test_non_fp32_weights_rejected_without_publishing_cache (test_ncnn_partition.PartitionTests.test_non_fp32_weights_rejected_without_publishing_cache) ... skipped 'requires native ncnn and a Vulkan GPU'
+test_weights_preserved_branch_retained_and_results_match_analytic (test_ncnn_partition.PartitionTests.test_weights_preserved_branch_retained_and_results_match_analytic) ... skipped 'requires native ncnn and a Vulkan GPU'
+test_collects_images_from_leaf_directories_only (test_pixiv.PixivOrganizationTests.test_collects_images_from_leaf_directories_only) ... ok
+test_folder_name_falls_back_to_base_rating (test_pixiv.PixivOrganizationTests.test_folder_name_falls_back_to_base_rating) ... ok
+test_inference_timing_excludes_slow_first_batch (test_pixiv.PixivOrganizationTests.test_inference_timing_excludes_slow_first_batch) ... ok
+test_moves_whole_group_for_questionable_rating (test_pixiv.PixivOrganizationTests.test_moves_whole_group_for_questionable_rating) ... ok
+test_dbv4_questionable_badge_uses_questionable_score (test_report.ReportBadgeTests.test_dbv4_questionable_badge_uses_questionable_score) ... ok
+test_dbv4_sensitive_badge_uses_sensitive_score (test_report.ReportBadgeTests.test_dbv4_sensitive_badge_uses_sensitive_score) ... ok
+test_build_providers_skips_tensorrt_when_runtime_is_missing (test_runtime_compat.RuntimeCompatibilityTests.test_build_providers_skips_tensorrt_when_runtime_is_missing) ... ok
+test_build_providers_uses_tensorrt_when_runtime_is_loadable (test_runtime_compat.RuntimeCompatibilityTests.test_build_providers_uses_tensorrt_when_runtime_is_loadable) ... ok
+test_client_auto_selects_server_profile_without_model_download (test_runtime_compat.RuntimeCompatibilityTests.test_client_auto_selects_server_profile_without_model_download) ... ok
+test_client_batch_timeout_retries_singles_and_keeps_processing (test_runtime_compat.RuntimeCompatibilityTests.test_client_batch_timeout_retries_singles_and_keeps_processing) ... [INFO] Hugging Faceへ未ログインのため、ログインを開始します。
+[INFO] ONNX外部データを同一ディレクトリに配置: /tmp/tmpwpc67k5b/models/5d3e30b2e6cf8499
+[WARN] balanced: Hugging Faceで利用条件への同意が必要です。
+[INFO] DBV4モデル: test/model (balanced)
+[INFO] ラベル数: 5
+[INFO] metadata version: test
+[INFO] 入力 shape: ['batch', 3, 384, 384]
+[INFO] アクティブプロバイダ: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] 起動検証で実行されたEP: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[WARN] balanced: Hugging Faceで利用条件への同意が必要です。
+[INFO] DBV4モデル: test/model (balanced)
+[INFO] ラベル数: 5
+[INFO] metadata version: test
+[INFO] 入力 shape: ['batch', 3, 384, 384]
+[INFO] アクティブプロバイダ: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[WARN] balanced: Hugging Faceで利用条件への同意が必要です。
+[INFO] DBV4モデル: test/model (balanced)
+[INFO] ラベル数: 5
+[INFO] metadata version: test
+[INFO] 入力 shape: ['batch', 3, 384, 384]
+[INFO] アクティブプロバイダ: ['CPUExecutionProvider']
+[INFO] ncnn Vulkan GPU 0 (test GPU): ultra, fp32, ラベル数 4
+[INFO] ncnn Vulkan GPU 0 (test GPU): ultra, fp16-packed, ラベル数 4
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[INFO] Pixiv用の画像フォルダをスキャン中: /tmp/tmp_hnwkdwt
+[INFO] Pixiv画像フォルダを削除: /tmp/tmpou8jzgyk/source/artist
+[WARN] TensorrtExecutionProviderを使用できません: missing
+[INFO] Serverのモデルに自動整合: lightweight (animetimm/mobilenetv4_conv_aa_large.dbv4-full)
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[INFO] DBV4 Client batch-size=2
+  0%|          | 0/3 [00:00<?, ?img/s]                                        0%|          | 0/3 [00:00<?, ?img/s]  0%|          | 0/3 [00:00<?, ?img/s, 推論:1枚(29746.8/s) Skip:0枚(0.0/s)]                                                                             0%|          | 0/3 [00:00<?, ?img/s, 推論:1枚(29746.8/s) Skip:0枚(0.0/s)] 33%|███▎      | 1/3 [00:00<00:00, 783.84img/s, 推論:2枚(33156.6/s) Skip:0枚(0.0/s)]                                                                                     33%|███▎      | 1/3 [00:00<00:00, 691.22img/s, 推論:2枚(33156.6/s) Skip:0枚(0.0/s)]                                                                                     67%|██████▋   | 2/3 [00:00<00:00, 1222.65img/s, 推論:2枚(33156.6/s) Skip:0枚(0.0/s)] 67%|██████▋   | 2/3 [00:00<00:00, 1140.53img/s, 推論:3枚(35848.8/s) Skip:0枚(0.0/s)]                                                                                      67%|██████▋   | 2/3 [00:00<00:00, 1049.36img/s, 推論:3枚(35848.8/s) Skip:0枚(0.0/s)]100%|██████████| 3/3 [00:00<00:00, 1392.99img/s, 推論:3枚(35848.8/s) Skip:0枚(0.0/s)]
+ok
+test_client_compatibility_error_stops_remaining_images (test_runtime_compat.RuntimeCompatibilityTests.test_client_compatibility_error_stops_remaining_images) ... [WARN] 2枚のバッチ応答が120秒でタイムアウトしました。以降は1枚ずつ処理します。
+[0.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+[1.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+[WARN] 1枚のバッチ応答が120秒でタイムアウトしました。以降は1枚ずつ処理します。
+[2.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 3 枚 | 速度: 35848.75 img/s (0.0 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[WARN] 接続先Serverはバッチ通信に未対応です。Serverを更新・再起動するまで1枚ずつ処理します。
+  0%|          | 0/2 [00:00<?, ?img/s]                                        0%|          | 0/2 [00:00<?, ?img/s]                                        0%|          | 0/2 [00:00<?, ?img/s]  0%|          | 0/2 [00:00<?, ?img/s]
+ok
+test_client_http_error_skips_only_failed_image (test_runtime_compat.RuntimeCompatibilityTests.test_client_http_error_skips_only_failed_image) ... 互換性エラー: model_id mismatch
+[ERROR] Server/Clientの構成が一致しないため処理を停止します。
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[WARN] 接続先Serverはバッチ通信に未対応です。Serverを更新・再起動するまで1枚ずつ処理します。
+  0%|          | 0/2 [00:00<?, ?img/s]                                        0%|          | 0/2 [00:00<?, ?img/s] 50%|█████     | 1/2 [00:00<00:00, 3695.42img/s, 推論:1枚(36472.2/s) Skip:0枚(0.0/s)]                                                                                      50%|█████     | 1/2 [00:00<00:00, 2227.46img/s, 推論:1枚(36472.2/s) Skip:0枚(0.0/s)]100%|██████████| 2/2 [00:00<00:00, 3331.46img/s, 推論:1枚(36472.2/s) Skip:0枚(0.0/s)]
+ok
+test_client_reports_server_startup_failure (test_runtime_compat.RuntimeCompatibilityTests.test_client_reports_server_startup_failure) ... ok
+test_client_syncs_preprocessor_packages_in_virtualenv (test_runtime_compat.RuntimeCompatibilityTests.test_client_syncs_preprocessor_packages_in_virtualenv) ... サーバー処理エラー one.jpg: HTTP 500
+[two.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 36472.21 img/s (0.0 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] Client仮想環境の前処理ライブラリをServerに合わせます: Pillow==11.3.0, numpy==2.1.3
+[INFO] 更新したライブラリを読み込むためClientを再起動します。
+ok
+test_client_waits_for_server_model_loading (test_runtime_compat.RuntimeCompatibilityTests.test_client_waits_for_server_model_loading) ... [INFO] Server準備中: TensorRT engine build。接続したまま待機します。
+[INFO] Serverのモデル準備が完了しました。
+ok
+test_codec_mismatch_splits_mixed_batch_without_reordering (test_runtime_compat.RuntimeCompatibilityTests.test_codec_mismatch_splits_mixed_batch_without_reordering) ... [WARN] 画像コーデックの版が異なる形式は結果保持のため元画像で送信します: .jpg, .jpeg
+[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。
+[INFO] DBV4 Client batch-size=2
+  0%|          | 0/2 [00:00<?, ?img/s]  0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(9974.6/s) Skip:0枚(0.0/s)]                                                                            0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(9974.6/s) Skip:0枚(0.0/s)]                                                                           50%|█████     | 1/2 [00:00<00:00, 1366.22img/s, 推論:2枚(9974.6/s) Skip:0枚(0.0/s)]100%|██████████| 2/2 [00:00<00:00, 2088.80img/s, 推論:2枚(9974.6/s) Skip:0枚(0.0/s)]
+ok
+test_exiftool_diagnostics_are_not_merged_into_tag_output (test_runtime_compat.RuntimeCompatibilityTests.test_exiftool_diagnostics_are_not_merged_into_tag_output) ... ok
+test_future_1b_profile_is_reserved_until_onnx_is_available (test_runtime_compat.RuntimeCompatibilityTests.test_future_1b_profile_is_reserved_until_onnx_is_available) ... ok
+test_gated_profile_retries_after_login (test_runtime_compat.RuntimeCompatibilityTests.test_gated_profile_retries_after_login) ... ok
+test_incompatible_preprocessing_falls_back_to_original_upload (test_runtime_compat.RuntimeCompatibilityTests.test_incompatible_preprocessing_falls_back_to_original_upload) ... [one.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+[two.webp] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 2 枚 | 速度: 9974.56 img/s (0.1 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] アクセス申請・同意ページをブラウザで開きました: https://huggingface.co/animetimm/convnextv2_huge.dbv4-full
+[INFO] 利用条件への同意後、Hugging Faceへ再ログインしてください。
+[WARN] ClientとServerの前処理結果が一致しません。ライブラリ差分: 。自動版合わせ: sync failed。元画像送信で続行します。
+[INFO] Client転送モード: 元画像をそのまま送信します。
+  0%|          | 0/1 [00:00<?, ?img/s]  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(45590.3/s) Skip:0枚(0.0/s)]                                                                             0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(45590.3/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00, 2933.08img/s, 推論:1枚(45590.3/s) Skip:0枚(0.0/s)]
+ok
+test_manual_approval_profiles_are_available (test_runtime_compat.RuntimeCompatibilityTests.test_manual_approval_profiles_are_available) ... ok
+test_manual_profile_opens_approval_page_when_access_is_denied (test_runtime_compat.RuntimeCompatibilityTests.test_manual_profile_opens_approval_page_when_access_is_denied) ... ok
+test_manual_profile_starts_browser_login_when_logged_out (test_runtime_compat.RuntimeCompatibilityTests.test_manual_profile_starts_browser_login_when_logged_out) ... ok
+test_migrates_known_legacy_profiles_without_removing_custom_profiles (test_runtime_compat.RuntimeCompatibilityTests.test_migrates_known_legacy_profiles_without_removing_custom_profiles) ... ok
+test_parallel_server_limits_active_requests (test_runtime_compat.RuntimeCompatibilityTests.test_parallel_server_limits_active_requests) ... ok
+test_parser_accepts_custom_model_profile (test_runtime_compat.RuntimeCompatibilityTests.test_parser_accepts_custom_model_profile) ... ok
+test_postprocess_error_does_not_retry_batch_inference (test_runtime_compat.RuntimeCompatibilityTests.test_postprocess_error_does_not_retry_batch_inference) ... [one.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 45590.26 img/s (0.0 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] アクセス申請・同意ページをブラウザで開きました: https://huggingface.co/animetimm/convformer_s36.dbv4-full
+[INFO] 利用条件への同意後、Hugging Faceへ再ログインしてください。
+[INFO] Hugging Faceへ未ログインのため、ログインを開始します。
+[INFO] DBV4 batch-size=2, io-workers=0
+  0%|          | 0/2 [00:00<?, ?img/s]  0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(4339.7/s) Skip:0枚(0.0/s)]                                                                            0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(4339.7/s) Skip:0枚(0.0/s)]                                                                           50%|█████     | 1/2 [00:00<00:00, 1228.92img/s, 推論:2枚(4339.7/s) Skip:0枚(0.0/s)]100%|██████████| 2/2 [00:00<00:00, 2153.13img/s, 推論:2枚(4339.7/s) Skip:0枚(0.0/s)]
+ok
+test_server_binds_before_loading_model (test_runtime_compat.RuntimeCompatibilityTests.test_server_binds_before_loading_model) ... エラー one.jpg: decode failed
+エラー two.jpg: decode failed
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 2 枚 | 速度: 4339.68 img/s (0.2 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+
+[INFO] Port: 33751 で待受開始。モデル読み込み中はClientを待機させます。
+
+[INFO] DBV4推論サーバー稼働中 Port: 33751
+[INFO] 同時処理数: 2
+[INFO] model_id=test/model
+[INFO] output_size=5
+[INFO] metadata_version=test-version
+ok
+test_server_disconnected_client_does_not_raise_broken_pipe (test_runtime_compat.RuntimeCompatibilityTests.test_server_disconnected_client_does_not_raise_broken_pipe) ... ok
+test_server_metadata_endpoint_returns_model_without_inference (test_runtime_compat.RuntimeCompatibilityTests.test_server_metadata_endpoint_returns_model_without_inference) ... ok
+test_tensor_request_failure_switches_to_original_upload (test_runtime_compat.RuntimeCompatibilityTests.test_tensor_request_failure_switches_to_original_upload) ... [INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。
+  0%|          | 0/1 [00:00<?, ?img/s]                                        0%|          | 0/1 [00:00<?, ?img/s]  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(1633.3/s) Skip:0枚(0.0/s)]                                                                            0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(1633.3/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00, 600.30img/s, 推論:1枚(1633.3/s) Skip:0枚(0.0/s)]
+ok
+test_ultra_checks_gated_metadata_before_model_download (test_runtime_compat.RuntimeCompatibilityTests.test_ultra_checks_gated_metadata_before_model_download) ... ok
+
+----------------------------------------------------------------------
+Ran 113 tests in 5.388s
+
+OK (skipped=4)
+[WARN] 前処理済み転送に失敗しました: tensor rejected。元画像送信で続行します。
+[one.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 1633.30 img/s (0.6 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚

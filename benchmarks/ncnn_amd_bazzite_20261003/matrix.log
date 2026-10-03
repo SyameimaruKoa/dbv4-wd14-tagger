@@ -1,0 +1,8 @@
+fp32 b1 exit=0
+fp32 b4 exit=0
+fp16-storage b1 exit=1
+fp16-storage b4 exit=1
+fp16-packed b1 exit=1
+fp16-packed b4 exit=1
+fp16-arithmetic b1 exit=1
+fp16-arithmetic b4 exit=1

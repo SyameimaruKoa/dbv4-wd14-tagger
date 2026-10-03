@@ -1,0 +1,86 @@
+[INFO] ポータブルデータ保存先: /opt/dbv4-wd14-tagger/.dbv4
+[INFO] 自動Provider候補を検証します: tensorrt
+[INFO] 依存ライブラリを確認・インストール中 (nvidia)...
+Requirement already satisfied: onnxruntime-gpu<1.27 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (1.26.0)
+Requirement already satisfied: tensorrt-cu12<11 in ./venv_gpu/lib/python3.13/site-packages (10.16.1.11)
+Requirement already satisfied: pillow in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 1)) (12.3.0)
+Requirement already satisfied: pillow-avif-plugin in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 2)) (1.6.0)
+Requirement already satisfied: huggingface_hub in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.0.0)
+Requirement already satisfied: numpy in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 4)) (2.5.3)
+Requirement already satisfied: tqdm in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 5)) (4.70.1)
+Requirement already satisfied: flatbuffers in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu<1.27->onnxruntime-gpu[cuda,cudnn]<1.27) (25.12.19)
+Requirement already satisfied: packaging in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu<1.27->onnxruntime-gpu[cuda,cudnn]<1.27) (26.3)
+Requirement already satisfied: protobuf in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu<1.27->onnxruntime-gpu[cuda,cudnn]<1.27) (7.36.2)
+Requirement already satisfied: tensorrt_cu12_libs==10.16.1.11 in ./venv_gpu/lib/python3.13/site-packages (from tensorrt-cu12<11) (10.16.1.11)
+Requirement already satisfied: tensorrt_cu12_bindings==10.16.1.11 in ./venv_gpu/lib/python3.13/site-packages (from tensorrt-cu12<11) (10.16.1.11)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu12~=12.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.86)
+Requirement already satisfied: nvidia-cuda-runtime-cu12~=12.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.79)
+Requirement already satisfied: nvidia-cufft-cu12~=11.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (11.4.1.4)
+Requirement already satisfied: nvidia-curand-cu12~=10.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (10.3.10.19)
+Requirement already satisfied: nvidia-cudnn-cu12~=9.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (9.26.0.51)
+Requirement already satisfied: nvidia-cublas-cu12 in ./venv_gpu/lib/python3.13/site-packages (from nvidia-cudnn-cu12~=9.0->onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.2.10)
+Requirement already satisfied: nvidia-nvjitlink-cu12 in ./venv_gpu/lib/python3.13/site-packages (from nvidia-cufft-cu12~=11.0->onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.86)
+Requirement already satisfied: click<9.0.0,>=8.4.2 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (8.5.0)
+Requirement already satisfied: filelock>=3.10.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.0.3)
+Requirement already satisfied: fsspec>=2023.5.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2026.9.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.6.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (1.6.0)
+Requirement already satisfied: httpx2<3,>=2.0.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.13.1)
+Requirement already satisfied: pyyaml>=5.1 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (6.0.3)
+Requirement already satisfied: typing-extensions>=4.1.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.16.0)
+Requirement already satisfied: anyio>=4.10 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.15.1)
+Requirement already satisfied: httpcore2==2.13.1 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.13.1)
+Requirement already satisfied: idna>=3.18 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (3.20)
+Requirement already satisfied: truststore>=0.10 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (0.10.4)
+Requirement already satisfied: h11>=0.16 in ./venv_gpu/lib/python3.13/site-packages (from httpcore2==2.13.1->httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (0.16.0)
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: /opt/dbv4-wd14-tagger/.dbv4/models/53e96223459a3046
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] TensorRTの起動検証中です。初回はエンジン構築が完了するまでServerは接続を受け付けません。
+[INFO] 起動検証で実行されたEP: ['TensorrtExecutionProvider']
+[INFO] 自動選択しました: tensorrt
+[INFO] 依存ライブラリを確認・インストール中 (nvidia)...
+Requirement already satisfied: onnxruntime-gpu<1.27 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (1.26.0)
+Requirement already satisfied: tensorrt-cu12<11 in ./venv_gpu/lib/python3.13/site-packages (10.16.1.11)
+Requirement already satisfied: pillow in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 1)) (12.3.0)
+Requirement already satisfied: pillow-avif-plugin in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 2)) (1.6.0)
+Requirement already satisfied: huggingface_hub in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.0.0)
+Requirement already satisfied: numpy in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 4)) (2.5.3)
+Requirement already satisfied: tqdm in ./venv_gpu/lib/python3.13/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 5)) (4.70.1)
+Requirement already satisfied: flatbuffers in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu<1.27->onnxruntime-gpu[cuda,cudnn]<1.27) (25.12.19)
+Requirement already satisfied: packaging in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu<1.27->onnxruntime-gpu[cuda,cudnn]<1.27) (26.3)
+Requirement already satisfied: protobuf in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu<1.27->onnxruntime-gpu[cuda,cudnn]<1.27) (7.36.2)
+Requirement already satisfied: tensorrt_cu12_libs==10.16.1.11 in ./venv_gpu/lib/python3.13/site-packages (from tensorrt-cu12<11) (10.16.1.11)
+Requirement already satisfied: tensorrt_cu12_bindings==10.16.1.11 in ./venv_gpu/lib/python3.13/site-packages (from tensorrt-cu12<11) (10.16.1.11)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu12~=12.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.86)
+Requirement already satisfied: nvidia-cuda-runtime-cu12~=12.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.79)
+Requirement already satisfied: nvidia-cufft-cu12~=11.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (11.4.1.4)
+Requirement already satisfied: nvidia-curand-cu12~=10.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (10.3.10.19)
+Requirement already satisfied: nvidia-cudnn-cu12~=9.0 in ./venv_gpu/lib/python3.13/site-packages (from onnxruntime-gpu[cuda,cudnn]<1.27) (9.26.0.51)
+Requirement already satisfied: nvidia-cublas-cu12 in ./venv_gpu/lib/python3.13/site-packages (from nvidia-cudnn-cu12~=9.0->onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.2.10)
+Requirement already satisfied: nvidia-nvjitlink-cu12 in ./venv_gpu/lib/python3.13/site-packages (from nvidia-cufft-cu12~=11.0->onnxruntime-gpu[cuda,cudnn]<1.27) (12.9.86)
+Requirement already satisfied: click<9.0.0,>=8.4.2 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (8.5.0)
+Requirement already satisfied: filelock>=3.10.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.0.3)
+Requirement already satisfied: fsspec>=2023.5.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2026.9.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.6.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (1.6.0)
+Requirement already satisfied: httpx2<3,>=2.0.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.13.1)
+Requirement already satisfied: pyyaml>=5.1 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (6.0.3)
+Requirement already satisfied: typing-extensions>=4.1.0 in ./venv_gpu/lib/python3.13/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.16.0)
+Requirement already satisfied: anyio>=4.10 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.15.1)
+Requirement already satisfied: httpcore2==2.13.1 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.13.1)
+Requirement already satisfied: idna>=3.18 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (3.20)
+Requirement already satisfied: truststore>=0.10 in ./venv_gpu/lib/python3.13/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (0.10.4)
+Requirement already satisfied: h11>=0.16 in ./venv_gpu/lib/python3.13/site-packages (from httpcore2==2.13.1->httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (0.16.0)
+[INFO] Pythonスクリプトを実行 (nvidia)...
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: /opt/dbv4-wd14-tagger/.dbv4/models/53e96223459a3046
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] TensorRTの起動検証中です。初回はエンジン構築が完了するまでServerは接続を受け付けません。
+[INFO] 起動検証で実行されたEP: ['TensorrtExecutionProvider']

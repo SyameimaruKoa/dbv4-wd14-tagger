@@ -1,0 +1,13 @@
+{
+  "transport": "private Git push/archive; not published",
+  "sha256": {
+    "model.ncnn.param": "a3ed9db2d2f0b6d0c4fc3494afc6794b8a4c2f0919f0548cf3ff7563a35ef646",
+    "model.ncnn.json": "d0a12e621773e27dc4c30a85bfea48e8a287254f88520aba2ba7ff24e7a8613e",
+    "model.ncnn.bin": "86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6"
+  },
+  "matched": true,
+  "partition_count": 14,
+  "largest_partition_bytes": 254487572,
+  "partition_concatenated_sha256": "86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6",
+  "partition_bytes_preserved": true
+}

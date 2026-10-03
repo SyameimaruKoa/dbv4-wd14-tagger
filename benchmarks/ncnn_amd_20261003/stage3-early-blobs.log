@@ -1,0 +1,16 @@
+CPU blob 273: (1408, 32, 32)
+CPU blob 360: (1408, 32, 32)
+CPU blob 447: (1408, 32, 32)
+CPU blob 563: (1408, 32, 32)
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+{"blob": "273", "shape": [1408, 32, 32], "max_absolute_difference": 0.000335693359375, "mean_absolute_difference": 3.2526686482015066e-06, "cpu_min": -380.1375427246094, "cpu_max": 278.33673095703125, "allclose": true}
+{"blob": "360", "shape": [1408, 32, 32], "max_absolute_difference": 1.7342529296875, "mean_absolute_difference": 0.012315771542489529, "cpu_min": -948.9198608398438, "cpu_max": 643.9461059570312, "allclose": false}
+{"blob": "447", "shape": [1408, 32, 32], "max_absolute_difference": 13.782913208007812, "mean_absolute_difference": 0.11970870941877365, "cpu_min": -1251.1627197265625, "cpu_max": 893.245361328125, "allclose": false}
+{"blob": "563", "shape": [1408, 32, 32], "max_absolute_difference": 140.49362182617188, "mean_absolute_difference": 0.4509543478488922, "cpu_min": -3032.05224609375, "cpu_max": 3341.08935546875, "allclose": false}

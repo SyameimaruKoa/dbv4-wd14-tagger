@@ -214,8 +214,11 @@ param (
     [switch]$Login,
 
     [Alias('ep')]
-    [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu')]
+    [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu','ncnn')]
     [string]$Provider,
+    [ValidateSet('fp32','fp16-storage','fp16-packed','fp16-arithmetic')]
+    [string]$NcnnPrecision = 'fp32',
+    [ValidateRange(0,2147483647)][int]$NcnnPartSizeMiB = 0,
     [Alias('wg')]
     [switch]$WebGpu,
     [Alias('gi')]
@@ -260,7 +263,9 @@ function Show-Help {
     Write-Host "    -q <0～1の数値>           タグ採用閾値（例: 0.35、未指定時はモデルの推奨値）"
     Write-Host "    -v <2|4|6>                旧センシティブ分割（DBV4では5段階固定）"
     Write-Host "    -d <0～1の数値>           旧rating閾値（例: 0.5）"
-    Write-Host "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/directml/webgpu/migraphx"
+    Write-Host "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/directml/webgpu/ncnn"
+    Write-Host "    -NcnnPrecision <形式>     fp32/fp16-storage/fp16-packed/fp16-arithmetic"
+    Write-Host "    -NcnnPartSizeMiB <MiB>    重み分割目安（0=なし、低メモリでは128）"
     Write-Host "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
     Write-Host "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
     Write-Host "    -wi <0以上の整数>         WebGPU番号"
@@ -358,6 +363,7 @@ function Prepare-Environment {
                 }
                 'intel' { $OnnxPackage = 'onnxruntime-openvino==1.24.1'; $ExtraPackages = @('openvino==2025.4.1') }
                 'webgpu' { $OnnxPackage = 'onnxruntime'; $ExtraPackages = @('onnxruntime-ep-webgpu') }
+                'ncnn' { $OnnxPackage = 'onnxruntime'; $ExtraPackages = @('ncnn') }
                 'directml' { $OnnxPackage = 'onnxruntime-directml' }
             }
         }
@@ -438,26 +444,26 @@ function Resolve-AutoProvider {
             -ErrorAction SilentlyContinue | ForEach-Object { $_.DriverDesc } | Where-Object { $_ })
         if (-not $Names) {
             Write-Warning "GPU製造元を取得できないため、互換性を優先してDirectMLを使用します。"
-            return @{ Candidates = @('directml', 'webgpu', 'cpu'); Vendor = $null }
+            return @{ Candidates = @('directml', 'ncnn', 'webgpu', 'cpu'); Vendor = $null }
         }
     }
 
     $JoinedNames = $Names -join ' / '
     if ($Names | Where-Object { $_ -match 'NVIDIA' }) {
         Write-Host "[INFO] NVIDIA GPUを検出しました。TensorRTを最優先で確認します: $JoinedNames" -ForegroundColor Cyan
-        return @{ Candidates = @('tensorrt', 'cuda', 'directml', 'webgpu', 'cpu'); Vendor = 'nvidia' }
+        return @{ Candidates = @('tensorrt', 'cuda', 'ncnn', 'webgpu', 'cpu'); Vendor = 'nvidia' }
     }
     if ($Names | Where-Object { $_ -match 'AMD|Radeon|Advanced Micro Devices' }) {
         Write-Host "[INFO] AMD GPUを検出しました。DirectMLを自動選択します: $JoinedNames" -ForegroundColor Cyan
-        return @{ Candidates = @('directml', 'webgpu', 'cpu'); Vendor = 'amd' }
+        return @{ Candidates = @('directml', 'ncnn', 'webgpu', 'cpu'); Vendor = 'amd' }
     }
     if ($Names | Where-Object { $_ -match 'Intel' }) {
         Write-Host "[INFO] Intel GPUを検出しました。OpenVINOを自動選択します: $JoinedNames" -ForegroundColor Cyan
-        return @{ Candidates = @('intel', 'directml', 'webgpu', 'cpu'); Vendor = 'intel' }
+        return @{ Candidates = @('intel', 'ncnn', 'webgpu', 'cpu'); Vendor = 'intel' }
     }
 
     Write-Warning "対応GPUを識別できないため、互換性を優先してDirectMLを使用します: $JoinedNames"
-    return @{ Candidates = @('directml', 'webgpu', 'cpu'); Vendor = $null }
+    return @{ Candidates = @('directml', 'ncnn', 'webgpu', 'cpu'); Vendor = $null }
 }
 
 function Test-ProviderAvailability {
@@ -484,6 +490,10 @@ function Test-ProviderAvailability {
         'webgpu' {
             & $PythonExecutable -c "import sys; sys.path.insert(0,sys.argv[1]); import gpu_runtime,onnxruntime as ort; gpu_runtime.configure_webgpu(ort.SessionOptions(),None,sys.argv[2] or None)" $ScriptDir $Vendor 2>$null | Out-Null
         }
+        'ncnn' {
+            # Let the full model probe report missing Vulkan support or driver errors.
+            return $true
+        }
         default { return $false }
     }
     return $LASTEXITCODE -eq 0
@@ -503,25 +513,52 @@ function Show-TensorRtInstallInstructions {
 #region Main Logic
 
 if ($Login -or ($RemainingArgs -contains '--login')) {
-    $HfExecutable = $null
     $VenvPython = $null
-    foreach ($VenvName in @('venv_gpu', 'venv_std', 'venv_client', 'venv_webgpu', 'venv_intel', 'venv_amd', 'venv_cuda', 'venv_tensorrt', 'venv_cpu')) {
-        $Candidate = Join-Path $ScriptDir "$VenvName/Scripts/hf.exe"
-        if (Test-Path $Candidate) {
-            $HfExecutable = $Candidate
-            Write-Host "[INFO] 既存の仮想環境を使用します: $VenvName" -ForegroundColor Cyan
-            break
+    $RepairPython = $null
+    $Candidates = @(Get-ChildItem -Path $ScriptDir -Directory | Where-Object {
+        $_.Name -like 'venv_*' -or $_.Name -eq '.venv'
+    } | Sort-Object Name)
+    foreach ($Directory in $Candidates) {
+        $RelativePython = if ($IsWindowsOS) { 'Scripts/python.exe' } else { 'bin/python' }
+        $Candidate = Join-Path $Directory.FullName $RelativePython
+        if (-not (Test-Path -LiteralPath $Candidate -PathType Leaf)) { continue }
+        try {
+            & $Candidate -c 'import sys' 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { continue }
+            if (-not $RepairPython) { $RepairPython = $Candidate }
+            & $Candidate -m huggingface_hub.cli.hf --help 2>$null | Out-Null
+            if ($LASTEXITCODE -eq 0) { $VenvPython = $Candidate; break }
         }
+        catch { Write-Warning "起動できない環境をスキップします: $($Directory.Name)" }
     }
-    if (-not $HfExecutable) {
-        $VenvPython = Prepare-Environment -UseGpu $false -IsClient $false
-        $HfExecutable = Join-Path (Split-Path -Parent $VenvPython) 'hf.exe'
+    if (-not $VenvPython) {
+        $VenvPython = $RepairPython
+        if (-not $VenvPython) {
+            $BasePython = $null
+            foreach ($Command in @('python', 'python3', 'py')) {
+                if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) { continue }
+                & $Command -c 'import sys' 2>$null | Out-Null
+                if ($LASTEXITCODE -eq 0) { $BasePython = $Command; break }
+            }
+            if (-not $BasePython) { throw 'ログイン用Pythonが見つかりません。' }
+            $LoginEnvironment = Join-Path $ScriptDir 'venv_login'
+            & $BasePython -m venv $LoginEnvironment
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $RelativePython = if ($IsWindowsOS) { 'Scripts/python.exe' } else { 'bin/python' }
+            $VenvPython = Join-Path $LoginEnvironment $RelativePython
+        }
+        & $VenvPython -m pip --version 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            & $VenvPython -m ensurepip --upgrade
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        }
+        & $VenvPython -m pip install --upgrade huggingface_hub
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $VenvPython -m huggingface_hub.cli.hf --help 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Hugging Face CLIを起動できません。' }
     }
-    if (-not (Test-Path $HfExecutable)) {
-        Write-Error "Hugging Face CLIが見つかりません: $HfExecutable"
-        exit 1
-    }
-    & $HfExecutable auth login
+    Write-Host "[INFO] ログイン用Python: $VenvPython" -ForegroundColor Cyan
+    & $VenvPython -m huggingface_hub.cli.hf auth login
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     Write-Host "[INFO] Hugging Faceログインが完了しました。" -ForegroundColor Green
     exit 0
@@ -563,7 +600,25 @@ if ($AutoProviderSelection) {
         try {
             $CandidatePython = Prepare-Environment -UseGpu ($Candidate -ne 'cpu') -IsClient $false -SelectedProvider $Candidate
             $CandidateVendor = if ($Candidate -eq 'webgpu') { $AutoSelection.Vendor } else { $null }
-            if (Test-ProviderAvailability -PythonExecutable $CandidatePython -SelectedProvider $Candidate -Vendor $CandidateVendor) {
+            $Available = Test-ProviderAvailability -PythonExecutable $CandidatePython -SelectedProvider $Candidate -Vendor $CandidateVendor
+            if (-not $Client) {
+                $ProbeArgs = @($PythonScript, '--probe-provider', '--provider', $Candidate,
+                    '--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex",
+                    '--ncnn-precision', $NcnnPrecision, '--ncnn-part-size-mib', "$NcnnPartSizeMiB")
+                if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $ProbeArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
+                if ($ModelProfile) { $ProbeArgs += @('--model-profile', $ModelProfile) }
+                if ($ModelRepo) { $ProbeArgs += @('--model-repo', $ModelRepo) }
+                if ($ModelFile) { $ProbeArgs += @('--model-file', $ModelFile) }
+                if ($TagsFile) { $ProbeArgs += @('--tags-file', $TagsFile) }
+                if ($OpenVinoDevice) { $ProbeArgs += @('--openvino-device', $OpenVinoDevice) }
+                if ($TensorRtLibDir) { $ProbeArgs += @('--tensorrt-lib-dir', $TensorRtLibDir) }
+                if ($Candidate -eq 'webgpu' -and $CandidateVendor) { $ProbeArgs += @('--target-vendor', $CandidateVendor) }
+                if ($Available) {
+                    & $CandidatePython @ProbeArgs
+                    $Available = $LASTEXITCODE -eq 0
+                }
+            }
+            if ($Available) {
                 $Provider = $Candidate
                 $Gpu = $Candidate -ne 'cpu'
                 $VenvPython = $CandidatePython
@@ -573,12 +628,20 @@ if ($AutoProviderSelection) {
             }
             if ($Candidate -eq 'tensorrt' -and
                 (Test-ProviderAvailability -PythonExecutable $CandidatePython -SelectedProvider 'cuda' -Vendor $null)) {
-                $Provider = 'cuda'
-                $Gpu = $true
-                $VenvPython = $CandidatePython
                 Show-TensorRtInstallInstructions
-                Write-Host "[INFO] 自動選択しました: cuda (venv_tensorrtを再利用)" -ForegroundColor Green
-                break
+                $CudaAvailable = $true
+                if (-not $Client) {
+                    $ProbeArgs[3] = 'cuda'
+                    & $CandidatePython @ProbeArgs
+                    $CudaAvailable = $LASTEXITCODE -eq 0
+                }
+                if ($CudaAvailable) {
+                    $Provider = 'cuda'
+                    $Gpu = $true
+                    $VenvPython = $CandidatePython
+                    Write-Host "[INFO] 自動選択しました: cuda (venv_tensorrtを再利用)" -ForegroundColor Green
+                    break
+                }
             }
             Write-Warning "${Candidate}を利用できないため、次の候補を確認します。"
         }
@@ -626,6 +689,8 @@ if ($PSBoundParameters.ContainsKey("Thresh")) { $PyArgs += ("--thresh", $Thresh)
 if ($Gpu) { $PyArgs += "--gpu" }
 if ($Provider) { $PyArgs += @('--provider', $Provider) }
 $PyArgs += @('--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex")
+$PyArgs += @('--ncnn-precision', $NcnnPrecision)
+$PyArgs += @('--ncnn-part-size-mib', "$NcnnPartSizeMiB")
 if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $PyArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
 if ($TargetVendor) { $PyArgs += @('--target-vendor', $TargetVendor) }
 if ($OpenVinoDevice) { $PyArgs += @('--openvino-device', $OpenVinoDevice) }
@@ -650,6 +715,7 @@ if ($PSBoundParameters.ContainsKey('RatingThresh')) { $PyArgs += ("--rating-thre
 if ($IgnoreSensitive) { $PyArgs += "--ignore-sensitive" }
 
 # 最後にパス
+if ($RemainingArgs) { $PyArgs += $RemainingArgs }
 if ($Path) { $PyArgs += $Path }
 
 # 実行

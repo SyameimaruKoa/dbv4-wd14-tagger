@@ -1,0 +1,51 @@
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: /opt/dbv4-wd14-tagger/.dbv4/models/53e96223459a3046
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] 起動検証で実行されたEP: ['CUDAExecutionProvider']
+test_cpu_probability_rating_and_threshold_parity (test_ncnn_integration.NcnnIntegrationTests.test_cpu_probability_rating_and_threshold_parity) ... ok
+test_standalone_and_both_client_modes_write_same_xmp (test_ncnn_integration.NcnnIntegrationTests.test_standalone_and_both_client_modes_write_same_xmp) ... [INFO] DBV4 batch-size=4, io-workers=0
+  0%|          | 0/1 [00:00<?, ?img/s]  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(2.4/s) Skip:0枚(0.0/s)]                                                                       [standalone.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(2.4/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00,  1.71img/s, 推論:1枚(2.4/s) Skip:0枚(0.0/s)]/opt/dbv4-wd14-tagger/embed_tags_universal.py:329: ResourceWarning: unclosed file <_io.BufferedReader name=42>
+  self.process = None
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+100%|██████████| 1/1 [00:00<00:00,  1.68img/s, 推論:1枚(2.4/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 2.44 img/s (409.7 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[INFO] DBV4 Client batch-size=4
+  0%|          | 0/1 [00:00<?, ?img/s][06:33:14] 127.0.0.1       | File: 画像 | Size: 27.1 KB | Processing...
+[06:33:14] 127.0.0.1       | File: 画像 | HTTP受信: 0.03 MiB / 0.000s = 1483.99 MiB/s
+  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]                                                                       [original.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00,  1.59img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00,  1.57img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 2.22 img/s (449.9 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。
+[INFO] DBV4 Client batch-size=4
+  0%|          | 0/1 [00:00<?, ?img/s][06:33:15] 127.0.0.1       | File: 画像 | Size: 129.4 KB | Processing...
+[06:33:15] 127.0.0.1       | File: 画像 | HTTP受信: 0.13 MiB / 0.000s = 3450.73 MiB/s
+[INFO] 127.0.0.1 | 推論開始: 1枚
+[INFO] 127.0.0.1 | 推論完了: 1枚 / 0.41s
+[INFO] 127.0.0.1 | 結果送信完了: 1枚
+  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]                                                                       [preprocessed.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00,  1.58img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00,  1.56img/s, 推論:1枚(2.2/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 2.20 img/s (455.5 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 8.705s
+
+OK

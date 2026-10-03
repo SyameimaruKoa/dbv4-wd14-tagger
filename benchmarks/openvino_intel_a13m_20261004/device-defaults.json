@@ -1,0 +1,5 @@
+{
+  "device": "Intel(R) Iris(R) Xe Graphics (iGPU)",
+  "default_inference_precision_hint": "<Type: 'float16'>",
+  "openvino_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4"
+}

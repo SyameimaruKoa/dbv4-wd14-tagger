@@ -1,0 +1,37 @@
+Running as unit: dbv4-cpu-layernorm.service; invocation ID: 36f0a20254b04dba902531656661c1de
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+Diagnostic CPU layers: 41 ['LayerNorm']
+[INFO] ncnn Vulkan GPU 0 (AMD Radeon Graphics (RADV RENOIR)): ultra, fp32, ラベル数 12476
+[benchmark] Model initialization and startup probe: 11.49s
+[benchmark] Warm-up 1/1
+[benchmark] Iteration 1/3: 6820.03 ms/img
+[benchmark] Iteration 2/3: 6809.03 ms/img
+[benchmark] Iteration 3/3: 6808.71 ms/img
+{
+  "max_absolute_difference": 0.19244462251663208,
+  "mean_absolute_difference": 0.0001416337036062032,
+  "selected_tag_symmetric_difference": [
+    "blue_background",
+    "colored_skin",
+    "perspective"
+  ],
+  "rating_absolute_difference": {
+    "general": 0.0001245737075805664,
+    "sensitive": 0.0003475286066532135,
+    "questionable": 0.0007357512367889285,
+    "explicit": 8.699874160811305e-05
+  }
+}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 41.597s
+             CPU time consumed: 12.144s
+                   Memory peak: 852.2M (swap: 0B)

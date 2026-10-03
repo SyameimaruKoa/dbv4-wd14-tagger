@@ -1,0 +1,176 @@
+{
+  "sources": {
+    "model.ncnn.bin": {
+      "bytes": 2770470868,
+      "sha256": "86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6"
+    },
+    "model.ncnn.param": {
+      "bytes": 72689,
+      "sha256": "a3ed9db2d2f0b6d0c4fc3494afc6794b8a4c2f0919f0548cf3ff7563a35ef646"
+    },
+    "model.ncnn.json": {
+      "bytes": 180,
+      "sha256": "d0a12e621773e27dc4c30a85bfea48e8a287254f88520aba2ba7ff24e7a8613e"
+    }
+  },
+  "partition_manifest": {
+    "signature": {
+      "version": 1,
+      "size_mib": 128,
+      "sources": {
+        "/opt/dbv4-wd14-tagger/.dbv4/models/ultra/model.ncnn.param": [
+          72689,
+          1790930642000000000
+        ],
+        "/opt/dbv4-wd14-tagger/.dbv4/models/ultra/model.ncnn.bin": [
+          2770470868,
+          1790930657000000000
+        ]
+      }
+    },
+    "parts": [
+      {
+        "start": 0,
+        "end": 188,
+        "offset": 0,
+        "bytes": 144016024,
+        "input": "in0",
+        "output": "215",
+        "param": "part000.ncnn.param",
+        "bin": "part000.ncnn.bin"
+      },
+      {
+        "start": 188,
+        "end": 263,
+        "offset": 144016024,
+        "bytes": 191414844,
+        "input": "215",
+        "output": "302",
+        "param": "part001.ncnn.param",
+        "bin": "part001.ncnn.bin"
+      },
+      {
+        "start": 263,
+        "end": 338,
+        "offset": 335430868,
+        "bytes": 191414844,
+        "input": "302",
+        "output": "389",
+        "param": "part002.ncnn.param",
+        "bin": "part002.ncnn.bin"
+      },
+      {
+        "start": 338,
+        "end": 413,
+        "offset": 526845712,
+        "bytes": 191414844,
+        "input": "389",
+        "output": "476",
+        "param": "part003.ncnn.param",
+        "bin": "part003.ncnn.bin"
+      },
+      {
+        "start": 413,
+        "end": 488,
+        "offset": 718260556,
+        "bytes": 191414844,
+        "input": "476",
+        "output": "563",
+        "param": "part004.ncnn.param",
+        "bin": "part004.ncnn.bin"
+      },
+      {
+        "start": 488,
+        "end": 563,
+        "offset": 909675400,
+        "bytes": 191414844,
+        "input": "563",
+        "output": "650",
+        "param": "part005.ncnn.param",
+        "bin": "part005.ncnn.bin"
+      },
+      {
+        "start": 563,
+        "end": 638,
+        "offset": 1101090244,
+        "bytes": 191414844,
+        "input": "650",
+        "output": "737",
+        "param": "part006.ncnn.param",
+        "bin": "part006.ncnn.bin"
+      },
+      {
+        "start": 638,
+        "end": 713,
+        "offset": 1292505088,
+        "bytes": 191414844,
+        "input": "737",
+        "output": "824",
+        "param": "part007.ncnn.param",
+        "bin": "part007.ncnn.bin"
+      },
+      {
+        "start": 713,
+        "end": 788,
+        "offset": 1483919932,
+        "bytes": 191414844,
+        "input": "824",
+        "output": "911",
+        "param": "part008.ncnn.param",
+        "bin": "part008.ncnn.bin"
+      },
+      {
+        "start": 788,
+        "end": 842,
+        "offset": 1675334776,
+        "bytes": 191071276,
+        "input": "911",
+        "output": "973",
+        "param": "part009.ncnn.param",
+        "bin": "part009.ncnn.bin"
+      },
+      {
+        "start": 842,
+        "end": 867,
+        "offset": 1866406052,
+        "bytes": 254487572,
+        "input": "973",
+        "output": "1002",
+        "param": "part010.ncnn.param",
+        "bin": "part010.ncnn.bin"
+      },
+      {
+        "start": 867,
+        "end": 892,
+        "offset": 2120893624,
+        "bytes": 254487572,
+        "input": "1002",
+        "output": "1031",
+        "param": "part011.ncnn.param",
+        "bin": "part011.ncnn.bin"
+      },
+      {
+        "start": 892,
+        "end": 917,
+        "offset": 2375381196,
+        "bytes": 254487572,
+        "input": "1031",
+        "output": "1060",
+        "param": "part012.ncnn.param",
+        "bin": "part012.ncnn.bin"
+      },
+      {
+        "start": 917,
+        "end": 924,
+        "offset": 2629868768,
+        "bytes": 140602100,
+        "input": "1060",
+        "output": "out0",
+        "param": "part013.ncnn.param",
+        "bin": "part013.ncnn.bin"
+      }
+    ]
+  },
+  "concatenated_weights_sha256": "86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6",
+  "matches_original": true
+}

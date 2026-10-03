@@ -1,0 +1,41 @@
+Running as unit: dbv4-ncnn-conv1x1-fp32-20261003.service; invocation ID: 7ae62ef2412f4e2481d1611311cba336
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (AMD Radeon Graphics (RADV RENOIR)): ultra, fp32, ラベル数 12476
+[benchmark] Model initialization and startup probe: 10.51s
+[benchmark] Warm-up 1/3
+[benchmark] Warm-up 2/3
+[benchmark] Warm-up 3/3
+[benchmark] Iteration 1/20: 4883.52 ms/img
+[benchmark] Iteration 2/20: 4883.35 ms/img
+[benchmark] Iteration 3/20: 4883.05 ms/img
+[benchmark] Iteration 4/20: 4884.47 ms/img
+[benchmark] Iteration 5/20: 4888.58 ms/img
+[benchmark] Iteration 6/20: 4884.89 ms/img
+[benchmark] Iteration 7/20: 4884.21 ms/img
+[benchmark] Iteration 8/20: 4878.40 ms/img
+[benchmark] Iteration 9/20: 4882.45 ms/img
+[benchmark] Iteration 10/20: 4882.59 ms/img
+[benchmark] Iteration 11/20: 4877.27 ms/img
+[benchmark] Iteration 12/20: 4879.82 ms/img
+[benchmark] Iteration 13/20: 4878.41 ms/img
+[benchmark] Iteration 14/20: 4882.52 ms/img
+[benchmark] Iteration 15/20: 4879.42 ms/img
+[benchmark] Iteration 16/20: 4881.37 ms/img
+[benchmark] Iteration 17/20: 4880.20 ms/img
+[benchmark] Iteration 18/20: 4882.00 ms/img
+[benchmark] Iteration 19/20: 4885.34 ms/img
+[benchmark] Iteration 20/20: 4880.66 ms/img
+benchmarks/ncnn_amd_20261003/conv1x1-fp32-b1.json: 4882.48 ms/img
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 2min 5.820s
+             CPU time consumed: 8.217s
+                   Memory peak: 1.9G (swap: 0B)

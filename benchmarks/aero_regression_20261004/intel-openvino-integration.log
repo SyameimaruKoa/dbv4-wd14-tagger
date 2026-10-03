@@ -1,0 +1,85 @@
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\.dbv4\models\53e96223459a3046
+[INFO] OpenVINO GPU.0: Intel(R) UHD Graphics 630 (iGPU)
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['OpenVINOExecutionProvider', 'CPUExecutionProvider']
+[INFO] 起動検証で実行されたEP: ['OpenVINOExecutionProvider']
+python.exe : test_cpu_probability_rating_and_threshold_parity (test_ncnn_integration.NcnnIntegrationTests.test_cpu_prob
+ability_rating_and_threshold_parity) ... ok
+発生場所 行:32 文字:2
++  & ".\$checkEnv\Scripts\python.exe" -m unittest discover -s tests -p  ...
++  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_cpu_probab..._parity) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[INFO] DBV4 batch-size=4, io-workers=0
+[INFO] コンパイル系EPのウォームアップ推論を実行します (batch=4)...
+[INFO] ウォームアップ完了 (所要時間: 84.67秒)。エンジンの準備が整いました。
+test_standalone_and_both_client_modes_write_same_xmp (test_ncnn_integration.NcnnIntegrationTests.test_standalone_and_bo
+th_client_modes_write_same_xmp) ... 
+  0%|          | 0/1 [00:00<?, ?img/s]
+  0%|          | 0/1 [00:08<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+[standalone.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+                                                                       
+
+  0%|          | 0/1 [00:08<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+100%|██████████| 1/1 [00:08<00:00,  8.73s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]C:\Users\kouki\Documents\MyApp\dbv4-wd14-tag
+ger\embed_tags_universal.py:329: ResourceWarning: unclosed file <_io.BufferedReader name=4>
+  self.process = None
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+100%|██████████| 1/1 [00:08<00:00,  8.75s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・ウォームアップ時間 (エンジン事前構築): 84.67 秒
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 0.12 img/s (8493.2 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[INFO] DBV4 Client batch-size=4
+
+[04:52:45] 127.0.0.1       | File: 画像 | Size: 24.9 KB | Processing...
+[04:52:45] 127.0.0.1       | File: 画像 | HTTP受信: 0.02 MiB / 0.000s = 1261.81 MiB/s
+  0%|          | 0/1 [00:00<?, ?img/s]
+  0%|          | 0/1 [00:08<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+[original.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+                                                                       
+
+  0%|          | 0/1 [00:08<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+100%|██████████| 1/1 [00:09<00:00,  9.07s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+100%|██████████| 1/1 [00:09<00:00,  9.09s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 0.12 img/s (8631.9 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。
+[INFO] DBV4 Client batch-size=4
+
+[04:52:56] 127.0.0.1       | File: 画像 | Size: 129.4 KB | Processing...
+[04:52:56] 127.0.0.1       | File: 画像 | HTTP受信: 0.13 MiB / 0.000s = 1141.61 MiB/s
+[INFO] 127.0.0.1 | 推論開始: 1枚
+[INFO] 127.0.0.1 | 推論完了: 1枚 / 8.84s
+[INFO] 127.0.0.1 | 結果送信完了: 1枚
+  0%|          | 0/1 [00:00<?, ?img/s]
+  0%|          | 0/1 [00:09<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+[preprocessed.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+                                                                       
+
+  0%|          | 0/1 [00:09<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+100%|██████████| 1/1 [00:09<00:00,  9.34s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 0.11 img/s (8913.8 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+100%|██████████| 1/1 [00:09<00:00,  9.36s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 289.005s
+
+OK

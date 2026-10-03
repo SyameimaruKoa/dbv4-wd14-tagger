@@ -1,0 +1,48 @@
+Running as unit: dbv4-sync-fp16-matrix.service; invocation ID: 81fd0871b44343cda61515c66cd77b82
+Measuring sync-fp16-storage-b1
+sync-fp16-storage-b1 exit=1
+    results.append(infer_output_to_probabilities(raw))
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/dbv4-wd14-tagger/dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。
+Measuring sync-fp16-storage-b4
+sync-fp16-storage-b4 exit=1
+    results.append(infer_output_to_probabilities(raw))
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/dbv4-wd14-tagger/dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。
+Measuring sync-fp16-packed-b1
+sync-fp16-packed-b1 exit=1
+    results.append(infer_output_to_probabilities(raw))
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/dbv4-wd14-tagger/dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。
+Measuring sync-fp16-packed-b4
+sync-fp16-packed-b4 exit=1
+    results.append(infer_output_to_probabilities(raw))
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/dbv4-wd14-tagger/dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。
+Measuring sync-fp16-arithmetic-b1
+sync-fp16-arithmetic-b1 exit=1
+    results.append(infer_output_to_probabilities(raw))
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/dbv4-wd14-tagger/dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。
+Measuring sync-fp16-arithmetic-b4
+sync-fp16-arithmetic-b4 exit=1
+    results.append(infer_output_to_probabilities(raw))
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/dbv4-wd14-tagger/dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 6min 43.034s
+             CPU time consumed: 48.531s
+                   Memory peak: 441.2M (swap: 0B)

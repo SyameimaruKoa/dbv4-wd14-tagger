@@ -1,0 +1,7 @@
+Bash --login reused sole venv_ncnn: PASS (isolated HF executable stub)
+[INFO] ポータブルデータ保存先: /tmp/tmp8oclz9oj/.dbv4
+[INFO] Hugging Faceログインモードを開始します。
+[INFO] 既存の仮想環境を使用します: venv_ncnn
+ncnn-hf: auth login
+[INFO] Hugging Faceログインモードを終了します。
+

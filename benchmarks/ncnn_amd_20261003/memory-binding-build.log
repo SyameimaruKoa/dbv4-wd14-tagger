@@ -1,0 +1,8 @@
+Running as unit: dbv4-memory-binding.service; invocation ID: 392384b57d1f412895860fb14fb3772c
+[1/2] Building CXX object python/CMakeFiles/pyncnn.dir/src/main.cpp.o
+[2/2] Linking CXX shared module python/ncnn/ncnn.cpython-313-x86_64-linux-gnu.so
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 37.308s
+             CPU time consumed: 37.370s
+                   Memory peak: 1.1G (swap: 0B)

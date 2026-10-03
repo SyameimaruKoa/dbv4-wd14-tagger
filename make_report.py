@@ -1,4 +1,6 @@
 import json
+import html
+from urllib.parse import quote
 import os
 
 # スクリプトの場所を基準にする
@@ -84,7 +86,7 @@ HTML_TEMPLATE = """
 
 CARD_TEMPLATE = """
 <div class="card">
-    <div class="img-box" onclick="show('{rel_path}')">
+    <div class="img-box" onclick="show(this.querySelector('img').src)">
         <img src="{rel_path}" loading="lazy" alt="img">
     </div>
     <div class="info">
@@ -197,10 +199,10 @@ def make_report():
             probs = item["probs"]
             badge_cls, badge_text, score_info = get_badge_info(rating, probs)
             cards_html += CARD_TEMPLATE.format(
-                rel_path=rel_path.replace("\\", "/"),
-                filename=os.path.basename(abs_path),
+                rel_path=html.escape(quote(rel_path.replace("\\", "/"), safe="/:"), quote=True),
+                filename=html.escape(os.path.basename(abs_path)),
                 badge_cls=badge_cls,
-                badge_text=badge_text,
+                badge_text=html.escape(str(badge_text)),
                 score_info=score_info,
                 p0=f"{probs[0]*100:.1f}",
                 p1=f"{probs[1]*100:.1f}",
@@ -209,7 +211,7 @@ def make_report():
             )
 
         final_html = HTML_TEMPLATE.format(
-            category=folder_name, count=len(items), cards=cards_html
+            category=html.escape(str(folder_name)), count=len(items), cards=cards_html
         )
 
         with open(html_filename, "w", encoding="utf-8") as f:

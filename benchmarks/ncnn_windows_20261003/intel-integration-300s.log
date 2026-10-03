@@ -1,0 +1,94 @@
+﻿[WARN] ultra縺ｯRTX 2070 Max-Q繝ｻDirectML繝ｻbatch-size=4縺ｧ繝斐・繧ｯ6,583MiB縲∵ｸｬ螳壼燕繧帝勁縺丞｢怜・5,743MiB繧堤｢ｺ隱肴ｸ医∩縺ｧ縺吶・GB莉･荳翫・GPU繧呈耳螂ｨ縺励∫ｩｺ縺榊ｮｹ驥丈ｸ崎ｶｳ譎ゅ・batch-size繧剃ｸ九￡縺ｦ縺上□縺輔＞縲・
+.\venv_ncnn\Scripts\python.exe : [0 Intel(R) UHD Graphics 630]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=10
+発生場所 行:1 文字:444
++ ... EOUT='300'; .\venv_ncnn\Scripts\python.exe -m unittest discover -s te ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([0 Intel(R) UHD...r=1  r-score=10:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[0 Intel(R) UHD Graphics 630]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 Intel(R) UHD Graphics 630]  subgroup=32(8~32)  ops=1/1/1/1/1/1/1/1/0/0
+[0 Intel(R) UHD Graphics 630]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 Intel(R) UHD Graphics 630]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=10
+[1 Intel(R) UHD Graphics 630]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 Intel(R) UHD Graphics 630]  subgroup=32(8~32)  ops=1/1/1/1/1/1/1/1/0/0
+[1 Intel(R) UHD Graphics 630]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  queueC=2[8]  queueT=1[2]  rebar=0  r-score=74
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/1
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  subgroup=32(32~32)  ops=1/1/1/1/1/1/1/1/1/1
+[2 NVIDIA GeForce RTX 2070 with Max-Q Design]  fp16-cm=16x16x16/16x8x16/16x8x8  int8-cm=16x16x32/16x8x32  bf16-cm=16x16
+x16  fp8-cm=0
+[3 Intel(R) UHD Graphics 630]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=10
+[3 Intel(R) UHD Graphics 630]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[3 Intel(R) UHD Graphics 630]  subgroup=32(8~32)  ops=1/1/1/1/1/1/1/1/0/0
+[3 Intel(R) UHD Graphics 630]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (Intel(R) UHD Graphics 630): ultra, fp32, 繝ｩ繝吶Ν謨ｰ 12476
+test_cpu_probability_rating_and_threshold_parity (test_ncnn_integration.NcnnIntegrationTests.test_cpu_probability_ratin
+g_and_threshold_parity) ... ok
+[WARN] 縺薙・繝｢繝・Ν縺ｯ繝舌ャ繝∵耳隲悶↓髱槫ｯｾ蠢懊・縺溘ａ縲｜atch-size=1縺ｫ螟画峩縺励∪縺吶・
+test_standalone_and_both_client_modes_write_same_xmp (test_ncnn_integration.NcnnIntegrationTests.test_standalone_and_bo
+th_client_modes_write_same_xmp) ... 
+  0%|          | 0/1 [00:00<?, ?img/s]
+  0%|          | 0/1 [02:35<?, ?img/s, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+[standalone.png] Gen:[32m笆遺毎笆遺毎[90m笆・[0m99.3% Sen:[33m[90m笆鯛桝笆鯛桝笆・[0m00.6% Que:[35m[90m笆鯛桝笆鯛桝笆・[0m00.2% Exp:[31m[90m笆鯛桝笆鯛桝笆・[0m00.0% => [32m[R-00][0m
+                                                                       
+
+  0%|          | 0/1 [02:35<?, ?img/s, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+100%|笆遺毎笆遺毎笆遺毎笆遺毎笆遺毎| 1/1 [02:35<00:00, 155.65s/img, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]C:\Users\kouki\Documents\MyApp\dbv4-w
+d14-tagger\embed_tags_universal.py:329: ResourceWarning: unclosed file <_io.BufferedReader name=4>
+  self.process = None
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+
+100%|笆遺毎笆遺毎笆遺毎笆遺毎笆遺毎| 1/1 [02:35<00:00, 155.68s/img, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+[螳御ｺ・ 蜃ｦ逅・ｵ先棡繧ｵ繝槭Μ繝ｼ:
+  繝ｻ謗ｨ隲門ｮ溯｡後ヵ繧｡繧､繝ｫ (DBV4 AI貍皮ｮ励≠繧・: 1 譫・| 騾溷ｺｦ: 0.01 img/s (155207.5 ms/img)
+  繝ｻ貍皮ｮ励せ繧ｭ繝・・繝輔ぃ繧､繝ｫ (DBV4 score): 0 譫・| 騾溷ｺｦ: 貂ｬ螳壼ｯｾ雎｡縺ｪ縺・
+  繝ｻ隧ｳ邏ｰ: 繧ｿ繧ｰ譖ｸ縺崎ｾｼ縺ｿ 1 譫・ 謨ｴ逅・ｧｻ蜍・0 譫・
+[INFO] Client霆｢騾√Δ繝ｼ繝・ 蜈・判蜒上ｒ縺昴・縺ｾ縺ｾ騾∽ｿ｡縺励∪縺吶・
+[WARN] 縺薙・繝｢繝・Ν縺ｯ繝舌ャ繝∵耳隲悶↓髱槫ｯｾ蠢懊・縺溘ａ縲｜atch-size=1縺ｫ螟画峩縺励∪縺吶・
+
+[07:09:49] 127.0.0.1       | File: original.png | Size: 18.7 KB | Processing...
+[07:09:49] 127.0.0.1       | File: original.png | HTTP蜿嶺ｿ｡: 0.02 MiB / 0.000s = 1086.51 MiB/s
+[07:12:28] 127.0.0.1       | File: original.png | Processed OK (159.59s)
+  0%|          | 0/1 [00:00<?, ?img/s]
+  0%|          | 0/1 [02:39<?, ?img/s, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+[original.png] Gen:[32m笆遺毎笆遺毎[90m笆・[0m99.3% Sen:[33m[90m笆鯛桝笆鯛桝笆・[0m00.6% Que:[35m[90m笆鯛桝笆鯛桝笆・[0m00.2% Exp:[31m[90m笆鯛桝笆鯛桝笆・[0m00.0% => [32m[R-00][0m
+                                                                       
+
+  0%|          | 0/1 [02:39<?, ?img/s, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+100%|笆遺毎笆遺毎笆遺毎笆遺毎笆遺毎| 1/1 [02:40<00:00, 160.10s/img, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+
+100%|笆遺毎笆遺毎笆遺毎笆遺毎笆遺毎| 1/1 [02:40<00:00, 160.13s/img, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+[螳御ｺ・ 蜃ｦ逅・ｵ先棡繧ｵ繝槭Μ繝ｼ:
+  繝ｻ謗ｨ隲門ｮ溯｡後ヵ繧｡繧､繝ｫ (DBV4 AI貍皮ｮ励≠繧・: 1 譫・| 騾溷ｺｦ: 0.01 img/s (159895.1 ms/img)
+  繝ｻ貍皮ｮ励せ繧ｭ繝・・繝輔ぃ繧､繝ｫ (DBV4 score): 0 譫・| 騾溷ｺｦ: 貂ｬ螳壼ｯｾ雎｡縺ｪ縺・
+  繝ｻ隧ｳ邏ｰ: 繧ｿ繧ｰ譖ｸ縺崎ｾｼ縺ｿ 1 譫・ 謨ｴ逅・ｧｻ蜍・0 譫・
+[INFO] Client蜑榊・逅・Δ繝ｼ繝・ 繝｢繝・Ν蜈･蜉帙ユ繝ｳ繧ｽ繝ｫ繧貞庄騾・悸邵ｮ縺励※騾∽ｿ｡縺励∪縺吶・
+[WARN] 縺薙・繝｢繝・Ν縺ｯ繝舌ャ繝∵耳隲悶↓髱槫ｯｾ蠢懊・縺溘ａ縲｜atch-size=1縺ｫ螟画峩縺励∪縺吶・
+
+[07:12:30] 127.0.0.1       | File: 逕ｻ蜒・| Size: 129.4 KB | Processing...
+[07:12:30] 127.0.0.1       | File: 逕ｻ蜒・| HTTP蜿嶺ｿ｡: 0.13 MiB / 0.000s = 499.71 MiB/s
+[INFO] 127.0.0.1 | 謗ｨ隲夜幕蟋・ 1譫・
+[INFO] 127.0.0.1 | 謗ｨ隲門ｮ御ｺ・ 1譫・/ 148.27s
+[INFO] 127.0.0.1 | 邨先棡騾∽ｿ｡螳御ｺ・ 1譫・
+  0%|          | 0/1 [00:00<?, ?img/s]
+  0%|          | 0/1 [02:28<?, ?img/s, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+[preprocessed.png] Gen:[32m笆遺毎笆遺毎[90m笆・[0m99.3% Sen:[33m[90m笆鯛桝笆鯛桝笆・[0m00.6% Que:[35m[90m笆鯛桝笆鯛桝笆・[0m00.2% Exp:[31m[90m笆鯛桝笆鯛桝笆・[0m00.0% => [32m[R-00][0m
+                                                                       
+
+  0%|          | 0/1 [02:28<?, ?img/s, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+100%|笆遺毎笆遺毎笆遺毎笆遺毎笆遺毎| 1/1 [02:28<00:00, 148.79s/img, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+
+100%|笆遺毎笆遺毎笆遺毎笆遺毎笆遺毎| 1/1 [02:28<00:00, 148.82s/img, 謗ｨ隲・1譫・0.0/s) Skip:0譫・0.0/s)]
+[螳御ｺ・ 蜃ｦ逅・ｵ先棡繧ｵ繝槭Μ繝ｼ:
+  繝ｻ謗ｨ隲門ｮ溯｡後ヵ繧｡繧､繝ｫ (DBV4 AI貍皮ｮ励≠繧・: 1 譫・| 騾溷ｺｦ: 0.01 img/s (148612.8 ms/img)
+  繝ｻ貍皮ｮ励せ繧ｭ繝・・繝輔ぃ繧､繝ｫ (DBV4 score): 0 譫・| 騾溷ｺｦ: 貂ｬ螳壼ｯｾ雎｡縺ｪ縺・
+  繝ｻ隧ｳ邏ｰ: 繧ｿ繧ｰ譖ｸ縺崎ｾｼ縺ｿ 1 譫・ 謨ｴ逅・ｧｻ蜍・0 譫・
+ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 771.317s
+
+OK
+

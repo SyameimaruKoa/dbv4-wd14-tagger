@@ -21,6 +21,17 @@ def adapter(vendor_id, dxgi='0'):
 
 
 class GPUInitializationTests(unittest.TestCase):
+    def test_openvino_keeps_fp32_on_the_explicit_intel_gpu(self):
+        with patch.object(app.ort, 'get_available_providers', return_value=[
+                'OpenVINOExecutionProvider', 'CPUExecutionProvider']), patch.object(
+                gpu, 'prepare_openvino', return_value='Intel Iris Xe') as inspect:
+            providers = app.build_providers(True, 'intel', openvino_device='GPU.2')
+        inspect.assert_called_once_with('GPU.2')
+        name, options = providers[0]
+        self.assertEqual(name, 'OpenVINOExecutionProvider')
+        self.assertEqual(options['device_type'], 'GPU.2')
+        self.assertEqual(json.loads(options['load_config'])['GPU']['INFERENCE_PRECISION_HINT'], 'f32')
+
     def test_powershell_tensorrt_fallback_reuses_prepared_environment(self):
         launcher = (Path(app.SCRIPT_DIR) / 'run_tagger.ps1').read_text(encoding='utf-8-sig')
         fallback = "if ($Candidate -eq 'tensorrt' -and"
@@ -130,13 +141,14 @@ class GPUInitializationTests(unittest.TestCase):
     def test_tensorrt_loads_plugin_and_ort_bridge(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {}, clear=True):
             root = Path(directory)
-            for name in ['libnvinfer.so.10', 'libnvinfer_plugin.so.10']:
+            for name in ['libnvinfer.so.10', 'libnvinfer_plugin.so.10', 'libnvonnxparser.so.10']:
                 (root/name).touch()
             with patch.object(gpu.ctypes, 'CDLL') as load:
                 found, handles = gpu.prepare_tensorrt_linux(root)
                 self.assertEqual(found, root)
-                self.assertEqual(len(handles), 3)
-                self.assertEqual(load.call_count, 3)
+                self.assertEqual(len(handles), 4)
+                self.assertEqual(load.call_count, 4)
+                self.assertEqual(load.call_args_list[-2].args[0], str(root/'libnvonnxparser.so.10'))
                 self.assertTrue(load.call_args.args[0].endswith('libonnxruntime_providers_tensorrt.so'))
 
     def test_explicit_tensorrt_failure_is_not_cuda_success(self):

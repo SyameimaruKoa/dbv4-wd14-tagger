@@ -1,0 +1,20 @@
+﻿Collecting openvino==2025.4.1
+  Using cached openvino-2025.4.1-20426-cp313-cp313-win_amd64.whl.metadata (12 kB)
+Collecting numpy<2.4.0,>=1.16.6 (from openvino==2025.4.1)
+  Using cached numpy-2.3.5-cp313-cp313-win_amd64.whl.metadata (60 kB)
+Requirement already satisfied: openvino-telemetry>=2023.2.1 in .\venv_intel\Lib\site-packages (from openvino==2025.4.1) (2025.2.0)
+Requirement already satisfied: packaging in .\venv_intel\Lib\site-packages (from openvino==2025.4.1) (26.3)
+Using cached openvino-2025.4.1-20426-cp313-cp313-win_amd64.whl (41.8 MB)
+Using cached numpy-2.3.5-cp313-cp313-win_amd64.whl (12.8 MB)
+Installing collected packages: numpy, openvino
+  Attempting uninstall: numpy
+    Found existing installation: numpy 2.5.3
+    Uninstalling numpy-2.5.3:
+      Successfully uninstalled numpy-2.5.3
+  Attempting uninstall: openvino
+    Found existing installation: openvino 2026.4.1
+    Uninstalling openvino-2026.4.1:
+      Successfully uninstalled openvino-2026.4.1
+
+Successfully installed numpy-2.3.5 openvino-2025.4.1
+

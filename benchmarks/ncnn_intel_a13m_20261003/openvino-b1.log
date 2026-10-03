@@ -1,0 +1,41 @@
+[WARN] ultra縺ｯRTX 2070 Max-Q繝ｻDirectML繝ｻbatch-size=4縺ｧ繝斐・繧ｯ6,583MiB縲∵ｸｬ螳壼燕繧帝勁縺丞｢怜・5,743MiB繧堤｢ｺ隱肴ｸ医∩縺ｧ縺吶・GB莉･荳翫・GPU繧呈耳螂ｨ縺励∫ｩｺ縺榊ｮｹ驥丈ｸ崎ｶｳ譎ゅ・batch-size繧剃ｸ九￡縺ｦ縺上□縺輔＞縲・
+[INFO] ONNX螟夜Κ繝・・繧ｿ繧貞酔荳繝・ぅ繝ｬ繧ｯ繝医Μ縺ｫ驟咲ｽｮ: C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\.dbv4\models\53e96223459a3046
+[INFO] OpenVINO GPU: Intel(R) Iris(R) Xe Graphics (iGPU)
+[INFO] DBV4繝｢繝・Ν: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] 繝ｩ繝吶Ν謨ｰ: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 蜈･蜉・shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] 繧｢繧ｯ繝・ぅ繝悶・繝ｭ繝舌う繝: ['OpenVINOExecutionProvider', 'CPUExecutionProvider']
+.\venv_intel\Scripts\python.exe : Traceback (most recent call last):
+発生場所 行:9 文字:1
++ .\venv_intel\Scripts\python.exe benchmark_ncnn.py --provider intel -- ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\benchmark_ncnn.py", line 271, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\benchmark_ncnn.py", line 262, in main
+    result, measured_start = run(args, monitor)
+                             ~~~^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\benchmark_ncnn.py", line 162, in run
+    runtime = load_runtime_model(
+        args.provider != "cpu", args.profile, provider=args.provider,
+    ...<3 lines>...
+        ncnn_part_size_mib=args.ncnn_part_size_mib,
+    )
+  File "C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\embed_tags_universal.py", line 750, in load_runtime_model
+    runtime.predict_images([Image.new("RGB", (640, 480), (127, 63, 191))]
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                           * (runtime.batch_limit or 1))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\embed_tags_universal.py", line 482, in predict_images
+    return self._predict_input(self.preprocess_batch(images), len(images))
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\embed_tags_universal.py", line 507, in _predict_input
+    return [infer_output_to_probabilities(row) for row in raw]
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp\dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 output縺ｫ髱樊怏髯仙､縺後≠繧翫∪縺吶・)
+ValueError: DBV4 output縺ｫ髱樊怏髯仙､縺後≠繧翫∪縺吶・

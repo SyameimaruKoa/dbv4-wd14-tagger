@@ -1,0 +1,16 @@
+{
+  "platform": "Linux-4.9.140-l4t-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "packages": {
+    "ncnn": "1.0.20260526",
+    "numpy": "2.5.3",
+    "onnxruntime": "1.30.0",
+    "Pillow": "12.3.0",
+    "huggingface-hub": "2.1.1"
+  },
+  "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "meminfo": "MemTotal:        4087628 kB\nMemFree:          436520 kB\nMemAvailable:    3537344 kB\nBuffers:           14564 kB\nCached:          3173496 kB\nSwapCached:         5180 kB\nActive:           189016 kB\nInactive:        3219188 kB\nActive(anon):     100288 kB\nInactive(anon):   127476 kB\nActive(file):      88728 kB\nInactive(file):  3091712 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       3145724 kB\nSwapFree:        3101836 kB\nDirty:                 8 kB\nWriteback:             0 kB\nAnonPages:        217404 kB\nMapped:            83808 kB\nShmem:              7292 kB\nSlab:              99908 kB\nSReclaimable:      44300 kB\nSUnreclaim:        55608 kB\nKernelStack:        5728 kB\nPageTables:         5684 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     5189536 kB\nCommitted_AS:    1747496 kB\nVmallocTotal:   263061440 kB\nVmallocUsed:           0 kB\nVmallocChunk:          0 kB\nAnonHugePages:     86016 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nNvMapCIramUsed:        0 kB\nNvMapCVprUsed:         0 kB\nNvMapCVidMUsed:        0 kB\nNvMapCGenUsed:         0 kB\nNvMapCrvTotal:         0 kB\nNvMapMemFree:      30016 kB\nNvMapMemUsed:      38208 kB\nCmaTotal:         524288 kB\nCmaFree:          370228 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\n",
+  "swap": "Filename\t\t\t\tType\t\tSize\tUsed\tPriority\n/dev/zram0                              partition\t3145724\t43888\t5\n",
+  "icd": "{\n    \"file_format_version\" : \"1.0.0\",\n    \"ICD\": {\n        \"library_path\": \"libGLX_nvidia.so.0\",\n        \"api_version\" : \"1.1.85\"\n    }\n}\n",
+  "exiftool_version": "13.59"
+}

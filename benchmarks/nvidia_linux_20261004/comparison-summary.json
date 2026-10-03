@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-04",
+  "host": "ubuntu-komeiziaya on AERO",
+  "profile": "ultra",
+  "warmup": 1,
+  "iterations": 3,
+  "atol": 0.0001,
+  "rtol": 0.001,
+  "input_sha256": "501fbf0fee15841b31ff8ea29fd3516b7329d652588b7b4f7dd1c0128faa9264",
+  "metadata_version": "07cfcadc104847e8",
+  "conditions": [
+    {
+      "name": "cuda-b1",
+      "median_ms_per_image": 402.75349800003823,
+      "load_seconds": 8.102028634999897,
+      "max_absolute_difference": 3.039836883544922e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "label_count": 12476,
+      "gpu_memory_mib_loaded": 4220.0
+    },
+    {
+      "name": "cuda-b4",
+      "median_ms_per_image": 397.5619409999922,
+      "load_seconds": 3.6811440280000625,
+      "max_absolute_difference": 3.337860107421875e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "label_count": 12476,
+      "gpu_memory_mib_loaded": 4220.0
+    },
+    {
+      "name": "ncnn-b1",
+      "median_ms_per_image": 1015.8113130000856,
+      "load_seconds": 9.334081983000033,
+      "max_absolute_difference": 3.5762786865234375e-06,
+      "rating_max_absolute_difference": 2.0023435354232788e-08,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "label_count": 12476,
+      "gpu_memory_mib_loaded": 3025.0
+    },
+    {
+      "name": "ncnn-b4",
+      "median_ms_per_image": 1019.5932412499928,
+      "load_seconds": 5.280194784000059,
+      "max_absolute_difference": 3.5762786865234375e-06,
+      "rating_max_absolute_difference": 2.0023435354232788e-08,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "label_count": 12476,
+      "gpu_memory_mib_loaded": 3025.0
+    },
+    {
+      "name": "tensorrt-b1",
+      "median_ms_per_image": 295.5984150000859,
+      "load_seconds": 6.256349324999974,
+      "max_absolute_difference": 3.7848949432373047e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "label_count": 12476,
+      "gpu_memory_mib_loaded": 3408.0
+    },
+    {
+      "name": "tensorrt-b4",
+      "median_ms_per_image": 296.3949685000671,
+      "load_seconds": 4.402416570000014,
+      "max_absolute_difference": 4.649162292480469e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "label_count": 12476,
+      "gpu_memory_mib_loaded": 3408.0
+    }
+  ],
+  "integrations": {
+    "ncnn": {
+      "tests": 2,
+      "passed": true,
+      "seconds": 12.804
+    },
+    "cuda": {
+      "tests": 2,
+      "passed": true,
+      "seconds": 8.705
+    },
+    "tensorrt": {
+      "tests": 2,
+      "passed": true,
+      "seconds": 11.351
+    }
+  },
+  "exit_codes": {
+    "ncnn-b1": 0,
+    "ncnn-b4": 0,
+    "ncnn-integration": 0,
+    "cuda-b1": 0,
+    "cuda-b4": 0,
+    "cuda-integration": 0,
+    "tensorrt-b1": 0,
+    "tensorrt-b4": 0,
+    "tensorrt-integration": 0,
+    "auto-launcher": 0
+  },
+  "source_before_fix": "8df9046",
+  "source_after_fix": "0d534f2",
+  "python": "3.13.16",
+  "packages": {
+    "onnxruntime-gpu": "1.26.0",
+    "tensorrt-cu12": "10.16.1.11",
+    "numpy": "2.5.3",
+    "huggingface_hub": "2.0.0"
+  },
+  "notes": [
+    "ncnn Vulkan GPU1 RTX; CUDA/TensorRT GPU0 RTX",
+    "ncnn batch4 sequential batch1 graph",
+    "GPU measurements sequential, warmup1 iterations3; no controlled improvement claim against Windows",
+    "NVIDIA memory values are device-wide snapshots, not peaks",
+    "TensorRT initial failures: parser installed but not preloaded; fixed loading before ORT bridge",
+    "Initial auto-launcher used CUDA fallback; final auto-launcher executes TensorRT"
+  ]
+}

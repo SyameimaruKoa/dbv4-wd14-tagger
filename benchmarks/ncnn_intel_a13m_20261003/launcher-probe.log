@@ -1,0 +1,86 @@
+[INFO] 環境確認: ncnn
+  -> ライブラリの確認・インストールを行います...
+[INFO] Pythonスクリプトを実行...
+[案内] 画像ファイルまたはフォルダを指定してください。
+usage: embed_tags_universal.py [-D {standalone,server,client}] [-Z] [-o] [-x]
+                               [-z] [-q THRESH] [-g] [-wg] [-ep EP名]
+                               [-gi GPU_INDEX]
+                               [--ncnn-precision {fp32,fp16-storage,fp16-packed,fp16-arithmetic}]
+                               [--ncnn-part-size-mib NCNN_PART_SIZE_MIB]
+                               [-di DIRECTML_DEVICE_INDEX]
+                               [-wi WEBGPU_DEVICE_INDEX] [-tv ベンダー名]
+                               [-od GPU.N] [-td ディレクトリ] [-b BATCH_SIZE]
+                               [-w IO_WORKERS] [-f] [-r] [-n] [-m NAME]
+                               [-e 所有者/リポジトリ] [-l ファイル] [-y ファイル] [-j ホスト名/IP]
+                               [-U {p,o,original,preprocessed}] [-u PORT]
+                               [-v {2,4,6}] [-a] [-k] [-d RATING_THRESH] [-i]
+                               [-G] [-h]
+                               [images ...]
+
+DBV4 Tagger Universal (日本語版)
+
+処理時に必要な入力（引数なしは環境構築）:
+  images                処理対象の画像またはフォルダパス
+
+値を指定するオプション（<>内の値が必要）:
+  -D, --mode {standalone,server,client}
+                        実行モード（★standalone）
+  -q, --thresh THRESH   DBV4のtag best_thresholdを上書きする明示的な閾値
+  -ep, --provider EP名   cpu/cuda/tensorrt/intel/directml/webgpu/migraphx/rocm/
+                        ncnn（利用不可時は停止）
+  -gi, --gpu-index GPU_INDEX
+                        ★GPU番号 0
+  --ncnn-precision {fp32,fp16-storage,fp16-packed,fp16-arithmetic}
+                        ncnn演算精度・保存形式（★fp32）
+  --ncnn-part-size-mib NCNN_PART_SIZE_MIB
+                        ncnn重みの分割目安MiB（0=分割なし、低メモリ環境では128）
+  -di, --directml-device-index DIRECTML_DEVICE_INDEX
+                        ★DirectML番号 0
+  -wi, --webgpu-device-index WEBGPU_DEVICE_INDEX
+  -tv, --target-vendor ベンダー名
+                        nvidia/intel/amd
+  -od, --openvino-device GPU.N
+                        OpenVINOデバイス（例: GPU.0）
+  -td, --tensorrt-lib-dir ディレクトリ
+                        TensorRT 10ライブラリの場所
+  -b, --batch-size BATCH_SIZE
+                        ★推論バッチサイズ 4（モデル上限で調整）
+  -w, --io-workers IO_WORKERS
+                        ★画像読込みの並列数 -1=自動（Clientは0）
+  -m, --model-profile NAME
+                        ★balanced。compact_manual/lightweight/medium_manual/bal
+                        anced/high/ultra（configのカスタム定義も可）
+  -e, --model-repo 所有者/リポジトリ
+                        HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）
+  -l, --model-file ファイル
+                        ONNXモデルファイル名またはパス（例: model.onnx）
+  -y, --tags-file ファイル  タグCSV名またはパス（例: selected_tags.csv）
+  -j, --host ホスト名/IP    Client接続先（例: google-colab）
+  -U, -um, --client-upload-mode {p,o,original,preprocessed}
+                        ★初期設定p=互換形式のみ前処理、o=元画像送信
+  -u, --port PORT       ★Server/Clientポート 5000
+  -v, --sensitive-split-mode {2,4,6}
+                        旧CLI互換（DBV4ではR-15/R-17の5段階固定）
+  -d, --rating-thresh RATING_THRESH
+                        非General rating判定閾値（旧CLI互換）
+
+値を指定しないスイッチ:
+  -Z, --no-tag          タグ付け処理を行わない
+  -o, --organize        レーティングに基づきフォルダ整理を行う
+  -x, --pixiv           Pixiv整理モード（画像を含むフォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダ
+                        は削除）
+  -z, --no-report       HTMLレポートを作成しない
+  -g, --gpu             GPUを使用する
+  -wg, --webgpu         WebGPUを使用する
+  -f, --force           既存DBV4 scoreを使わず強制再推論
+  -r, --recursive       再帰検索ON
+  -n, --no-recursive    再帰検索OFF
+  -a, --record-ratio    ★rating RAWスコアをXMPへ保存（既定ON、config.jsonで変更可）
+  -k, --no-record-ratio
+                        rating RAWスコアのXMP保存をOFF
+  -i, --ignore-sensitive
+                        Sensitive判定をGeneralとして扱う
+  -G, --gen-config      config.jsonを生成・更新
+  -h, --help            このヘルプを表示
+
+★は初期設定。通常解析ではタグ付けとレポート作成が有効。転送方式は既存config.jsonがあればその値を使用し、-Uで上書きします。

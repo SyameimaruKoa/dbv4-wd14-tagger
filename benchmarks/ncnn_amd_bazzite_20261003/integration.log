@@ -1,0 +1,55 @@
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (AMD Radeon Graphics (RADV RENOIR)): ultra, fp32, ラベル数 12476
+test_cpu_probability_rating_and_threshold_parity (test_ncnn_integration.NcnnIntegrationTests.test_cpu_probability_rating_and_threshold_parity) ... ok
+test_standalone_and_both_client_modes_write_same_xmp (test_ncnn_integration.NcnnIntegrationTests.test_standalone_and_both_client_modes_write_same_xmp) ... [WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。
+  0%|          | 0/1 [00:00<?, ?img/s]  0%|          | 0/1 [00:06<?, ?img/s, 推論:1枚(0.2/s) Skip:0枚(0.0/s)]                                                                       [standalone.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+  0%|          | 0/1 [00:06<?, ?img/s, 推論:1枚(0.2/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:06<00:00,  6.81s/img, 推論:1枚(0.2/s) Skip:0枚(0.0/s)]/var/opt/dbv4-wd14-tagger/embed_tags_universal.py:329: ResourceWarning: unclosed file <_io.BufferedReader name=18>
+  self.process = None
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+100%|██████████| 1/1 [00:06<00:00,  6.82s/img, 推論:1枚(0.2/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 0.15 img/s (6586.2 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。
+  0%|          | 0/1 [00:00<?, ?img/s][20:47:36] 127.0.0.1       | File: original.png | Size: 20.2 KB | Processing...
+[20:47:36] 127.0.0.1       | File: original.png | HTTP受信: 0.02 MiB / 0.000s = 1298.54 MiB/s
+[20:47:42] 127.0.0.1       | File: original.png | Processed OK (6.60s)
+  0%|          | 0/1 [00:06<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]                                                                       [original.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+  0%|          | 0/1 [00:06<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:06<00:00,  6.75s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:06<00:00,  6.76s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 0.15 img/s (6675.0 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。
+[WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。
+  0%|          | 0/1 [00:00<?, ?img/s][20:47:44] 127.0.0.1       | File: 画像 | Size: 129.4 KB | Processing...
+[20:47:44] 127.0.0.1       | File: 画像 | HTTP受信: 0.13 MiB / 0.000s = 630.03 MiB/s
+[INFO] 127.0.0.1 | 推論開始: 1枚
+[INFO] 127.0.0.1 | 推論完了: 1枚 / 6.59s
+[INFO] 127.0.0.1 | 結果送信完了: 1枚
+  0%|          | 0/1 [00:06<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]                                                                       [preprocessed.png] Gen:[32m████[90m░[0m99.3% Sen:[33m[90m░░░░░[0m00.6% Que:[35m[90m░░░░░[0m00.2% Exp:[31m[90m░░░░░[0m00.0% => [32m[R-00][0m
+  0%|          | 0/1 [00:06<?, ?img/s, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:06<00:00,  6.79s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:06<00:00,  6.80s/img, 推論:1枚(0.1/s) Skip:0枚(0.0/s)]
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 0.15 img/s (6710.5 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 1 枚, 整理移動 0 枚
+ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 40.697s
+
+OK
