@@ -1,0 +1,6 @@
+[INFO] DBV4用コンフィグを生成しました: /opt/dbv4-wd14-tagger/config.json
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[0 NVIDIA Tegra X1 (nvgpu)]  queueC=0[16]  queueT=0[16]  rebar=1  r-score=8
+[0 NVIDIA Tegra X1 (nvgpu)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 NVIDIA Tegra X1 (nvgpu)]  subgroup=32(32~32)  ops=1/1/1/1/1/1/1/1/0/0
+[0 NVIDIA Tegra X1 (nvgpu)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0

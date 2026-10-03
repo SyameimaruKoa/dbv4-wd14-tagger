@@ -1,0 +1,54 @@
+[INFO] ポータブルデータ保存先: /opt/dbv4-wd14-tagger/.dbv4
+[INFO] 依存ライブラリを確認・インストール中 (ncnn)...
+Requirement already satisfied: onnxruntime in ./venv_ncnn/lib/python3.12/site-packages (1.30.0)
+Requirement already satisfied: ncnn in ./venv_ncnn/lib/python3.12/site-packages (1.0.20260526)
+Requirement already satisfied: pillow in ./venv_ncnn/lib/python3.12/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 1)) (12.3.0)
+Requirement already satisfied: pillow-avif-plugin in ./venv_ncnn/lib/python3.12/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 2)) (1.6.0)
+Requirement already satisfied: huggingface_hub in ./venv_ncnn/lib/python3.12/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.1.1)
+Requirement already satisfied: numpy in ./venv_ncnn/lib/python3.12/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 4)) (2.5.3)
+Requirement already satisfied: tqdm in ./venv_ncnn/lib/python3.12/site-packages (from -r /opt/dbv4-wd14-tagger/requirements.txt (line 5)) (4.70.1)
+Requirement already satisfied: flatbuffers in ./venv_ncnn/lib/python3.12/site-packages (from onnxruntime) (25.12.19)
+Requirement already satisfied: packaging in ./venv_ncnn/lib/python3.12/site-packages (from onnxruntime) (26.3)
+Requirement already satisfied: protobuf>=4.25.8 in ./venv_ncnn/lib/python3.12/site-packages (from onnxruntime) (7.36.2)
+Requirement already satisfied: requests in ./venv_ncnn/lib/python3.12/site-packages (from ncnn) (2.34.2)
+Requirement already satisfied: portalocker in ./venv_ncnn/lib/python3.12/site-packages (from ncnn) (4.4.0)
+Requirement already satisfied: opencv-python in ./venv_ncnn/lib/python3.12/site-packages (from ncnn) (5.0.0.93)
+Requirement already satisfied: click<9.0.0,>=8.4.2 in ./venv_ncnn/lib/python3.12/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (8.5.0)
+Requirement already satisfied: filelock>=3.10.0 in ./venv_ncnn/lib/python3.12/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.0.9)
+Requirement already satisfied: fsspec>=2023.5.0 in ./venv_ncnn/lib/python3.12/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2026.9.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.6.0 in ./venv_ncnn/lib/python3.12/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (1.6.0)
+Requirement already satisfied: httpx2<3,>=2.0.0 in ./venv_ncnn/lib/python3.12/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.13.1)
+Requirement already satisfied: pyyaml>=5.1 in ./venv_ncnn/lib/python3.12/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (6.0.3)
+Requirement already satisfied: typing-extensions>=4.1.0 in ./venv_ncnn/lib/python3.12/site-packages (from huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.16.0)
+Requirement already satisfied: anyio>=4.10 in ./venv_ncnn/lib/python3.12/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (4.15.1)
+Requirement already satisfied: httpcore2==2.13.1 in ./venv_ncnn/lib/python3.12/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (2.13.1)
+Requirement already satisfied: idna>=3.18 in ./venv_ncnn/lib/python3.12/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (3.20)
+Requirement already satisfied: truststore>=0.10 in ./venv_ncnn/lib/python3.12/site-packages (from httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (0.10.4)
+Requirement already satisfied: h11>=0.16 in ./venv_ncnn/lib/python3.12/site-packages (from httpcore2==2.13.1->httpx2<3,>=2.0.0->huggingface_hub->-r /opt/dbv4-wd14-tagger/requirements.txt (line 3)) (0.16.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./venv_ncnn/lib/python3.12/site-packages (from requests->ncnn) (3.5.2)
+Requirement already satisfied: urllib3<3,>=1.26 in ./venv_ncnn/lib/python3.12/site-packages (from requests->ncnn) (2.8.0)
+Requirement already satisfied: certifi>=2023.5.7 in ./venv_ncnn/lib/python3.12/site-packages (from requests->ncnn) (2026.7.22)
+[INFO] Pythonスクリプトを実行 (ncnn)...
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[0 NVIDIA Tegra X1 (nvgpu)]  queueC=0[16]  queueT=0[16]  rebar=1  r-score=8
+[0 NVIDIA Tegra X1 (nvgpu)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 NVIDIA Tegra X1 (nvgpu)]  subgroup=32(32~32)  ops=1/1/1/1/1/1/1/1/0/0
+[0 NVIDIA Tegra X1 (nvgpu)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (NVIDIA Tegra X1 (nvgpu)): ultra, fp32, ラベル数 12476
+[INFO] ncnn streaming: 14 sections, largest 242.7 MiB weights
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+nvdc: start nvdcEventThread
+nvdc: nvdcEventThread select failed: Bad file descriptor

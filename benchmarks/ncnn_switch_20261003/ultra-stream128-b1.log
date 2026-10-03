@@ -1,0 +1,55 @@
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[0 NVIDIA Tegra X1 (nvgpu)]  queueC=0[16]  queueT=0[16]  rebar=1  r-score=8
+[0 NVIDIA Tegra X1 (nvgpu)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 NVIDIA Tegra X1 (nvgpu)]  subgroup=32(32~32)  ops=1/1/1/1/1/1/1/1/0/0
+[0 NVIDIA Tegra X1 (nvgpu)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (NVIDIA Tegra X1 (nvgpu)): ultra, fp32, ラベル数 12476
+[INFO] ncnn streaming: 14 sections, largest 242.7 MiB weights
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[benchmark] Model initialization and startup probe: 217.71s
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[benchmark] Warm-up 1/1
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[benchmark] Iteration 1/1: 75004.67 ms/img
+benchmarks/ncnn_switch_20261003/ultra-stream128-b1.json: 75004.67 ms/img
+nvdc: start nvdcEventThread
+nvdc: nvdcEventThread select failed: Bad file descriptor
