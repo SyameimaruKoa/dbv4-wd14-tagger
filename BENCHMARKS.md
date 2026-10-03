@@ -201,6 +201,25 @@ warm-up 1回・反復3回、各GPU測定は順番に実行した。ncnn b4は固
 
 [ncnn](benchmarks/nvidia_linux_20261004/ncnn-integration.log)、[CUDA](benchmarks/nvidia_linux_20261004/cuda-integration.log)、[TensorRT](benchmarks/nvidia_linux_20261004/tensorrt-integration.log)の実GPU統合テストは各2件成功（12.804／8.705／11.351秒）。単独／原画像／前処理済みServer/Client転送のXMP一致も確認した。[通常Bash自動起動](benchmarks/nvidia_linux_20261004/auto-launcher.log)はTensorRTを選び、実EP実行を確認して終了コード0。初回のCUDAへの切り替えは別ログとして保持している。修正後の全10終了コードは0、ローカルのGPU初期化関連テスト26件も成功。
 
+### PS4 Linux・AMD Liverpool（2026-10-04 JST）
+
+PS4 CUH-1200AのCachyOS、kernel `7.1.7-Strawberry-General-FullLTO+`、Mesa PS4 `26.0.4.217906.bbc23bed47f.2fc1477-1`、Python 3.13.15、ncnn 1.0.20260526で、ソース `6b518dc` を検証した。Vulkan GPU 0はAMD Liverpool（RADV）、RAM約5.8GiB、VRAM 2GiB。ホストのログ時刻はEDTのまま保存した。[実機情報](benchmarks/ncnn_ps4_20261004/environment.log)と[結果一覧](benchmarks/ncnn_ps4_20261004/comparison-summary.json)を参照。
+
+既存のultra FP32モデルをGit経由で転送し、`--ncnn-part-size-mib 128` で14区間に分割した。最大区間は254,487,572 bytes（約242.7MiB）。binのSHA256は `86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6` で、分割binを連結した値も一致した。param・jsonも転送前と一致し、モデルの変更・再変換はしていない。[保全記録](benchmarks/ncnn_ps4_20261004/model-integrity.json)。元モデルと分割キャッシュで約5.2GiBのディスクを使用する。
+
+| 条件 | 秒/枚 | RSS最大 MiB | VRAM最大 MiB | GTT最大 MiB |
+|---|---:|---:|---:|---:|
+| ultra FP32、分割128、batch 1 | 87.83 | 274.14 | 690.33 | 32.61 |
+| ultra FP32、分割128、batch 4 | 80.30 | 229.41 | 690.33 | 36.61 |
+
+warmup 1、測定1回。batch 4はbatch 1のグラフで4枚を順次実行し、JSONの精度比較は代表の先頭出力を使用する。全12,476確率がCPU参照と `atol=1e-4, rtol=1e-3` で一致し、最大絶対差2.742e-6、rating最大差1.397e-8、選択タグ差0。初回のキャッシュ生成・起動検証を含む初期化は296.66秒。測定回数が少ないため他機種との速度順位は判断しない。
+
+メモリを0.2秒間隔で観測した。GPUメモリ値は画面表示などを含むデバイス全体の値で、GPU使用率・温度は取得できなかった。最小空きRAMはbatch 1で4825.54MiB、batch 4で4880.89MiB。実行はsystemd user serviceの `MemoryHigh=3G, MemoryMax=3500M, MemorySwapMax=1G` と外部タイムアウトで制限した。サービスのメモリ計上にはページキャッシュが含まれ、表のRSSとは異なる。OOMは観測していない。
+
+通常テスト119件（skip 5）とネイティブ分割テスト2件が成功。実GPU統合テスト2件も成功し、単独処理・元画像アップロード・前処理済みアップロードのXMPが一致した。統合試験では `client_timeout` と `client_batch_timeout` を600秒に設定した（既定値は変更していない）。通常ランチャーの `--provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 --gpu-index 0 --probe-provider` も実GPU起動検証に成功。自動選択は今回の試験対象外。保存した6件の終了コードはすべて0。
+
+ExifToolは `.dbv4/runtime/exiftool` に配置し、実行時にそのディレクトリをPATHへ追加した。現在のGPU起動では既存の `RADV_DEBUG=syncshaders` 設定を使用する。各試験後のカーネルログにring timeout、GPU reset、GPU Recovery Failed、OOMはなかった。ただし[提供されたGist](https://gist.github.com/SyameimaruKoa/865677c33ddac427a406a754e20d6c82)のGeekbench Feature Matchingは実行しておらず、そのGPUハング原因や復旧失敗を修正したという結果ではない。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。

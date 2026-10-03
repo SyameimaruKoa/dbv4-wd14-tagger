@@ -80,6 +80,14 @@ Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn
 
 Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-part-size-mib 128` で区間ごとに読み込み、実GPU推論とCPU参照の一致を確認した。例えば `./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 -p /path/to/images`。元のモデル・重みは変更せず、分岐をまたがない位置で切り、1区間ずつ読み込み・解放する。128MiBは重み量の目安で、今回の最大区間は約243MiB。初回は同じ容量の分割キャッシュを追加するため約2.58GiBの空き容量が必要。毎画像で重みを再読み込みするので、メモリに余裕のあるPCでは既定の分割なし（0）を使う。Switchの初回測定は約75秒/枚だったため、Server/Clientでは `client_timeout` と `client_batch_timeout` を600秒などに設定する。旧NVIDIA ICDを選ぶ必要がある環境では、実行前に `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` を `/etc/vulkan/icd.d/nvidia_icd.json` へ設定する。実測条件は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
+PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+
+```bash
+export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"
+bash run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 --gpu-index 0 -p /path/to/images
+```
+
+
 LinuxでAMD GPUを検出した場合、ncnnのVulkan初期化前に `RADV_DEBUG` へ `syncshaders` を追加する。AMD RADV実機で確認した連続演算時の確率差を抑える同期設定で、既存の環境変数のフラグは保持する。起動ログに適用を表示し、ベンチマークにも環境変数を記録する。
 
 AMD実機のultraはFP32で確率・rating・タグとXMPの一致を確認した。FP16の3設定は非有限出力で停止したため、この組み合わせではFP32を使用する。

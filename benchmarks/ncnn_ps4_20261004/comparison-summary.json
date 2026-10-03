@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-04 JST; host clock logs retained",
+  "date": "2026-10-04",
   "source_commit": "6b518dc",
   "profile": "ultra",
   "gpu": "AMD Liverpool (PlayStation 4) RADV",
@@ -110,6 +110,7 @@
     "MemoryHigh3G MemoryMax3500M MemorySwapMax1G in systemd user services",
     "GPU memory counters device-wide; GPU busy and temperature not measured",
     "Gist Geekbench Feature Matching workload was not run; its hang is not fixed or ruled out",
-    "Transferred original model privately via Git; temporary transfer repositories removed"
+    "Transferred original model privately via Git; temporary transfer repositories removed",
+    "Date is JST; host clock logs retained in EDT"
   ]
 }
