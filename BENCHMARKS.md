@@ -132,11 +132,23 @@ FP16 storage／packed／arithmeticのb1/b4は6条件すべて非有限出力に�
 
 同じultra FP32・入力SHA256・metadataで、[batch 1](benchmarks/ncnn_intel_a13m_20261003/fp32-b1.json)はwarm-up 1回・測定3回、中央値 **32,900.08 ms/枚**、ロード40.62秒。[batch 4](benchmarks/ncnn_intel_a13m_20261003/fp32-b4.json)はwarm-up 1回・測定1回、**33,299.30 ms/枚**、ロード36.46秒。4枚は固定batch 1グラフを逐次実行した。両条件とも全12,476確率がCPU参照の `atol=1e-4, rtol=1e-3` 内、最大差0.00000327826、rating最大差0.0000000135042、採用タグ差0件、終了コード0。20回測定した他PCの中央値とは反復数が異なる。WindowsのRSS・GPU共有メモリ・使用率は未取得。
 
-[実GPU統合テスト](benchmarks/ncnn_intel_a13m_20261003/integration.log)は2件成功（181.163秒、終了コード0）。全確率・rating・閾値、単独実行／原画像転送／前処理済み転送のXMP一致を確認し、Client期限は300秒に設定した。[PowerShell構文解析](benchmarks/ncnn_intel_a13m_20261003/powershell-parser.log)は0エラー。[通常PowerShellランチャー](benchmarks/ncnn_intel_a13m_20261003/launcher-probe.log)の明示ncnn起動も終了コード0。
+[実GPU統合テスト](benchmarks/ncnn_intel_a13m_20261003/integration.log)は2件成功（181.163秒、終了コード0）。全確率・rating・閾値、単独実行／原画像転送／前処理済み転送のXMP一致を確認し、Client期限は300秒に設定した。[PowerShell構文解析](benchmarks/ncnn_intel_a13m_20261003/powershell-parser.log)は0エラー。当日の[PowerShellランチャー記録](benchmarks/ncnn_intel_a13m_20261003/launcher-probe.log)は追加引数が未転送でPythonのヘルプ表示に終わっていたため、GPU起動検証としては扱わない。2026-10-04に転送を修正し、下記の実GPU検証を実施した。
 
 [OpenVINO比較](benchmarks/ncnn_intel_a13m_20261003/openvino-b1.log)は実名 `Intel(R) Iris(R) Xe Graphics (iGPU)` のGPUを確認し、OpenVINOExecutionProviderがactiveでも起動検証で非有限出力を検出して終了コード1。測定JSONは生成せず、batch 4は未実行。成功速度として扱わない。最初の直接測定ではリポジトリ内の既存HFトークンが環境へ指定されていなかったため認証待ちになり、`HF_HOME`／`HF_TOKEN_PATH` を指定して再ログインなしで再開した。[環境・モデルSHA256](benchmarks/ncnn_intel_a13m_20261003/environment.json)も保存している。
 
 IntelとSwitchのbin SHA256は同一。paramのSHA256は層名が異なるため一致しないが、[全層の型・接続・パラメーター照合](benchmarks/ncnn_intel_a13m_20261003/graph-integrity.json)は層名と空白を除いて一致した。[Intel全条件の精度照合](benchmarks/ncnn_intel_a13m_20261003/comparison-summary.json)と[Switchの精度照合](benchmarks/ncnn_switch_20261003/comparison-summary.json)を保存した。[最終通常テスト](benchmarks/ncnn_switch_20261003/unit-tests-final.log)は113件実行、実GPU用4件を除いて成功した。
+
+### Intel OpenVINO停止の修正（2026-10-04）
+
+同じa13m・ultra・ORT 1.24.1／OpenVINO 2025.4.1で精度設定だけを変えて調査した。[GPU既定値](benchmarks/openvino_intel_a13m_20261004/device-defaults.json)はFP16。[修正前と同じ設定](benchmarks/openvino_intel_a13m_20261004/default-control.json)と[明示FP16](benchmarks/openvino_intel_a13m_20261004/f16-control.json)は、いずれも起動検証の全12,476出力がNaNとなり停止した。出力バッファのdtypeはfloat32でも、内部のFP16計算は防げない。NaNが最初に生じる個別演算は未特定で、特定層のoverflowやdriverの不具合とは断定しない。
+
+Intel providerへ `load_config={"GPU":{"INFERENCE_PRECISION_HINT":"f32"}}` を追加し、選択GPU・元モデル・入力・非有限値検査を保持した。設定方法は[ORT公式OpenVINO資料](https://onnxruntime.ai/docs/execution-providers/OpenVINO-ExecutionProvider.html#load_config)に基づく。起動時の実行EPはOpenVINOExecutionProviderで、CPUに切り替えて成功させていない。
+
+[修正後batch 1](benchmarks/openvino_intel_a13m_20261004/fp32-b1.json)はwarm-up 1回・測定3回、中央値 **1,599.69 ms/枚**、ロード90.22秒。[batch 4](benchmarks/openvino_intel_a13m_20261004/fp32-b4.json)もwarm-up 1回・測定3回で **1,542.60 ms/枚**、ロード16.97秒。全12,476確率がCPU参照の `atol=1e-4, rtol=1e-3` 内で、採用タグ差0件。[実GPU統合テスト](benchmarks/openvino_intel_a13m_20261004/integration.log)は2件成功（39.302秒）：全確率・rating・閾値、単独／原画像／前処理済み転送のXMP一致。WindowsのGPUメモリ・使用率は未測定で、3回反復の結果を20回測定と同じ精度の速度推定とは扱わない。
+
+PowerShellの `RemainingArgs` がPythonへ渡っていなかった箇所も修正した。検証用引数を実際に渡し、[Intelランチャー](benchmarks/openvino_intel_a13m_20261004/launcher-probe.log)と[ncnnランチャー](benchmarks/openvino_intel_a13m_20261004/ncnn-launcher-probe.log)で実GPUの起動を検証した。以前のヘルプ表示・終了コード0を実GPU成功と読み替えない。
+
+[通常のGPU自動選択](benchmarks/openvino_intel_a13m_20261004/auto-launcher-probe.log)もIntel OpenVINOを選び、GPU.0の実名とOpenVINO EPの実行を確認して終了コード0。明示指定しなくてもこのa13mでは修正後の経路を使う。[最終通常テスト](benchmarks/openvino_intel_a13m_20261004/unit-tests.log)は114件実行、実GPU用4件を除いて成功した。
 
 ### 再測定
 

@@ -86,7 +86,7 @@ AMD実機のultraはFP32で確率・rating・タグとXMPの一致を確認し�
 
 同じAMD PCのBazzite 44／Mesa 26.2.2でもFP32のbatch 1／4とXMP・Server/Clientを確認した。OS標準Python 3.14を変更せず、リポジトリ内のPython 3.13と`venv_ncnn`を使った。ExifToolを`.dbv4/runtime/exiftool`へ配置した場合は、実行前に `export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"` を設定する。`--login`／`-Login`は既存の`venv_ncnn`も探索し、ログイン用に再利用する。
 
-Windows 11のCore i7-1355U／Intel Iris Xeでも、ultra FP32のbatch 1／4とXMP・両Client転送の一致を確認した。ncnnは約33秒/枚で、Client期限は300秒に設定して検証した。同じGPUのOpenVINOは起動検査で非有限出力となったため、この環境では `-Provider ncnn` を明示して利用できる。省メモリの分割設定はPowerShellでは `-NcnnPartSizeMiB`（既定0）で指定する。[測定・失敗記録](BENCHMARKS.md)を参照。
+Windows 11のCore i7-1355U／Intel Iris Xeでは、OpenVINOの既定FP16実行でultraの全出力がNaNになるため、Intel providerはFP32を明示する。修正後は約1.6秒/枚で、全12,476確率・rating・タグとXMP・両Client転送の一致を確認した。`-Provider intel -Gpu -ModelProfile ultra -OpenVinoDevice GPU` で利用できる。同じGPUのncnn FP32も約33秒/枚で確認済み。省メモリの分割設定はPowerShellでは `-NcnnPartSizeMiB`（既定0）で指定する。[測定・失敗記録](BENCHMARKS.md)を参照。
 
 初回変換は推論より多くのRAMを必要とする。保存するパラメーターの勾配を無効化し、pnnxが形状確認時に不要な勾配履歴を保持することを防ぐ。TorchScriptを作成するプロセスを終了してからpnnxを起動し、変換前半のメモリも解放する。pnnx自体がメモリ不足で終了する場合は、余裕のあるPCで変換してキャッシュ3ファイルを配置する。[CPUでの変換照合](validate_ncnn_conversion.py)、[ultra測定ランナー](benchmark_ncnn_matrix.sh)、[実GPUのXMP・Server/Client検証](tests/test_ncnn_integration.py)も用意している。
 
@@ -371,6 +371,7 @@ Clientは最大2バッチの通信を並行させ、次のバッチのアップ�
 固定batch 1の単画像通信は`client_timeout`（既定15秒）を使う。WindowsのIntel UHD 630でultraをncnn実行すると1枚約140秒かかったため、クライアントの`config.json`で`client_timeout`と`client_batch_timeout`を例えば300秒に設定する。300秒設定で原画像・前処理済み転送のXMP一致を確認した。
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
+Intel GPUの計算精度はFP32を指定する。モデルのFP32出力形式だけでは内部FP16演算を防げないため、OpenVINOの `INFERENCE_PRECISION_HINT=f32` を設定する。
 追加のGPU指定にも短縮形を使える。実行プロバイダは`-ep`、WebGPUは`-wg`、GPU番号は`-gi`、DirectML番号は`-di`、WebGPU番号は`-wi`、対象ベンダーは`-tv`、OpenVINOデバイスは`-od`、TensorRTライブラリ場所は`-td`。Bash・PowerShell・Python CLIで同じ短縮形を使える。
 
 ### Linux実機検証
