@@ -1,0 +1,6 @@
+{
+  "comparison": "all layers in order: type, input/output counts and blob names, every parameter; whitespace and layer instance names ignored",
+  "switch_reference_canonical_sha256": "f0fecc0d06d1ae258c8efc8d8d10a174ed0bb5d57c864c4bcf01dfd90cc585d6",
+  "intel_canonical_sha256": "f0fecc0d06d1ae258c8efc8d8d10a174ed0bb5d57c864c4bcf01dfd90cc585d6",
+  "matches_switch_graph": true
+}
