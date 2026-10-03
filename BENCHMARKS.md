@@ -1,5 +1,34 @@
 # ベンチマーク結果と分析
 
+## 測定一覧の入口（2026-10-04更新）
+
+[全測定178件の速度・RAM・VRAM一覧](benchmarks/all_measurements.md)に、保存済みのultra・balanced・wd14_v3・lightweight・highを集約した。実機・測定日ごとに速度とメモリの表を分け、各値の出典へリンクする。同じ測定組・実行方式・batchでのモデル間の時間比／RSS比／VRAM比も掲載。未測定・失敗・診断値は成功値に読み替えない。容量に対する使用率は分母が記録されている場合だけ算出する。
+
+最終コード確認と修正・テスト結果は[最終確認記録](benchmarks/final_review_20261004/README.md)に保存した。
+
+### ultraの実機結果早見表
+
+時間はms/枚。`b1 / b4`を併記し、メモリはその2条件の最大値。VRAMの「時点値」は初期化・warmup後などのスナップショット最大で、連続監視ピークではない。機種・OS・測定回数・分割の有無が異なるため、保存結果の一覧として読む。
+
+| 実機・OS | 実行方式 | b1 / b4 ms/枚 | RSS最大 MiB | GPUメモリ MiB・計測方式 | 出典 |
+|---|---|---:|---:|---|---|
+| AERO RTX 2070 Max-Q / Ubuntu | TensorRT | 295.60 / 296.39 | 7,237.22 | 4,238.00 時点値 | [b1](benchmarks/nvidia_linux_20261004/tensorrt-b1.json) / [b4](benchmarks/nvidia_linux_20261004/tensorrt-b4.json) |
+| 同上 | CUDA | 402.75 / 397.56 | 1,103.75 | 5,244.00 時点値 | [b1](benchmarks/nvidia_linux_20261004/cuda-b1.json) / [b4](benchmarks/nvidia_linux_20261004/cuda-b4.json) |
+| 同上 | ncnn FP32 | 1,015.81 / 1,019.59 | 372.70 | 3,025.00 時点値 | [b1](benchmarks/nvidia_linux_20261004/ncnn-b1.json) / [b4](benchmarks/nvidia_linux_20261004/ncnn-b4.json) |
+| AERO RTX 2070 Max-Q / Windows | TensorRT | 313.30 / 307.09 | 未測定 | 4,117.00 時点値 | [b1](benchmarks/aero_regression_20261004/tensorrt-b1.json) / [b4](benchmarks/aero_regression_20261004/tensorrt-b4.json) |
+| 同上 | CUDA | 403.69 / 397.79 | 未測定 | 5,323.00 時点値 | [b1](benchmarks/aero_regression_20261004/cuda-b1.json) / [b4](benchmarks/aero_regression_20261004/cuda-b4.json) |
+| 同上 | ncnn FP32 | 1,012.66 / 1,014.69 | 未測定 | 未測定 | [b1](benchmarks/aero_regression_20261004/rtx-ncnn-b1.json) / [b4](benchmarks/aero_regression_20261004/rtx-ncnn-b4.json) |
+| AERO UHD 630 / Windows | OpenVINO FP32 | 7,967.46 / 8,637.68 | 未測定 | 未測定 | [b1](benchmarks/aero_regression_20261004/intel-openvino-b1.json) / [b4](benchmarks/aero_regression_20261004/intel-openvino-b4.json) |
+| a13m Iris Xe / Windows | OpenVINO FP32 | 1,599.69 / 1,542.60 | 未測定 | 未測定 | [b1](benchmarks/openvino_intel_a13m_20261004/fp32-b1.json) / [b4](benchmarks/openvino_intel_a13m_20261004/fp32-b4.json) |
+| 同上 | ncnn FP32 | 32,900.08 / 33,299.30 | 未測定 | 未測定 | [b1](benchmarks/ncnn_intel_a13m_20261003/fp32-b1.json) / [b4](benchmarks/ncnn_intel_a13m_20261003/fp32-b4.json) |
+| AMD Barcelo / Ubuntu | ncnn FP32同期あり | 6,505.56 / 6,659.12 | 219.16 | 500.02 VRAMピーク＋2,841.51 GTTピーク | [b1](benchmarks/ncnn_amd_20261003/sync-default-fp32-b1.json) / [b4](benchmarks/ncnn_amd_20261003/sync-fp32-b4.json) |
+| 同じAMD PC / Bazzite | ncnn FP32同期あり | 7,509.21 / 7,558.89 | 198.97 | 493.02 VRAMピーク＋2,992.02 GTTピーク | [b1](benchmarks/ncnn_amd_bazzite_20261003/fp32-b1.json) / [b4](benchmarks/ncnn_amd_bazzite_20261003/fp32-b4.json) |
+| Nintendo Switch / Linux | ncnn FP32・分割128 | 75,004.67 / 未測定 | 544.77 | 未測定 | [b1](benchmarks/ncnn_switch_20261003/ultra-stream128-b1.json) |
+| PS4 Liverpool / Linux | ncnn FP32・分割128 | 87,825.23 / 80,302.54 | 274.14 | 690.33 VRAMピーク（33.71%）＋36.61 GTTピーク | [b1](benchmarks/ncnn_ps4_20261004/ultra-stream128-b1.json) / [b4](benchmarks/ncnn_ps4_20261004/ultra-stream128-b4.json) |
+
+Switchの外部監視ではRSS最大660.27MiB。プロセス内監視と範囲が異なるため、早見表とは別に[全測定一覧の補助観測](benchmarks/all_measurements.md#補助観測と旧記録)へ掲載した。モデル間比較の例として、旧DirectML・batch4のultraはbalancedの時間3.78倍、VRAMピーク3.21倍、highは時間2.78倍、VRAMピーク1.76倍。同じ旧測定内での比較であり、最新のncnn/TensorRT値との直接比較には使わない。
+
+
 ## Issue #21: ncnn Vulkan 検証
 
 2026-10-02、Intel Core i5-6500T / HD Graphics 530、RAM約15 GiBのLinux環境で検証した。`/dev/dri`が公開されず、Vulkanの実GPUを利用できない。pnnx 20260526で元PyTorchの `convnextv2_huge.dbv4-full` をbatch 1・入力512×512・FP32で変換し、`model.ncnn.param`（約71 KiB）と `.bin`（約2.58 GiB）を生成した。ncnn 1.0.20260526で両ファイルの読み込みとCPU推論が成功し、入出力名 `in0` / `out0` を確認した。元のGlobalResponseNormの `torch.addcmul` は同値の基本演算に変えてからtraceし、pnnx未変換演算が残らないことを確認した。Mesa llvmpipe上の合成Sigmoidグラフでは入力CHW `(3,4,4)` → 出力48値の推論が成功した。llvmpipeはVulkanのCPUデバイスなので自動GPU選択から除外する。

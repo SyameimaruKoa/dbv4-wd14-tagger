@@ -9,6 +9,7 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
+import threading
 import weakref
 from typing import Sequence
 
@@ -223,6 +224,7 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
                  precision='fp32', part_size_mib=128):
         from partition_ncnn_model import partition_model
 
+        self._inference_lock = threading.Lock()
         self.part_directory, self.parts = partition_model(model_prefix, part_size_mib)
         self.gpu_index = gpu_index
         first = self.part_directory / self.parts[0]['param']
@@ -234,6 +236,12 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
               flush=True)
 
     def predict_preprocessed(self, batch_nchw):
+        # Server workers share this runtime. Reloading/clearing a section must
+        # finish before another request can replace the same native net.
+        with self._inference_lock:
+            return self._predict_sections(batch_nchw)
+
+    def _predict_sections(self, batch_nchw):
         import ncnn
 
         results = []

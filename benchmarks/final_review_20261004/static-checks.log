@@ -1,0 +1,4 @@
+Python AST syntax: 32 files passed
+Bash/Zsh syntax passed
+178 source measurements and deterministic rendered tables verified
+README/BENCHMARKS/all_measurements local links verified

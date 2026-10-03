@@ -58,7 +58,7 @@ DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`と�
 
 ### ベンチマーク結果
 
-GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。
+GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。 保存済み178件を集約した[全測定一覧](benchmarks/all_measurements.md)では、速度・RAM・VRAM・GTT・取得できた使用率と、同条件でのモデル間の比を確認できる。未測定は未測定として記載し、GPUメモリのピークと時点値を区別している。
 
 Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、AMDはDirectML→ncnn Vulkanを先に確認する。LinuxではNVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、ROCm利用可能なAMDはMIGraphX→ROCm→ncnn Vulkan、旧AMD・PS4 Linux・Switch Linuxはncnn Vulkanから確認する。両OSともncnnの次はWebGPU、CPUの順に起動検証する。`--provider` / `-Provider`を指定すると選択を固定し、初期化に失敗した場合は理由を表示して停止する。TensorRTだけが利用できずCUDAが使える場合は、同じ`venv_tensorrt`をCUDA用に再利用する。各バックエンドは独立した`venv_*`を使用する。
 
@@ -79,6 +79,8 @@ Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn
 精度は `fp32`（既定）、`fp16-storage`、`fp16-packed`、`fp16-arithmetic`。モデル変換は共通で、実行時のncnn設定だけを切り替える。ncnn形式はbatch 1のグラフで、複数枚は順に推論する。VulkanドライバーとVulkan対応のncnn Python bindingが必要。Python wheelにVulkanが含まれない環境ではVulkan有効でncnnをビルドするか、WebGPUを使用する。既存のタグ、rating、XMP、Server/Client処理は同じ確率配列を利用する。実機比較の状態は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
 Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-part-size-mib 128` で区間ごとに読み込み、実GPU推論とCPU参照の一致を確認した。例えば `./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 -p /path/to/images`。元のモデル・重みは変更せず、分岐をまたがない位置で切り、1区間ずつ読み込み・解放する。128MiBは重み量の目安で、今回の最大区間は約243MiB。初回は同じ容量の分割キャッシュを追加するため約2.58GiBの空き容量が必要。毎画像で重みを再読み込みするので、メモリに余裕のあるPCでは既定の分割なし（0）を使う。Switchの初回測定は約75秒/枚だったため、Server/Clientでは `client_timeout` と `client_batch_timeout` を600秒などに設定する。旧NVIDIA ICDを選ぶ必要がある環境では、実行前に `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` を `/etc/vulkan/icd.d/nvidia_icd.json` へ設定する。実測条件は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+
+分割推論をServerで使う場合は、複数Clientの推論を順番に実行する。区間の読み込み・解放が他の接続と干渉しないようにし、同時実行によるメモリ増加も抑える。待ち時間には先行するClientの処理時間も含まれるため、接続数に合わせてタイムアウトを調整する。
 
 PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 

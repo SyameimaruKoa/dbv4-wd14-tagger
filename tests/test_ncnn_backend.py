@@ -4,6 +4,8 @@ from pathlib import Path
 import sys
 import tempfile
 import subprocess
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 import unittest
 import weakref
@@ -13,7 +15,7 @@ import numpy as np
 from PIL import Image
 
 from convert_ncnn_model import convert
-from ncnn_backend import (NcnnRuntimeModel, configure_vulkan_environment,
+from ncnn_backend import (NcnnRuntimeModel, StreamingNcnnRuntimeModel, configure_vulkan_environment,
                           ensure_ncnn_model, vulkan_device, _register_vulkan_shutdown)
 
 
@@ -126,6 +128,79 @@ class NcnnBackendTests(unittest.TestCase):
             self.assertTrue(net.opt.use_fp16_storage)
             self.assertTrue(net.opt.use_fp16_packed)
             self.assertFalse(net.opt.use_fp16_arithmetic)
+
+    def test_streaming_requests_do_not_clear_another_requests_net(self):
+        entered = threading.Event()
+        release = threading.Event()
+        second_started = threading.Event()
+        second_net_created = threading.Event()
+        nets = []
+
+        class Mat:
+            def __init__(self, value):
+                self.value = value
+
+            def clone(self):
+                return self.value.copy()
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                self.index = len(nets)
+                nets.append(self)
+                if self.index == 1:
+                    second_net_created.set()
+
+            def clear(self):
+                self.cleared = True
+
+            def create_extractor(self):
+                net = self
+
+                class Extractor(FakeExtractor):
+                    def extract(self, name):
+                        if net.index == 0:
+                            entered.set()
+                            if not release.wait(3):
+                                raise RuntimeError('test inference timed out')
+                        if net.cleared:
+                            raise RuntimeError('active request net was cleared')
+                        return 0, self.input_tensor[1].reshape(-1)[:4].copy()
+
+                return Extractor(None)
+
+        runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
+        runtime._inference_lock = threading.Lock()
+        runtime.part_directory = Path('.')
+        runtime.parts = [{'param': 'part.param', 'bin': 'part.bin',
+                          'input': 'in', 'output': 'out'}]
+        runtime.options = {}
+        runtime.gpu_index = 0
+        runtime.metadata = SimpleNamespace(label_count=4)
+        runtime.net = None
+        binding = SimpleNamespace(Net=Net, Mat=Mat)
+
+        def second_request():
+            second_started.set()
+            return runtime.predict_preprocessed(np.full((1, 3, 2, 2), 0.8, np.float32))
+
+        with patch.dict(sys.modules, {'ncnn': binding}), ThreadPoolExecutor(2) as pool:
+            first = pool.submit(runtime.predict_preprocessed,
+                                np.full((1, 3, 2, 2), 0.2, np.float32))
+            try:
+                self.assertTrue(entered.wait(3))
+                second = pool.submit(second_request)
+                self.assertTrue(second_started.wait(3))
+                self.assertFalse(second_net_created.wait(0.1))
+                self.assertFalse(second.done())
+                self.assertEqual(len(nets), 1)
+            finally:
+                release.set()
+            np.testing.assert_allclose(first.result(timeout=3)[0], [0.2] * 4)
+            np.testing.assert_allclose(second.result(timeout=3)[0], [0.8] * 4)
+        self.assertEqual(len(nets), 2)
+        self.assertTrue(all(net.cleared for net in nets))
 
     def test_software_vulkan_device_is_rejected(self):
         ncnn = SimpleNamespace(get_gpu_count=lambda: 1,

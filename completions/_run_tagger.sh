@@ -16,6 +16,7 @@ _dbv4_wd14_tagger() {
     _arguments -s -S \
         '--provider[実行EP]:provider:(cpu cuda tensorrt intel webgpu migraphx rocm ncnn)' \
         '--ncnn-precision[ncnnの精度設定]:precision:(fp32 fp16-storage fp16-packed fp16-arithmetic)' \
+        '--ncnn-part-size-mib[重み分割目安MiB（0=なし）]:MiB:' \
         '--webgpu[WebGPUを使用]' \
         '--gpu-index[CUDA/TensorRT/MIGraphXの番号]:index:' \
         '--directml-device-index[DirectML DXGI番号]:index:' \

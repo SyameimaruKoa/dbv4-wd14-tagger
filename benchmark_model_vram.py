@@ -41,7 +41,7 @@ def measure(profile: str, batch_size: int, iterations: int) -> dict:
     poller = threading.Thread(target=poll, daemon=True)
     poller.start()
     started = time.perf_counter()
-    runtime = load_runtime_model(True, profile)
+    runtime = load_runtime_model(True, profile, provider="directml")
     images = [Image.new("RGB", (640, 480), (127, 63, 191)) for _ in range(batch_size)]
     inference_times = []
     try:
