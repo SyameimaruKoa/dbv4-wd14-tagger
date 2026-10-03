@@ -1,0 +1,20 @@
+{
+  "mode": "f16",
+  "outputs": [
+    {
+      "shape": [
+        12476
+      ],
+      "nan_count": 12476,
+      "inf_count": 0,
+      "dtype": "float32"
+    }
+  ],
+  "options": {
+    "device_type": "GPU",
+    "load_config": "{\"GPU\": {\"INFERENCE_PRECISION_HINT\": \"f16\"}}"
+  },
+  "result": "rejected",
+  "error": "DBV4 output\u306b\u975e\u6709\u9650\u5024\u304c\u3042\u308a\u307e\u3059\u3002",
+  "seconds": 17.918882199999643
+}
