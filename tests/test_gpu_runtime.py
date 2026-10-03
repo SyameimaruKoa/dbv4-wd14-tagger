@@ -21,6 +21,17 @@ def adapter(vendor_id, dxgi='0'):
 
 
 class GPUInitializationTests(unittest.TestCase):
+    def test_openvino_keeps_fp32_on_the_explicit_intel_gpu(self):
+        with patch.object(app.ort, 'get_available_providers', return_value=[
+                'OpenVINOExecutionProvider', 'CPUExecutionProvider']), patch.object(
+                gpu, 'prepare_openvino', return_value='Intel Iris Xe') as inspect:
+            providers = app.build_providers(True, 'intel', openvino_device='GPU.2')
+        inspect.assert_called_once_with('GPU.2')
+        name, options = providers[0]
+        self.assertEqual(name, 'OpenVINOExecutionProvider')
+        self.assertEqual(options['device_type'], 'GPU.2')
+        self.assertEqual(json.loads(options['load_config'])['GPU']['INFERENCE_PRECISION_HINT'], 'f32')
+
     def test_powershell_tensorrt_fallback_reuses_prepared_environment(self):
         launcher = (Path(app.SCRIPT_DIR) / 'run_tagger.ps1').read_text(encoding='utf-8-sig')
         fallback = "if ($Candidate -eq 'tensorrt' -and"

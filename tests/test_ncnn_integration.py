@@ -26,7 +26,8 @@ class NcnnIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.runtime = app.load_runtime_model(
-            True, 'ultra', provider='ncnn',
+            True, 'ultra', provider=os.environ.get('DBV4_NCNN_INTEGRATION_PROVIDER', 'ncnn'),
+            openvino_device=os.environ.get('DBV4_NCNN_OPENVINO_DEVICE'),
             gpu_index=int(os.environ.get('DBV4_NCNN_GPU_INDEX', '0')),
             model_file=os.environ.get('DBV4_NCNN_MODEL_PREFIX'),
             ncnn_part_size_mib=int(os.environ.get('DBV4_NCNN_PART_SIZE_MIB', '0')))
