@@ -185,6 +185,22 @@ warm-up 1回・測定3回。ncnn b4はbatch 1グラフの逐次処理。GPU試�
 
 利用者による追加確認で、充電器のSwitchBotに「毎朝05:00に1分間電源を切る」設定が残っていたことが判明した。05:00:03のAC切断と時刻が一致し、今回のスリープを引き起こした外部電源操作として説明できる。SwitchBot本体の履歴は未取得で、設定解除済みとは扱わない。追加確認でもスリープ前後のBootIdは266のまま、05:40時点のOS稼働時間は約66分、04:34:15の起動から継続していた。今回の接続停止調査は外部電源操作後の無操作S3スリープとして完了し、上記の推論・精度・通信・XMP試験結果は有効。IntelのCISA診断は別の依存ライブラリ側の記録として保持する。
 
+### AERO UbuntuのNVIDIA確認（2026-10-04）
+
+`ubuntu-komeiziaya` の `/opt/dbv4-wd14-tagger` をGit経由で更新し、RTX 2070 Max-Qのultraを確認した。[実機情報](benchmarks/nvidia_linux_20261004/hardware.log)はkernel 7.0.0-38-generic、NVIDIA driver 610.57.04、VRAM 8 GiB。Python 3.13.16、ORT GPU 1.26.0、TensorRT cu12 10.16.1.11。ncnn VulkanはRTXのindex 1、CUDA／TensorRTはindex 0を指定した。
+
+| 経路 | batch 1 ms/枚 | batch 4 ms/枚 |
+| --- | ---: | ---: |
+| ncnn FP32 | 1,015.81 | 1,019.59 |
+| CUDA | 402.75 | 397.56 |
+| TensorRT | 295.60 | 296.39 |
+
+warm-up 1回・反復3回、各GPU測定は順番に実行した。ncnn b4は固定batch 1グラフの逐次処理。[6条件の照合](benchmarks/nvidia_linux_20261004/comparison-summary.json)では同じ入力・metadataの全12,476確率がCPU参照の `atol=1e-4, rtol=1e-3` 内、採用タグ差0件、最大確率差4.65e-6未満、rating最大差1.2e-7未満。NVIDIAメモリ値はGPU全体の時点値でピークではない。Windowsとの速度差をOS単独の効果とは解釈しない。
+
+初回の[TensorRT失敗](benchmarks/nvidia_linux_20261004/tensorrt-b1-initial.log)は `libnvonnxparser.so.10` の読み込みエラー。ライブラリはpip環境に存在したが、実装がnvinfer／pluginだけを先読みし、ORT bridgeが必要とするparserを先読みしていなかった。Linuxの読み込み処理へparserを追加し、ハンドルを保持するよう修正した。依存関係は[ORT公式のパッケージ定義](https://github.com/microsoft/onnxruntime/blob/main/setup.py)とも一致する。修正をGit経由で同期し、TensorRT b1／b4の実EP実行と数値一致を確認した。
+
+[ncnn](benchmarks/nvidia_linux_20261004/ncnn-integration.log)、[CUDA](benchmarks/nvidia_linux_20261004/cuda-integration.log)、[TensorRT](benchmarks/nvidia_linux_20261004/tensorrt-integration.log)の実GPU統合テストは各2件成功（12.804／8.705／11.351秒）。単独／原画像／前処理済みServer/Client転送のXMP一致も確認した。[通常Bash自動起動](benchmarks/nvidia_linux_20261004/auto-launcher.log)はTensorRTを選び、実EP実行を確認して終了コード0。初回のCUDAへの切り替えは別ログとして保持している。修正後の全10終了コードは0、ローカルのGPU初期化関連テスト26件も成功。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。
