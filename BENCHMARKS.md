@@ -171,6 +171,18 @@ warm-up 1回・測定3回。ncnn b4はbatch 1グラフの逐次処理。GPU試�
 
 [通常テスト](benchmarks/aero_regression_20261004/unit-tests.log)は114件実行、8件skipで成功。4件はWindows対象外のBash試験、4件は別途有効化が必要なGPU試験。初回はテスト専用依存 `httpx` 不足で失敗し、`venv_intel` へ追加して全件を再実行した。今回の確認範囲では新たな推論・通信・XMPの異常を認めず、追加のアプリ修正は行っていない。
 
+### AEROの応答停止・電源状態調査（2026-10-04）
+
+上記試験後にSSH接続が途絶え、利用者から電源が落ちているとの報告を受けた。試験終了コードだけでホスト全体の正常性を判断した前の報告は不十分だった。復帰後の[電源イベント原文とXML](benchmarks/aero_regression_20261004/power-investigation/events.json)を取得し、次を確認した（日本時間）。
+
+- 05:00:03：Kernel-Power 105の `AcOnline=false`。WindowsがAC電源なしを検出した。RemainingCapacity／FullChargeCapacityはどちらも94,240で、残量切れではない。
+- 05:00:22：Kernel-Power 42、スリープ理由 `System Idle`。S3スリープへ移行。
+- 05:35:48：Power-Troubleshooter 1による復帰記録。解除元は `Power Button`、元のスリープ時刻は05:00:22。OSの起動時刻は04:34:15のまま。
+
+[電源ポリシー](benchmarks/aero_regression_20261004/power-investigation/sleep-policy.log)はSmartmanager Balanced、ACの自動スリープ0秒（無効）、DCは600秒（10分）。AC切断から19秒でスリープしているので、切断後に10分経過したとは解釈しない。無操作時間が既に蓄積していた可能性はあるが、その起点は未測定。今回の直接の応答停止原因はWindowsが記録した無操作S3スリープであり、AC検出の切り替わりが直前に起きている。ACが認識されなくなった物理的理由（抜線・接触・アダプター等）は特定できない。現在は `AcOnline=true`。直近の調査範囲ではKernel-Power 41、EventLog 6008、User32 1074、WHEAの障害記録はなく、新しいクラッシュダンプもない。Windowsの設定は変更していない。
+
+[kernel.errors.txt](benchmarks/aero_regression_20261004/power-investigation/kernel.errors.txt)は04:39:54作成、04:53:42最終更新のCISA GPUカーネル検証診断で、Windowsカーネルのクラッシュダンプではない。2件の診断文は[OpenVINOの既存報告 #31511](https://github.com/openvinotoolkit/openvino/issues/31511)と一致する。同報告も出力が得られた状態での診断を扱っている。今回のFP32全確率・XMP検証は成功しているが、診断が解消済みとは主張しない。診断ファイル生成を今回のS3移行の原因と結び付ける証拠はない。S3では外観が電源OFFに見える場合があることは[Microsoftの電源状態資料](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/system-power-states)にも記載されている。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。
