@@ -8,7 +8,7 @@
 - VRAMピーク・増分・スナップショットは別指標。GPU全体の値には画面表示や他プロセスも含む。スナップショット最大は推論中の連続監視ピークではない。
 - VRAM使用率はピーク÷記録されたVRAM総容量。Intel/AMDの共有メモリ、GTT、Switchの統合RAMは独立VRAMと合算しない。総容量未記録では割合を算出しない。
 - Linux AEROのGPUメモリ時点使用率は同じ測定組のhardware.logにある8192MiBを分母にする。旧DirectMLはlegacy_results.mdの8GiBを使用。
-- GPU稼働率は測定中の平均で、VRAM使用率とは異なる。旧DirectMLは前処理込み3回の平均で、中央値と混ぜない。Windowsの最新測定ではRSS監視がなく、未測定として表示する。
+- GPU稼働率は測定中の平均・最大で、VRAM使用率とは異なる。旧DirectMLは前処理込み3回の平均で、中央値と混ぜない。Windowsの最新測定ではRSS監視がなく、未測定として表示する。
 - 2026-09-23はwarmup3・20回×3セットのsession.run時間。最新ultraは画像が異なり、warmup/回数も各JSONに従う。ncnnのbatch4は順次4枚。PS4/Switchは測定1回。
 - 初期化時間は記録方式によってセッション構築のみ／取得・変換・起動検証込みが異なる。別日・別OS・別モデルの値から条件を揃えた性能差は断定しない。
 - AMD診断の精度不一致や失敗も残す。「記録あり」は速度が保存された意味で、精度合格の意味ではない。ΔはCPU参照との最大絶対差。全確率の合格判定は各comparison-summary.jsonを参照。
@@ -54,16 +54,16 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [cuda-b1 / ultra / b1](aero_regression_20261004/cuda-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,297.00 | 未測定 | 未測定 |
-| [cuda-b4 / ultra / b4](aero_regression_20261004/cuda-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 5,323.00 | 未測定 | 未測定 |
-| [intel-openvino-b1 / ultra / b1](aero_regression_20261004/intel-openvino-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [intel-openvino-b4 / ultra / b4](aero_regression_20261004/intel-openvino-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [rtx-ncnn-b1 / ultra / b1](aero_regression_20261004/rtx-ncnn-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [rtx-ncnn-b4 / ultra / b4](aero_regression_20261004/rtx-ncnn-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [tensorrt-b1 / ultra / b1](aero_regression_20261004/tensorrt-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,101.00 | 未測定 | 未測定 |
-| [tensorrt-b4 / ultra / b4](aero_regression_20261004/tensorrt-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,117.00 | 未測定 | 未測定 |
+| [cuda-b1 / ultra / b1](aero_regression_20261004/cuda-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,297.00 | 未測定 | 未測定 / 未測定 |
+| [cuda-b4 / ultra / b4](aero_regression_20261004/cuda-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 5,323.00 | 未測定 | 未測定 / 未測定 |
+| [intel-openvino-b1 / ultra / b1](aero_regression_20261004/intel-openvino-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [intel-openvino-b4 / ultra / b4](aero_regression_20261004/intel-openvino-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [rtx-ncnn-b1 / ultra / b1](aero_regression_20261004/rtx-ncnn-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [rtx-ncnn-b4 / ultra / b4](aero_regression_20261004/rtx-ncnn-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [tensorrt-b1 / ultra / b1](aero_regression_20261004/tensorrt-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,101.00 | 未測定 | 未測定 / 未測定 |
+| [tensorrt-b4 / ultra / b4](aero_regression_20261004/tensorrt-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,117.00 | 未測定 | 未測定 / 未測定 |
 
 ## amd_barcelo_4gb
 
@@ -79,13 +79,13 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [amd_barcelo_4gb / lightweight / b1](amd_barcelo_4gb.json) | 393.60 | 3.34 | 764.52 | 18.66 | 300.80 | 未測定 | 94.77 | 未測定 |
-| [amd_barcelo_4gb / balanced / b1](amd_barcelo_4gb.json) | 936.32 | 7.94 | 1,116.21 | 27.25 | 652.50 | 未測定 | 98.81 | 未測定 |
-| [amd_barcelo_4gb / high / b1](amd_barcelo_4gb.json) | 2,196.20 | 18.62 | 2,145.53 | 52.38 | 1,681.80 | 未測定 | 110.81 | 未測定 |
-| [amd_barcelo_4gb / ultra / b1](amd_barcelo_4gb.json) | 257.81 | 2.19 | 3,926.68 | 95.87 | 3,369.50 | 未測定 | 161.06 | 未測定 |
-| [amd_barcelo_4gb / wd14_v3 / b1](amd_barcelo_4gb.json) | 646.02 | 5.48 | 1,425.30 | 34.80 | 949.00 | 未測定 | 100.80 | 未測定 |
+| [amd_barcelo_4gb / lightweight / b1](amd_barcelo_4gb.json) | 393.60 | 3.34 | 764.52 | 18.66 | 300.80 | 未測定 | 94.77 | 未測定 / 未測定 |
+| [amd_barcelo_4gb / balanced / b1](amd_barcelo_4gb.json) | 936.32 | 7.94 | 1,116.21 | 27.25 | 652.50 | 未測定 | 98.81 | 未測定 / 未測定 |
+| [amd_barcelo_4gb / high / b1](amd_barcelo_4gb.json) | 2,196.20 | 18.62 | 2,145.53 | 52.38 | 1,681.80 | 未測定 | 110.81 | 未測定 / 未測定 |
+| [amd_barcelo_4gb / ultra / b1](amd_barcelo_4gb.json) | 257.81 | 2.19 | 3,926.68 | 95.87 | 3,369.50 | 未測定 | 161.06 | 未測定 / 未測定 |
+| [amd_barcelo_4gb / wd14_v3 / b1](amd_barcelo_4gb.json) | 646.02 | 5.48 | 1,425.30 | 34.80 | 949.00 | 未測定 | 100.80 | 未測定 / 未測定 |
 
 ## amd_barcelo_512mb
 
@@ -101,13 +101,13 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [amd_barcelo_512mb / wd14_v3 / b1](amd_barcelo_512mb.json) | 881.48 | 5.75 | 504.15 | 98.47 | 35.60 | 未測定 | 1,169.59 | 未測定 |
-| [amd_barcelo_512mb / lightweight / b1](amd_barcelo_512mb.json) | 380.24 | 2.48 | 493.61 | 96.41 | 20.70 | 未測定 | 610.15 | 未測定 |
-| [amd_barcelo_512mb / balanced / b1](amd_barcelo_512mb.json) | 936.11 | 6.11 | 504.12 | 98.46 | 41.20 | 未測定 | 974.95 | 未測定 |
-| [amd_barcelo_512mb / high / b1](amd_barcelo_512mb.json) | 2,194.16 | 14.32 | 504.88 | 98.61 | 54.40 | 未測定 | 1,934.83 | 未測定 |
-| [amd_barcelo_512mb / ultra / b1](amd_barcelo_512mb.json) | 2,092.11 | 13.65 | 507.78 | 99.18 | 27.00 | 未測定 | 3,585.79 | 未測定 |
+| [amd_barcelo_512mb / wd14_v3 / b1](amd_barcelo_512mb.json) | 881.48 | 5.75 | 504.15 | 98.47 | 35.60 | 未測定 | 1,169.59 | 未測定 / 未測定 |
+| [amd_barcelo_512mb / lightweight / b1](amd_barcelo_512mb.json) | 380.24 | 2.48 | 493.61 | 96.41 | 20.70 | 未測定 | 610.15 | 未測定 / 未測定 |
+| [amd_barcelo_512mb / balanced / b1](amd_barcelo_512mb.json) | 936.11 | 6.11 | 504.12 | 98.46 | 41.20 | 未測定 | 974.95 | 未測定 / 未測定 |
+| [amd_barcelo_512mb / high / b1](amd_barcelo_512mb.json) | 2,194.16 | 14.32 | 504.88 | 98.61 | 54.40 | 未測定 | 1,934.83 | 未測定 / 未測定 |
+| [amd_barcelo_512mb / ultra / b1](amd_barcelo_512mb.json) | 2,092.11 | 13.65 | 507.78 | 99.18 | 27.00 | 未測定 | 3,585.79 | 未測定 / 未測定 |
 
 ## amd_windows_20260923
 
@@ -130,20 +130,20 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [balanced-b1-cpu / balanced / b1](amd_windows_20260923/balanced-b1-cpu.json) | 1,060.88 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-directml / balanced / b1](amd_windows_20260923/balanced-b1-directml.json) | 636.77 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-webgpu / balanced / b1](amd_windows_20260923/balanced-b1-webgpu.json) | 718.79 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cpu / balanced / b4](amd_windows_20260923/balanced-b4-cpu.json) | 1,367.15 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-directml / balanced / b4](amd_windows_20260923/balanced-b4-directml.json) | 601.12 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-webgpu / balanced / b4](amd_windows_20260923/balanced-b4-webgpu.json) | 601.95 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cpu / wd14_v3 / b1](amd_windows_20260923/wd14_v3-b1-cpu.json) | 1,265.62 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-directml / wd14_v3 / b1](amd_windows_20260923/wd14_v3-b1-directml.json) | 745.66 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-webgpu / wd14_v3 / b1](amd_windows_20260923/wd14_v3-b1-webgpu.json) | 782.88 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cpu / wd14_v3 / b4](amd_windows_20260923/wd14_v3-b4-cpu.json) | 1,878.36 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-directml / wd14_v3 / b4](amd_windows_20260923/wd14_v3-b4-directml.json) | 633.63 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-webgpu / wd14_v3 / b4](amd_windows_20260923/wd14_v3-b4-webgpu.json) | 708.09 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [balanced-b1-cpu / balanced / b1](amd_windows_20260923/balanced-b1-cpu.json) | 1,060.88 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-directml / balanced / b1](amd_windows_20260923/balanced-b1-directml.json) | 636.77 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-webgpu / balanced / b1](amd_windows_20260923/balanced-b1-webgpu.json) | 718.79 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cpu / balanced / b4](amd_windows_20260923/balanced-b4-cpu.json) | 1,367.15 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-directml / balanced / b4](amd_windows_20260923/balanced-b4-directml.json) | 601.12 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-webgpu / balanced / b4](amd_windows_20260923/balanced-b4-webgpu.json) | 601.95 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cpu / wd14_v3 / b1](amd_windows_20260923/wd14_v3-b1-cpu.json) | 1,265.62 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-directml / wd14_v3 / b1](amd_windows_20260923/wd14_v3-b1-directml.json) | 745.66 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-webgpu / wd14_v3 / b1](amd_windows_20260923/wd14_v3-b1-webgpu.json) | 782.88 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cpu / wd14_v3 / b4](amd_windows_20260923/wd14_v3-b4-cpu.json) | 1,878.36 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-directml / wd14_v3 / b4](amd_windows_20260923/wd14_v3-b4-directml.json) | 633.63 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-webgpu / wd14_v3 / b4](amd_windows_20260923/wd14_v3-b4-webgpu.json) | 708.09 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## intel2_linux_20260923
 
@@ -166,20 +166,20 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [balanced-b1-cpu / balanced / b1](intel2_linux_20260923/balanced-b1-cpu.json) | 1,094.38 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-intel / balanced / b1](intel2_linux_20260923/balanced-b1-intel.json) | 1,918.58 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-webgpu / balanced / b1](intel2_linux_20260923/balanced-b1-webgpu.json) | 625.59 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cpu / balanced / b4](intel2_linux_20260923/balanced-b4-cpu.json) | 1,380.54 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-intel / balanced / b4](intel2_linux_20260923/balanced-b4-intel.json) | 1,517.64 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-webgpu / balanced / b4](intel2_linux_20260923/balanced-b4-webgpu.json) | 601.07 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cpu / wd14_v3 / b1](intel2_linux_20260923/wd14_v3-b1-cpu.json) | 1,267.35 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-intel / wd14_v3 / b1](intel2_linux_20260923/wd14_v3-b1-intel.json) | 1,656.09 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel2_linux_20260923/wd14_v3-b1-webgpu.json) | 595.79 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cpu / wd14_v3 / b4](intel2_linux_20260923/wd14_v3-b4-cpu.json) | 1,893.98 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-intel / wd14_v3 / b4](intel2_linux_20260923/wd14_v3-b4-intel.json) | 1,656.07 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel2_linux_20260923/wd14_v3-b4-webgpu.json) | 597.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [balanced-b1-cpu / balanced / b1](intel2_linux_20260923/balanced-b1-cpu.json) | 1,094.38 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-intel / balanced / b1](intel2_linux_20260923/balanced-b1-intel.json) | 1,918.58 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-webgpu / balanced / b1](intel2_linux_20260923/balanced-b1-webgpu.json) | 625.59 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cpu / balanced / b4](intel2_linux_20260923/balanced-b4-cpu.json) | 1,380.54 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-intel / balanced / b4](intel2_linux_20260923/balanced-b4-intel.json) | 1,517.64 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-webgpu / balanced / b4](intel2_linux_20260923/balanced-b4-webgpu.json) | 601.07 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cpu / wd14_v3 / b1](intel2_linux_20260923/wd14_v3-b1-cpu.json) | 1,267.35 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-intel / wd14_v3 / b1](intel2_linux_20260923/wd14_v3-b1-intel.json) | 1,656.09 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel2_linux_20260923/wd14_v3-b1-webgpu.json) | 595.79 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cpu / wd14_v3 / b4](intel2_linux_20260923/wd14_v3-b4-cpu.json) | 1,893.98 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-intel / wd14_v3 / b4](intel2_linux_20260923/wd14_v3-b4-intel.json) | 1,656.07 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel2_linux_20260923/wd14_v3-b4-webgpu.json) | 597.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## intel3_linux_20260923
 
@@ -202,20 +202,20 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [balanced-b1-cpu / balanced / b1](intel3_linux_20260923/balanced-b1-cpu.json) | 1,053.02 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-intel / balanced / b1](intel3_linux_20260923/balanced-b1-intel.json) | 1,538.06 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-webgpu / balanced / b1](intel3_linux_20260923/balanced-b1-webgpu.json) | 576.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cpu / balanced / b4](intel3_linux_20260923/balanced-b4-cpu.json) | 1,350.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-intel / balanced / b4](intel3_linux_20260923/balanced-b4-intel.json) | 1,538.02 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-webgpu / balanced / b4](intel3_linux_20260923/balanced-b4-webgpu.json) | 577.22 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cpu / wd14_v3 / b1](intel3_linux_20260923/wd14_v3-b1-cpu.json) | 1,221.97 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-intel / wd14_v3 / b1](intel3_linux_20260923/wd14_v3-b1-intel.json) | 1,688.90 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel3_linux_20260923/wd14_v3-b1-webgpu.json) | 588.10 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cpu / wd14_v3 / b4](intel3_linux_20260923/wd14_v3-b4-cpu.json) | 1,847.31 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-intel / wd14_v3 / b4](intel3_linux_20260923/wd14_v3-b4-intel.json) | 1,688.70 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel3_linux_20260923/wd14_v3-b4-webgpu.json) | 588.75 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [balanced-b1-cpu / balanced / b1](intel3_linux_20260923/balanced-b1-cpu.json) | 1,053.02 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-intel / balanced / b1](intel3_linux_20260923/balanced-b1-intel.json) | 1,538.06 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-webgpu / balanced / b1](intel3_linux_20260923/balanced-b1-webgpu.json) | 576.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cpu / balanced / b4](intel3_linux_20260923/balanced-b4-cpu.json) | 1,350.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-intel / balanced / b4](intel3_linux_20260923/balanced-b4-intel.json) | 1,538.02 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-webgpu / balanced / b4](intel3_linux_20260923/balanced-b4-webgpu.json) | 577.22 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cpu / wd14_v3 / b1](intel3_linux_20260923/wd14_v3-b1-cpu.json) | 1,221.97 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-intel / wd14_v3 / b1](intel3_linux_20260923/wd14_v3-b1-intel.json) | 1,688.90 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel3_linux_20260923/wd14_v3-b1-webgpu.json) | 588.10 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cpu / wd14_v3 / b4](intel3_linux_20260923/wd14_v3-b4-cpu.json) | 1,847.31 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-intel / wd14_v3 / b4](intel3_linux_20260923/wd14_v3-b4-intel.json) | 1,688.70 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel3_linux_20260923/wd14_v3-b4-webgpu.json) | 588.75 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## intel_linux_20260923
 
@@ -238,20 +238,20 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [balanced-b1-cpu / balanced / b1](intel_linux_20260923/balanced-b1-cpu.json) | 1,071.17 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-intel / balanced / b1](intel_linux_20260923/balanced-b1-intel.json) | 1,924.47 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-webgpu / balanced / b1](intel_linux_20260923/balanced-b1-webgpu.json) | 699.18 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cpu / balanced / b4](intel_linux_20260923/balanced-b4-cpu.json) | 1,360.68 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-intel / balanced / b4](intel_linux_20260923/balanced-b4-intel.json) | 1,550.22 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-webgpu / balanced / b4](intel_linux_20260923/balanced-b4-webgpu.json) | 698.71 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cpu / wd14_v3 / b1](intel_linux_20260923/wd14_v3-b1-cpu.json) | 1,236.95 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-intel / wd14_v3 / b1](intel_linux_20260923/wd14_v3-b1-intel.json) | 2,080.57 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel_linux_20260923/wd14_v3-b1-webgpu.json) | 653.65 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cpu / wd14_v3 / b4](intel_linux_20260923/wd14_v3-b4-cpu.json) | 1,863.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-intel / wd14_v3 / b4](intel_linux_20260923/wd14_v3-b4-intel.json) | 1,700.34 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel_linux_20260923/wd14_v3-b4-webgpu.json) | 660.81 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [balanced-b1-cpu / balanced / b1](intel_linux_20260923/balanced-b1-cpu.json) | 1,071.17 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-intel / balanced / b1](intel_linux_20260923/balanced-b1-intel.json) | 1,924.47 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-webgpu / balanced / b1](intel_linux_20260923/balanced-b1-webgpu.json) | 699.18 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cpu / balanced / b4](intel_linux_20260923/balanced-b4-cpu.json) | 1,360.68 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-intel / balanced / b4](intel_linux_20260923/balanced-b4-intel.json) | 1,550.22 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-webgpu / balanced / b4](intel_linux_20260923/balanced-b4-webgpu.json) | 698.71 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cpu / wd14_v3 / b1](intel_linux_20260923/wd14_v3-b1-cpu.json) | 1,236.95 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-intel / wd14_v3 / b1](intel_linux_20260923/wd14_v3-b1-intel.json) | 2,080.57 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel_linux_20260923/wd14_v3-b1-webgpu.json) | 653.65 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cpu / wd14_v3 / b4](intel_linux_20260923/wd14_v3-b4-cpu.json) | 1,863.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-intel / wd14_v3 / b4](intel_linux_20260923/wd14_v3-b4-intel.json) | 1,700.34 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel_linux_20260923/wd14_v3-b4-webgpu.json) | 660.81 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## intel_windows_20260923
 
@@ -278,24 +278,24 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [balanced-b1-cpu / balanced / b1](intel_windows_20260923/balanced-b1-cpu.json) | 1,045.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-directml / balanced / b1](intel_windows_20260923/balanced-b1-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-intel / balanced / b1](intel_windows_20260923/balanced-b1-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-webgpu / balanced / b1](intel_windows_20260923/balanced-b1-webgpu.json) | 708.13 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cpu / balanced / b4](intel_windows_20260923/balanced-b4-cpu.json) | 1,369.37 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-directml / balanced / b4](intel_windows_20260923/balanced-b4-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-intel / balanced / b4](intel_windows_20260923/balanced-b4-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-webgpu / balanced / b4](intel_windows_20260923/balanced-b4-webgpu.json) | 603.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cpu / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-cpu.json) | 1,252.09 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-directml / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-directml.json) | 1,498.73 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-intel / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-webgpu.json) | 716.78 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cpu / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-cpu.json) | 1,879.89 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-directml / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-directml.json) | 2,577.54 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-intel / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-webgpu.json) | 781.94 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [balanced-b1-cpu / balanced / b1](intel_windows_20260923/balanced-b1-cpu.json) | 1,045.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-directml / balanced / b1](intel_windows_20260923/balanced-b1-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-intel / balanced / b1](intel_windows_20260923/balanced-b1-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-webgpu / balanced / b1](intel_windows_20260923/balanced-b1-webgpu.json) | 708.13 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cpu / balanced / b4](intel_windows_20260923/balanced-b4-cpu.json) | 1,369.37 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-directml / balanced / b4](intel_windows_20260923/balanced-b4-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-intel / balanced / b4](intel_windows_20260923/balanced-b4-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-webgpu / balanced / b4](intel_windows_20260923/balanced-b4-webgpu.json) | 603.27 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cpu / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-cpu.json) | 1,252.09 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-directml / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-directml.json) | 1,498.73 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-intel / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-webgpu / wd14_v3 / b1](intel_windows_20260923/wd14_v3-b1-webgpu.json) | 716.78 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cpu / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-cpu.json) | 1,879.89 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-directml / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-directml.json) | 2,577.54 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-intel / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-intel.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-webgpu / wd14_v3 / b4](intel_windows_20260923/wd14_v3-b4-webgpu.json) | 781.94 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## ncnn_amd_20261003
 
@@ -324,26 +324,26 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [candidate-fp32 / ultra / b1](ncnn_amd_20261003/candidate-fp32.json) | 1,223.98 | 未測定 | 487.55 | 未測定 | 未測定 | 未測定 | 2,673.36 | 93.50 |
-| [conv1x1-direct / ultra / b1](ncnn_amd_20261003/conv1x1-direct.json) | 1,552.27 | 未測定 | 497.76 | 未測定 | 未測定 | 未測定 | 2,532.58 | 92.50 |
-| [conv1x1-fp32-b1 / ultra / b1](ncnn_amd_20261003/conv1x1-fp32-b1.json) | 1,552.00 | 未測定 | 497.76 | 未測定 | 未測定 | 未測定 | 2,532.58 | 97.00 |
-| [cpu-layernorm / ultra / b1](ncnn_amd_20261003/cpu-layernorm.json) | 241.17 | 未測定 | 500.03 | 未測定 | 未測定 | 未測定 | 2,880.02 | 94.50 |
-| [cpu-reduction / ultra / b1](ncnn_amd_20261003/cpu-reduction.json) | 307.44 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.60 | 91.50 |
-| [cpu-reshape / ultra / b1](ncnn_amd_20261003/cpu-reshape.json) | 615.28 | 未測定 | 500.03 | 未測定 | 未測定 | 未測定 | 3,012.05 | 81.50 |
-| [fp32-b1 / ultra / b1](ncnn_amd_20261003/fp32-b1.json) | 225.63 | 未測定 | 503.32 | 未測定 | 未測定 | 未測定 | 2,982.07 | 98.00 |
-| [native-no-shared-memory / ultra / b1](ncnn_amd_20261003/native-no-shared-memory.json) | 229.56 | 未測定 | 499.11 | 未測定 | 未測定 | 未測定 | 2,791.24 | 96.00 |
-| [ncnn-cpu-check / ultra / b1](ncnn_amd_20261003/ncnn-cpu-check.json) | 3,300.60 | 未測定 | 362.06 | 未測定 | 未測定 | 未測定 | 140.00 | 3.00 |
-| [ncnn-cpu-no-packing / ultra / b1](ncnn_amd_20261003/ncnn-cpu-no-packing.json) | 3,379.73 | 未測定 | 354.07 | 未測定 | 未測定 | 未測定 | 124.86 | 0.00 |
-| [no-packing / ultra / b1](ncnn_amd_20261003/no-packing.json) | 220.18 | 未測定 | 498.27 | 未測定 | 未測定 | 未測定 | 2,999.08 | 96.50 |
-| [no-winograd / ultra / b1](ncnn_amd_20261003/no-winograd.json) | 219.54 | 未測定 | 500.81 | 未測定 | 未測定 | 未測定 | 2,984.15 | 96.50 |
-| [patched-no-subgroup / ultra / b1](ncnn_amd_20261003/patched-no-subgroup.json) | 1,616.49 | 未測定 | 491.25 | 未測定 | 未測定 | 未測定 | 2,817.12 | 91.50 |
-| [radv-fullsync / ultra / b1](ncnn_amd_20261003/radv-fullsync.json) | 219.92 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 96.50 |
-| [radv-syncshaders / ultra / b1](ncnn_amd_20261003/radv-syncshaders.json) | 235.25 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 96.50 |
-| [sync-default-fp32-b1 / ultra / b1](ncnn_amd_20261003/sync-default-fp32-b1.json) | 219.16 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 98.17 |
-| [sync-fp32-b4 / ultra / b4](ncnn_amd_20261003/sync-fp32-b4.json) | 219.07 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 98.75 |
-| [webgpu-b1 / ultra / b1](ncnn_amd_20261003/webgpu-b1.json) | 200.34 | 未測定 | 501.94 | 未測定 | 未測定 | 未測定 | 3,507.48 | 98.45 |
+| [candidate-fp32 / ultra / b1](ncnn_amd_20261003/candidate-fp32.json) | 1,223.98 | 未測定 | 487.55 | 未測定 | 未測定 | 未測定 | 2,673.36 | 93.50 / 99.00 |
+| [conv1x1-direct / ultra / b1](ncnn_amd_20261003/conv1x1-direct.json) | 1,552.27 | 未測定 | 497.76 | 未測定 | 未測定 | 未測定 | 2,532.58 | 92.50 / 99.00 |
+| [conv1x1-fp32-b1 / ultra / b1](ncnn_amd_20261003/conv1x1-fp32-b1.json) | 1,552.00 | 未測定 | 497.76 | 未測定 | 未測定 | 未測定 | 2,532.58 | 97.00 / 99.00 |
+| [cpu-layernorm / ultra / b1](ncnn_amd_20261003/cpu-layernorm.json) | 241.17 | 未測定 | 500.03 | 未測定 | 未測定 | 未測定 | 2,880.02 | 94.50 / 98.00 |
+| [cpu-reduction / ultra / b1](ncnn_amd_20261003/cpu-reduction.json) | 307.44 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.60 | 91.50 / 94.00 |
+| [cpu-reshape / ultra / b1](ncnn_amd_20261003/cpu-reshape.json) | 615.28 | 未測定 | 500.03 | 未測定 | 未測定 | 未測定 | 3,012.05 | 81.50 / 85.00 |
+| [fp32-b1 / ultra / b1](ncnn_amd_20261003/fp32-b1.json) | 225.63 | 未測定 | 503.32 | 未測定 | 未測定 | 未測定 | 2,982.07 | 98.00 / 99.00 |
+| [native-no-shared-memory / ultra / b1](ncnn_amd_20261003/native-no-shared-memory.json) | 229.56 | 未測定 | 499.11 | 未測定 | 未測定 | 未測定 | 2,791.24 | 96.00 / 99.00 |
+| [ncnn-cpu-check / ultra / b1](ncnn_amd_20261003/ncnn-cpu-check.json) | 3,300.60 | 未測定 | 362.06 | 未測定 | 未測定 | 未測定 | 140.00 | 3.00 / 3.00 |
+| [ncnn-cpu-no-packing / ultra / b1](ncnn_amd_20261003/ncnn-cpu-no-packing.json) | 3,379.73 | 未測定 | 354.07 | 未測定 | 未測定 | 未測定 | 124.86 | 0.00 / 0.00 |
+| [no-packing / ultra / b1](ncnn_amd_20261003/no-packing.json) | 220.18 | 未測定 | 498.27 | 未測定 | 未測定 | 未測定 | 2,999.08 | 96.50 / 99.00 |
+| [no-winograd / ultra / b1](ncnn_amd_20261003/no-winograd.json) | 219.54 | 未測定 | 500.81 | 未測定 | 未測定 | 未測定 | 2,984.15 | 96.50 / 99.00 |
+| [patched-no-subgroup / ultra / b1](ncnn_amd_20261003/patched-no-subgroup.json) | 1,616.49 | 未測定 | 491.25 | 未測定 | 未測定 | 未測定 | 2,817.12 | 91.50 / 99.00 |
+| [radv-fullsync / ultra / b1](ncnn_amd_20261003/radv-fullsync.json) | 219.92 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 96.50 / 99.00 |
+| [radv-syncshaders / ultra / b1](ncnn_amd_20261003/radv-syncshaders.json) | 235.25 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 96.50 / 99.00 |
+| [sync-default-fp32-b1 / ultra / b1](ncnn_amd_20261003/sync-default-fp32-b1.json) | 219.16 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 98.17 / 99.00 |
+| [sync-fp32-b4 / ultra / b4](ncnn_amd_20261003/sync-fp32-b4.json) | 219.07 | 未測定 | 500.02 | 未測定 | 未測定 | 未測定 | 2,841.51 | 98.75 / 99.00 |
+| [webgpu-b1 / ultra / b1](ncnn_amd_20261003/webgpu-b1.json) | 200.34 | 未測定 | 501.94 | 未測定 | 未測定 | 未測定 | 3,507.48 | 98.45 / 99.00 |
 
 ## ncnn_amd_bazzite_20261003
 
@@ -356,10 +356,10 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [fp32-b1 / ultra / b1](ncnn_amd_bazzite_20261003/fp32-b1.json) | 198.77 | 未測定 | 493.02 | 未測定 | 未測定 | 未測定 | 2,992.02 | 97.86 |
-| [fp32-b4 / ultra / b4](ncnn_amd_bazzite_20261003/fp32-b4.json) | 198.97 | 未測定 | 493.02 | 未測定 | 未測定 | 未測定 | 2,992.02 | 98.63 |
+| [fp32-b1 / ultra / b1](ncnn_amd_bazzite_20261003/fp32-b1.json) | 198.77 | 未測定 | 493.02 | 未測定 | 未測定 | 未測定 | 2,992.02 | 97.86 / 99.00 |
+| [fp32-b4 / ultra / b4](ncnn_amd_bazzite_20261003/fp32-b4.json) | 198.97 | 未測定 | 493.02 | 未測定 | 未測定 | 未測定 | 2,992.02 | 98.63 / 99.00 |
 
 ## ncnn_intel_a13m_20261003
 
@@ -372,10 +372,10 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [fp32-b1 / ultra / b1](ncnn_intel_a13m_20261003/fp32-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [fp32-b4 / ultra / b4](ncnn_intel_a13m_20261003/fp32-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [fp32-b1 / ultra / b1](ncnn_intel_a13m_20261003/fp32-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [fp32-b4 / ultra / b4](ncnn_intel_a13m_20261003/fp32-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## ncnn_local_20261002
 
@@ -389,11 +389,11 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [conv1x1-cpu-check / ultra / b1](ncnn_local_20261002/conv1x1-cpu-check.json) | 4,846.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [cpu-b1 / ultra / b1](ncnn_local_20261002/cpu-b1.json) | 3,578.36 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [ncnn-cpu-conversion-check / ultra / b1](ncnn_local_20261002/ncnn-cpu-conversion-check.json) | 3,299.70 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [conv1x1-cpu-check / ultra / b1](ncnn_local_20261002/conv1x1-cpu-check.json) | 4,846.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [cpu-b1 / ultra / b1](ncnn_local_20261002/cpu-b1.json) | 3,578.36 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [ncnn-cpu-conversion-check / ultra / b1](ncnn_local_20261002/ncnn-cpu-conversion-check.json) | 3,299.70 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## ncnn_ps4_20261004
 
@@ -406,10 +406,10 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [ultra-stream128-b1 / ultra / b1](ncnn_ps4_20261004/ultra-stream128-b1.json) | 274.14 | 未測定 | 690.33 | 33.71 | 未測定 | 未測定 | 32.61 | 未測定 |
-| [ultra-stream128-b4 / ultra / b4](ncnn_ps4_20261004/ultra-stream128-b4.json) | 229.41 | 未測定 | 690.33 | 33.71 | 未測定 | 未測定 | 36.61 | 未測定 |
+| [ultra-stream128-b1 / ultra / b1](ncnn_ps4_20261004/ultra-stream128-b1.json) | 274.14 | 未測定 | 690.33 | 33.71 | 未測定 | 未測定 | 32.61 | 未測定 / 未測定 |
+| [ultra-stream128-b4 / ultra / b4](ncnn_ps4_20261004/ultra-stream128-b4.json) | 229.41 | 未測定 | 690.33 | 33.71 | 未測定 | 未測定 | 36.61 | 未測定 / 未測定 |
 
 ## ncnn_switch_20261003
 
@@ -421,9 +421,9 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [ultra-stream128-b1 / ultra / b1](ncnn_switch_20261003/ultra-stream128-b1.json) | 544.77 | 13.65 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [ultra-stream128-b1 / ultra / b1](ncnn_switch_20261003/ultra-stream128-b1.json) | 544.77 | 13.65 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## ncnn_windows_20261003
 
@@ -441,15 +441,15 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [cuda-b1 / ultra / b1](ncnn_windows_20261003/cuda-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,958.00 | 未測定 | 未測定 |
-| [cuda-b4 / ultra / b4](ncnn_windows_20261003/cuda-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 7,873.00 | 未測定 | 未測定 |
-| [rtx-fp32-b1 / ultra / b1](ncnn_windows_20261003/rtx-fp32-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [rtx-fp32-b4 / ultra / b4](ncnn_windows_20261003/rtx-fp32-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 3,624.00 | 未測定 | 未測定 |
-| [rtx-memory-check / ultra / b1](ncnn_windows_20261003/rtx-memory-check.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 3,732.00 | 未測定 | 未測定 |
-| [tensorrt-b1 / ultra / b1](ncnn_windows_20261003/tensorrt-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,605.00 | 未測定 | 未測定 |
-| [tensorrt-b4 / ultra / b4](ncnn_windows_20261003/tensorrt-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,621.00 | 未測定 | 未測定 |
+| [cuda-b1 / ultra / b1](ncnn_windows_20261003/cuda-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,958.00 | 未測定 | 未測定 / 未測定 |
+| [cuda-b4 / ultra / b4](ncnn_windows_20261003/cuda-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 7,873.00 | 未測定 | 未測定 / 未測定 |
+| [rtx-fp32-b1 / ultra / b1](ncnn_windows_20261003/rtx-fp32-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [rtx-fp32-b4 / ultra / b4](ncnn_windows_20261003/rtx-fp32-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 3,624.00 | 未測定 | 未測定 / 未測定 |
+| [rtx-memory-check / ultra / b1](ncnn_windows_20261003/rtx-memory-check.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 3,732.00 | 未測定 | 未測定 / 未測定 |
+| [tensorrt-b1 / ultra / b1](ncnn_windows_20261003/tensorrt-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,605.00 | 未測定 | 未測定 / 未測定 |
+| [tensorrt-b4 / ultra / b4](ncnn_windows_20261003/tensorrt-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 4,621.00 | 未測定 | 未測定 / 未測定 |
 
 ## nvidia_linux_20260923
 
@@ -476,24 +476,24 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [balanced-b1-cpu / balanced / b1](nvidia_linux_20260923/balanced-b1-cpu.json) | 1,040.49 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-cuda / balanced / b1](nvidia_linux_20260923/balanced-b1-cuda.json) | 1,222.22 | 未測定 | 1,180.00 | 未測定 | 1,146.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-tensorrt / balanced / b1](nvidia_linux_20260923/balanced-b1-tensorrt.json) | 3,150.19 | 未測定 | 988.00 | 未測定 | 954.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-webgpu / balanced / b1](nvidia_linux_20260923/balanced-b1-webgpu.json) | 658.32 | 未測定 | 721.00 | 未測定 | 687.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cpu / balanced / b4](nvidia_linux_20260923/balanced-b4-cpu.json) | 1,360.75 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cuda / balanced / b4](nvidia_linux_20260923/balanced-b4-cuda.json) | 1,211.48 | 未測定 | 1,180.00 | 未測定 | 1,146.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-tensorrt / balanced / b4](nvidia_linux_20260923/balanced-b4-tensorrt.json) | 3,188.66 | 未測定 | 1,238.00 | 未測定 | 1,204.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-webgpu / balanced / b4](nvidia_linux_20260923/balanced-b4-webgpu.json) | 669.47 | 未測定 | 1,137.00 | 未測定 | 1,103.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cpu / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-cpu.json) | 1,236.57 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cuda / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-cuda.json) | 1,258.54 | 未測定 | 1,180.00 | 未測定 | 1,147.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-tensorrt / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-tensorrt.json) | 3,345.49 | 未測定 | 942.00 | 未測定 | 909.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-webgpu / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-webgpu.json) | 690.62 | 未測定 | 874.00 | 未測定 | 841.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cpu / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-cpu.json) | 1,863.11 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cuda / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-cuda.json) | 1,260.76 | 未測定 | 1,180.00 | 未測定 | 1,147.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-tensorrt / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-tensorrt.json) | 3,331.25 | 未測定 | 1,356.00 | 未測定 | 1,323.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-webgpu / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-webgpu.json) | 662.17 | 未測定 | 1,865.00 | 未測定 | 1,832.00 | 未測定 | 未測定 | 未測定 |
+| [balanced-b1-cpu / balanced / b1](nvidia_linux_20260923/balanced-b1-cpu.json) | 1,040.49 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-cuda / balanced / b1](nvidia_linux_20260923/balanced-b1-cuda.json) | 1,222.22 | 未測定 | 1,180.00 | 未測定 | 1,146.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-tensorrt / balanced / b1](nvidia_linux_20260923/balanced-b1-tensorrt.json) | 3,150.19 | 未測定 | 988.00 | 未測定 | 954.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-webgpu / balanced / b1](nvidia_linux_20260923/balanced-b1-webgpu.json) | 658.32 | 未測定 | 721.00 | 未測定 | 687.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cpu / balanced / b4](nvidia_linux_20260923/balanced-b4-cpu.json) | 1,360.75 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cuda / balanced / b4](nvidia_linux_20260923/balanced-b4-cuda.json) | 1,211.48 | 未測定 | 1,180.00 | 未測定 | 1,146.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-tensorrt / balanced / b4](nvidia_linux_20260923/balanced-b4-tensorrt.json) | 3,188.66 | 未測定 | 1,238.00 | 未測定 | 1,204.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-webgpu / balanced / b4](nvidia_linux_20260923/balanced-b4-webgpu.json) | 669.47 | 未測定 | 1,137.00 | 未測定 | 1,103.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cpu / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-cpu.json) | 1,236.57 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cuda / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-cuda.json) | 1,258.54 | 未測定 | 1,180.00 | 未測定 | 1,147.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-tensorrt / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-tensorrt.json) | 3,345.49 | 未測定 | 942.00 | 未測定 | 909.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-webgpu / wd14_v3 / b1](nvidia_linux_20260923/wd14_v3-b1-webgpu.json) | 690.62 | 未測定 | 874.00 | 未測定 | 841.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cpu / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-cpu.json) | 1,863.11 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cuda / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-cuda.json) | 1,260.76 | 未測定 | 1,180.00 | 未測定 | 1,147.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-tensorrt / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-tensorrt.json) | 3,331.25 | 未測定 | 1,356.00 | 未測定 | 1,323.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-webgpu / wd14_v3 / b4](nvidia_linux_20260923/wd14_v3-b4-webgpu.json) | 662.17 | 未測定 | 1,865.00 | 未測定 | 1,832.00 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## nvidia_linux_20261004
 
@@ -510,14 +510,14 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [cuda-b1 / ultra / b1](nvidia_linux_20261004/cuda-b1.json) | 976.75 | 未測定 | 未測定 | 未測定 | 未測定 | 4,220.00 (51.51%) | 未測定 | 未測定 |
-| [cuda-b4 / ultra / b4](nvidia_linux_20261004/cuda-b4.json) | 1,103.75 | 未測定 | 未測定 | 未測定 | 未測定 | 5,244.00 (64.01%) | 未測定 | 未測定 |
-| [ncnn-b1 / ultra / b1](nvidia_linux_20261004/ncnn-b1.json) | 372.70 | 未測定 | 未測定 | 未測定 | 未測定 | 3,025.00 (36.93%) | 未測定 | 未測定 |
-| [ncnn-b4 / ultra / b4](nvidia_linux_20261004/ncnn-b4.json) | 360.63 | 未測定 | 未測定 | 未測定 | 未測定 | 3,025.00 (36.93%) | 未測定 | 未測定 |
-| [tensorrt-b1 / ultra / b1](nvidia_linux_20261004/tensorrt-b1.json) | 3,566.25 | 未測定 | 未測定 | 未測定 | 未測定 | 3,408.00 (41.60%) | 未測定 | 未測定 |
-| [tensorrt-b4 / ultra / b4](nvidia_linux_20261004/tensorrt-b4.json) | 7,237.22 | 未測定 | 未測定 | 未測定 | 未測定 | 4,238.00 (51.73%) | 未測定 | 未測定 |
+| [cuda-b1 / ultra / b1](nvidia_linux_20261004/cuda-b1.json) | 976.75 | 未測定 | 未測定 | 未測定 | 未測定 | 4,220.00 (51.51%) | 未測定 | 未測定 / 未測定 |
+| [cuda-b4 / ultra / b4](nvidia_linux_20261004/cuda-b4.json) | 1,103.75 | 未測定 | 未測定 | 未測定 | 未測定 | 5,244.00 (64.01%) | 未測定 | 未測定 / 未測定 |
+| [ncnn-b1 / ultra / b1](nvidia_linux_20261004/ncnn-b1.json) | 372.70 | 未測定 | 未測定 | 未測定 | 未測定 | 3,025.00 (36.93%) | 未測定 | 未測定 / 未測定 |
+| [ncnn-b4 / ultra / b4](nvidia_linux_20261004/ncnn-b4.json) | 360.63 | 未測定 | 未測定 | 未測定 | 未測定 | 3,025.00 (36.93%) | 未測定 | 未測定 / 未測定 |
+| [tensorrt-b1 / ultra / b1](nvidia_linux_20261004/tensorrt-b1.json) | 3,566.25 | 未測定 | 未測定 | 未測定 | 未測定 | 3,408.00 (41.60%) | 未測定 | 未測定 / 未測定 |
+| [tensorrt-b4 / ultra / b4](nvidia_linux_20261004/tensorrt-b4.json) | 7,237.22 | 未測定 | 未測定 | 未測定 | 未測定 | 4,238.00 (51.73%) | 未測定 | 未測定 / 未測定 |
 
 ## nvidia_windows_20260923
 
@@ -548,28 +548,28 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [balanced-b1-cpu / balanced / b1](nvidia_windows_20260923/balanced-b1-cpu.json) | 1,045.88 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-cuda / balanced / b1](nvidia_windows_20260923/balanced-b1-cuda.json) | 1,024.37 | 未測定 | 2,065.00 | 未測定 | 1,131.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-directml / balanced / b1](nvidia_windows_20260923/balanced-b1-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-tensorrt / balanced / b1](nvidia_windows_20260923/balanced-b1-tensorrt.json) | 3,075.07 | 未測定 | 1,919.00 | 未測定 | 985.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b1-webgpu / balanced / b1](nvidia_windows_20260923/balanced-b1-webgpu.json) | 671.45 | 未測定 | 1,643.00 | 未測定 | 709.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cpu / balanced / b4](nvidia_windows_20260923/balanced-b4-cpu.json) | 1,368.91 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-cuda / balanced / b4](nvidia_windows_20260923/balanced-b4-cuda.json) | 1,017.29 | 未測定 | 2,129.00 | 未測定 | 1,195.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-directml / balanced / b4](nvidia_windows_20260923/balanced-b4-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-tensorrt / balanced / b4](nvidia_windows_20260923/balanced-b4-tensorrt.json) | 3,096.50 | 未測定 | 2,171.00 | 未測定 | 1,237.00 | 未測定 | 未測定 | 未測定 |
-| [balanced-b4-webgpu / balanced / b4](nvidia_windows_20260923/balanced-b4-webgpu.json) | 583.24 | 未測定 | 2,067.00 | 未測定 | 1,133.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cpu / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-cpu.json) | 1,250.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-cuda / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-cuda.json) | 1,048.73 | 未測定 | 2,065.00 | 未測定 | 1,131.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-directml / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-directml.json) | 870.01 | 未測定 | 1,800.00 | 未測定 | 866.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-tensorrt / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-tensorrt.json) | 2,870.95 | 未測定 | 1,873.00 | 未測定 | 939.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b1-webgpu / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-webgpu.json) | 766.92 | 未測定 | 1,802.00 | 未測定 | 868.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cpu / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-cpu.json) | 1,879.95 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-cuda / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-cuda.json) | 1,058.55 | 未測定 | 2,065.00 | 未測定 | 1,131.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-directml / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-directml.json) | 862.66 | 未測定 | 2,902.00 | 未測定 | 1,968.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-tensorrt / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-tensorrt.json) | 2,929.23 | 未測定 | 2,287.00 | 未測定 | 1,353.00 | 未測定 | 未測定 | 未測定 |
-| [wd14_v3-b4-webgpu / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-webgpu.json) | 783.65 | 未測定 | 2,797.00 | 未測定 | 1,863.00 | 未測定 | 未測定 | 未測定 |
+| [balanced-b1-cpu / balanced / b1](nvidia_windows_20260923/balanced-b1-cpu.json) | 1,045.88 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-cuda / balanced / b1](nvidia_windows_20260923/balanced-b1-cuda.json) | 1,024.37 | 未測定 | 2,065.00 | 未測定 | 1,131.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-directml / balanced / b1](nvidia_windows_20260923/balanced-b1-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-tensorrt / balanced / b1](nvidia_windows_20260923/balanced-b1-tensorrt.json) | 3,075.07 | 未測定 | 1,919.00 | 未測定 | 985.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b1-webgpu / balanced / b1](nvidia_windows_20260923/balanced-b1-webgpu.json) | 671.45 | 未測定 | 1,643.00 | 未測定 | 709.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cpu / balanced / b4](nvidia_windows_20260923/balanced-b4-cpu.json) | 1,368.91 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-cuda / balanced / b4](nvidia_windows_20260923/balanced-b4-cuda.json) | 1,017.29 | 未測定 | 2,129.00 | 未測定 | 1,195.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-directml / balanced / b4](nvidia_windows_20260923/balanced-b4-directml.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-tensorrt / balanced / b4](nvidia_windows_20260923/balanced-b4-tensorrt.json) | 3,096.50 | 未測定 | 2,171.00 | 未測定 | 1,237.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [balanced-b4-webgpu / balanced / b4](nvidia_windows_20260923/balanced-b4-webgpu.json) | 583.24 | 未測定 | 2,067.00 | 未測定 | 1,133.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cpu / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-cpu.json) | 1,250.84 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-cuda / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-cuda.json) | 1,048.73 | 未測定 | 2,065.00 | 未測定 | 1,131.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-directml / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-directml.json) | 870.01 | 未測定 | 1,800.00 | 未測定 | 866.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-tensorrt / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-tensorrt.json) | 2,870.95 | 未測定 | 1,873.00 | 未測定 | 939.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b1-webgpu / wd14_v3 / b1](nvidia_windows_20260923/wd14_v3-b1-webgpu.json) | 766.92 | 未測定 | 1,802.00 | 未測定 | 868.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cpu / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-cpu.json) | 1,879.95 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-cuda / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-cuda.json) | 1,058.55 | 未測定 | 2,065.00 | 未測定 | 1,131.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-directml / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-directml.json) | 862.66 | 未測定 | 2,902.00 | 未測定 | 1,968.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-tensorrt / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-tensorrt.json) | 2,929.23 | 未測定 | 2,287.00 | 未測定 | 1,353.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [wd14_v3-b4-webgpu / wd14_v3 / b4](nvidia_windows_20260923/wd14_v3-b4-webgpu.json) | 783.65 | 未測定 | 2,797.00 | 未測定 | 1,863.00 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## nvidia_windows_summary
 
@@ -592,20 +592,20 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [nvidia_windows_summary / balanced / b1](nvidia_windows_summary.json) | 1,023.07 | 未測定 | 未測定 | 未測定 | 1,129.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / balanced / b1](nvidia_windows_summary.json) | 3,077.52 | 未測定 | 未測定 | 未測定 | 985.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / balanced / b1](nvidia_windows_summary.json) | 689.48 | 未測定 | 未測定 | 未測定 | 714.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / balanced / b4](nvidia_windows_summary.json) | 1,014.39 | 未測定 | 未測定 | 未測定 | 1,142.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / balanced / b4](nvidia_windows_summary.json) | 3,077.44 | 未測定 | 未測定 | 未測定 | 1,228.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / balanced / b4](nvidia_windows_summary.json) | 729.25 | 未測定 | 未測定 | 未測定 | 1,133.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / wd14_v3 / b1](nvidia_windows_summary.json) | 1,049.34 | 未測定 | 未測定 | 未測定 | 1,133.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / wd14_v3 / b1](nvidia_windows_summary.json) | 2,861.39 | 未測定 | 未測定 | 未測定 | 938.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / wd14_v3 / b1](nvidia_windows_summary.json) | 743.88 | 未測定 | 未測定 | 未測定 | 867.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / wd14_v3 / b4](nvidia_windows_summary.json) | 1,059.43 | 未測定 | 未測定 | 未測定 | 1,127.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / wd14_v3 / b4](nvidia_windows_summary.json) | 2,910.82 | 未測定 | 未測定 | 未測定 | 1,353.00 | 未測定 | 未測定 | 未測定 |
-| [nvidia_windows_summary / wd14_v3 / b4](nvidia_windows_summary.json) | 780.28 | 未測定 | 未測定 | 未測定 | 1,874.00 | 未測定 | 未測定 | 未測定 |
+| [nvidia_windows_summary / balanced / b1](nvidia_windows_summary.json) | 1,023.07 | 未測定 | 未測定 | 未測定 | 1,129.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / balanced / b1](nvidia_windows_summary.json) | 3,077.52 | 未測定 | 未測定 | 未測定 | 985.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / balanced / b1](nvidia_windows_summary.json) | 689.48 | 未測定 | 未測定 | 未測定 | 714.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / balanced / b4](nvidia_windows_summary.json) | 1,014.39 | 未測定 | 未測定 | 未測定 | 1,142.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / balanced / b4](nvidia_windows_summary.json) | 3,077.44 | 未測定 | 未測定 | 未測定 | 1,228.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / balanced / b4](nvidia_windows_summary.json) | 729.25 | 未測定 | 未測定 | 未測定 | 1,133.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / wd14_v3 / b1](nvidia_windows_summary.json) | 1,049.34 | 未測定 | 未測定 | 未測定 | 1,133.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / wd14_v3 / b1](nvidia_windows_summary.json) | 2,861.39 | 未測定 | 未測定 | 未測定 | 938.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / wd14_v3 / b1](nvidia_windows_summary.json) | 743.88 | 未測定 | 未測定 | 未測定 | 867.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / wd14_v3 / b4](nvidia_windows_summary.json) | 1,059.43 | 未測定 | 未測定 | 未測定 | 1,127.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / wd14_v3 / b4](nvidia_windows_summary.json) | 2,910.82 | 未測定 | 未測定 | 未測定 | 1,353.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [nvidia_windows_summary / wd14_v3 / b4](nvidia_windows_summary.json) | 780.28 | 未測定 | 未測定 | 未測定 | 1,874.00 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## openvino_intel_a13m_20261004
 
@@ -618,10 +618,10 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [fp32-b1 / ultra / b1](openvino_intel_a13m_20261004/fp32-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
-| [fp32-b4 / ultra / b4](openvino_intel_a13m_20261004/fp32-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 |
+| [fp32-b1 / ultra / b1](openvino_intel_a13m_20261004/fp32-b1.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [fp32-b4 / ultra / b4](openvino_intel_a13m_20261004/fp32-b4.json) | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## directml_legacy
 
@@ -637,13 +637,13 @@
 
 ### メモリとGPU稼働率
 
-| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |
+| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| [legacy_results / lightweight / b4](legacy_results.md) | 未測定 | 未測定 | 1,614.00 | 19.70 | 771.00 | 未測定 | 未測定 | 未測定 |
-| [legacy_results / balanced / b4](legacy_results.md) | 未測定 | 未測定 | 2,051.00 | 25.04 | 1,199.00 | 未測定 | 未測定 | 未測定 |
-| [legacy_results / high / b4](legacy_results.md) | 未測定 | 未測定 | 3,618.00 | 44.17 | 2,771.00 | 未測定 | 未測定 | 未測定 |
-| [legacy_results / ultra / b4](legacy_results.md) | 未測定 | 未測定 | 6,583.00 | 80.36 | 5,743.00 | 未測定 | 未測定 | 未測定 |
-| [legacy_results / wd14_v3 / b4](legacy_results.md) | 未測定 | 未測定 | 2,973.00 | 36.29 | 1,886.00 | 未測定 | 未測定 | 未測定 |
+| [legacy_results / lightweight / b4](legacy_results.md) | 未測定 | 未測定 | 1,614.00 | 19.70 | 771.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [legacy_results / balanced / b4](legacy_results.md) | 未測定 | 未測定 | 2,051.00 | 25.04 | 1,199.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [legacy_results / high / b4](legacy_results.md) | 未測定 | 未測定 | 3,618.00 | 44.17 | 2,771.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [legacy_results / ultra / b4](legacy_results.md) | 未測定 | 未測定 | 6,583.00 | 80.36 | 5,743.00 | 未測定 | 未測定 | 未測定 / 未測定 |
+| [legacy_results / wd14_v3 / b4](legacy_results.md) | 未測定 | 未測定 | 2,973.00 | 36.29 | 1,886.00 | 未測定 | 未測定 | 未測定 / 未測定 |
 
 ## 同じ測定組でのモデル差
 

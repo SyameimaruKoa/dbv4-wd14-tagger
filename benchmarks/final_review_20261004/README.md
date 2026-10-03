@@ -12,6 +12,7 @@
 ## 確認結果
 
 - [通常テスト](unit-tests.log)：121件、成功（skip 5）、[終了コード0](unit-tests.exit)。skipは実GPU統合2件・ネイティブ分割2件・PowerShell1件の条件付き試験。このローカル環境で全実機・全EPを再実行した結果ではない。
+- PS4の[通常テスト](ps4-unit-tests.log)：121件、成功（skip 5）、終了コード0。[実GPUネイティブ分割テスト](ps4-partition-tests.log)：2件成功、終了コード0。検証したソースは[3a6b616](ps4-reviewed-source.txt)。同時推論の回帰テストも両環境で成功。
 - [構文・資料照合](static-checks.log)：Python 32ファイルの構文、Bash／Zsh構文、178件の出典と集計再現性、README／BENCHMARKS／全測定一覧のローカルリンクを確認。
 - ローカル通信を制限した環境での初回試験はsocket作成が拒否された。通信を許可して再実行し、上記結果を得た。
 - PowerShell本体は今回変更していない。Windowsでの構文とログイン経路は既存の実機記録、GPU精度・XMP・通信は各実機のcomparison-summaryと統合試験ログを参照。

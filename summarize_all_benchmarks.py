@@ -78,7 +78,7 @@ def measurements():
                         part=row.get('ncnn_part_size_mib') or (128 if 'stream128' in path.stem else 0),
                         ms=ms, rss=rss, vram=vram, increment=increment, snapshot=max(snapshots) if snapshots else None,
                         snapshot_pct=100*max(snapshots)/vram_total if snapshots and number(vram_total) and vram_total > 0 else None,
-                        gtt=gtt, busy=busy, load=row.get('load_seconds', row.get('session_seconds')),
+                        gtt=gtt, busy=busy, busy_peak=resources.get('measured_gpu_busy_percent_peak'), load=row.get('load_seconds', row.get('session_seconds')),
                         ram_pct=100*rss/ram_total if number(rss) and number(ram_total) and ram_total > 0 else None,
                         vram_pct=100*vram/vram_total if number(vram) and number(vram_total) and vram_total > 0 else None,
                         status=status, quality=quality, row=row)
@@ -95,7 +95,7 @@ def measurements():
         increment = float(cells[4].split()[0].replace(',', ''))
         groups['directml_legacy'].append(dict(source='legacy_results.md', index=0, profile=cells[0],
             provider='DirectML', batch=4, precision='—', part=0, ms=ms, rss=None, vram=vram,
-            increment=increment, snapshot=None, snapshot_pct=None, gtt=None, busy=None, load=None,
+            increment=increment, snapshot=None, snapshot_pct=None, gtt=None, busy=None, busy_peak=None, load=None,
             ram_pct=None, vram_pct=100*vram/8192, status='旧平均3回', quality='未照合', row={}))
     return groups
 
@@ -107,7 +107,7 @@ def render(groups):
             '- VRAMピーク・増分・スナップショットは別指標。GPU全体の値には画面表示や他プロセスも含む。スナップショット最大は推論中の連続監視ピークではない。',
             '- VRAM使用率はピーク÷記録されたVRAM総容量。Intel/AMDの共有メモリ、GTT、Switchの統合RAMは独立VRAMと合算しない。総容量未記録では割合を算出しない。',
             '- Linux AEROのGPUメモリ時点使用率は同じ測定組のhardware.logにある8192MiBを分母にする。旧DirectMLはlegacy_results.mdの8GiBを使用。',
-            '- GPU稼働率は測定中の平均で、VRAM使用率とは異なる。旧DirectMLは前処理込み3回の平均で、中央値と混ぜない。Windowsの最新測定ではRSS監視がなく、未測定として表示する。',
+            '- GPU稼働率は測定中の平均・最大で、VRAM使用率とは異なる。旧DirectMLは前処理込み3回の平均で、中央値と混ぜない。Windowsの最新測定ではRSS監視がなく、未測定として表示する。',
             '- 2026-09-23はwarmup3・20回×3セットのsession.run時間。最新ultraは画像が異なり、warmup/回数も各JSONに従う。ncnnのbatch4は順次4枚。PS4/Switchは測定1回。',
             '- 初期化時間は記録方式によってセッション構築のみ／取得・変換・起動検証込みが異なる。別日・別OS・別モデルの値から条件を揃えた性能差は断定しない。',
             '- AMD診断の精度不一致や失敗も残す。「記録あり」は速度が保存された意味で、精度合格の意味ではない。ΔはCPU参照との最大絶対差。全確率の合格判定は各comparison-summary.jsonを参照。', '',
@@ -125,14 +125,14 @@ def render(groups):
                 f"{r['precision']} / {r['part']}", fmt(r['ms']) + timing, fmt(r['load']),
                 f"{r['status']}; {r['quality']}"]) + ' |')
         text += ['', '### メモリとGPU稼働率', '',
-                 '| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 % |',
+                 '| 条件・モデル・batch | RSS MiB | RAM % | VRAMピーク MiB | VRAM % | VRAM増分 MiB | GPUメモリ時点最大 MiB (%) | GTTピーク MiB | GPU稼働 平均 / 最大 % |',
                  '|---|---:|---:|---:|---:|---:|---:|---:|---:|']
         for r in rows:
             label = f"{Path(r['source']).stem} / {r['profile']} / b{r['batch']}"
             text.append('| ' + ' | '.join([f"[{label}]({r['source']})",
                 *[fmt(r[k]) for k in ('rss','ram_pct','vram','vram_pct','increment')],
                 fmt(r['snapshot']) + (f" ({fmt(r['snapshot_pct'])}%)" if number(r['snapshot_pct']) else ''),
-                *[fmt(r[k]) for k in ('gtt','busy')]]) + ' |')
+                fmt(r['gtt']), fmt(r['busy']) + ' / ' + fmt(r['busy_peak'])]) + ' |')
     text += ['', '## 同じ測定組でのモデル差', '',
              'balancedを基準とした対象モデル÷balanced。時間比が1より大きければ遅く、メモリ比が1より大きければ多く使用する。実行方式・batchが同じ保存値だけを比較する。VRAMは同じ指標同士（ピーク優先、なければ増分）。モデルごとに画像サイズ・処理が異なるため品質の比較ではない。最新ultraと9月の他モデルは測定日・入力・精度設定が異なり、直接の倍率表を作らない。', '',
              '| 測定組 | 実行方式 | batch | 対象モデル | 時間比 | RSS比 | VRAM比・指標 | 出典 |', '|---|---|---:|---|---:|---:|---|---|']
