@@ -1,0 +1,1183 @@
+[    0.000000] ps4: x86_ps4_early_setup: PS4 early setup
+[    0.000000] Linux version 7.1.7-Strawberry-General-FullLTO+ (runner@runnervmgx7h7) (Ubuntu clang version 18.1.3 (1ubuntu1), Ubuntu LLD 18.1.3) #1 SMP PREEMPT_DYNAMIC Tue Aug 25 18:56:41 UTC 2026
+               
+                 _________ __                       ___.
+                /   _____//  |_____________ __  _  _\_ |__   __________________ ___.__.
+                \_____  \\   __\_  __ \__  \\ \/ \/ /| __ \_/ __ \_  __ \_  __ <   |  |
+                /        \|  |  |  | \// __ \\     / | \_\ \  ___/|  | \/|  | \/\___  |
+               /_______  /|__|  |__|  (____  /\/\_/  |___  /\___  >__|   |__|   / ____|
+                       \/                  \/            \/     \/              \/
+               
+                 Strawberry PS4 Linux
+                 Platform  : Sony PlayStation 4
+                 Release   : 7.1.7-Strawberry-General-FullLTO+
+                 Builder   : runner@runnervmgx7h7
+                 Toolchain : Ubuntu clang version 18.1.3 (1ubuntu1), Ubuntu LLD 18.1.3
+                 Build     : #1 SMP PREEMPT_DYNAMIC Tue Aug 25 18:56:41 UTC 2026
+
+[    0.000000] Command line: mitigations=off
+[    0.000000] KERNEL supported cpus:
+[    0.000000]   AMD AuthenticAMD
+[    0.000000] BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x0000000000007fff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x0000000000008000-0x000000000007ffff]  device reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000080000-0x0000000000099fff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x000000000009a000-0x00000000000bffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x00000000000c0000-0x00000000000dffff]
+[    0.000000] BIOS-e820: [mem 0x00000000000e0000-0x00000000000effff]  ACPI data
+[    0.000000] BIOS-e820: [gap 0x00000000000f0000-0x00000000000fffff]
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x00000000003fffff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x0000000000400000-0x000000000047ffff]  device reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000480000-0x000000000067ffff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x0000000000680000-0x00000000006fffff]  device reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000700000-0x000000007efe7fff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x000000007efe8000-0x000000007efeffff]  ACPI NVS
+[    0.000000] BIOS-e820: [mem 0x000000007eff0000-0x000000007effffff]  ACPI data
+[    0.000000] BIOS-e820: [mem 0x000000007f000000-0x000000007fffffff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x0000000080000000-0x00000000fbffffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x00000000fc000000-0x00000000ffffffff]
+[    0.000000] BIOS-e820: [mem 0x0000000100000000-0x000000017fffffff]  device reserved
+[    0.000000] BIOS-e820: [mem 0x0000000180000000-0x000000027effffff]  System RAM
+[    0.000000] Kernel compiled without mitigations, ignoring 'mitigations'; system may still be vulnerable
+[    0.000000] NX (Execute Disable) protection: active
+[    0.000000] APIC: Static calls initialized
+[    0.000000] DMI: SMBIOS 2.1 present.
+[    0.000000] DMI:  , BIOS unde Wed 09/22/2021 16:2
+[    0.000000] ps4_dmi: filling missing DMI fields with PS4 defaults
+[    0.000000] DMI: Memory slots populated: 1/1
+[    0.000000] ps4: EMC timer started in 20079 TSC ticks
+[    0.000000] ps4: Calibrated TSC frequency: 1593713792 kHz
+[    0.000000] tsc: Detected 1593.714 MHz processor
+[    0.000912] e820: update [mem 0x00000000-0x00000fff] System RAM ==> device reserved
+[    0.000917] e820: remove [mem 0x000a0000-0x000fffff] System RAM
+[    0.000931] last_pfn = 0x27f000 max_arch_pfn = 0x400000000
+[    0.000940] MTRR map: 6 entries (3 fixed + 3 variable; max 20), built from 9 variable MTRRs
+[    0.000946] x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT  
+[    0.001215] e820: update [mem 0x80000000-0x17fffffff] System RAM ==> device reserved
+[    0.001229] last_pfn = 0x80000 max_arch_pfn = 0x400000000
+[    0.009466] Using GB pages for direct mapping
+[    0.010673] RAMDISK: [mem 0x38c00000-0x38fe5fff]
+[    0.010691] ACPI: Early table checksum verification disabled
+[    0.010697] ACPI: RSDP 0x00000000000E0000 000024 (v02 SIE   )
+[    0.010705] ACPI: XSDT 0x00000000000E0088 00004C (v01 SIE    ORBIS    20121218 INTL 20110211)
+[    0.010715] ACPI: FACP 0x00000000000E016C 0000F4 (v04 SIE    ORBIS    20130205 INTL 20110211)
+[    0.010724] ACPI: DSDT 0x00000000000E0430 00018C (v02 SIE    ORBIS    20121002 INTL 20110211)
+[    0.010730] ACPI: FACS 0x00000000000E012C 000040
+[    0.010735] ACPI: FACS 0x00000000000E012C 000040
+[    0.010739] ACPI: APIC 0x00000000000E0298 00006C (v02 SIE    ORBIS    20120725 INTL 20110211)
+[    0.010745] ACPI: MCFG 0x00000000000E0304 00003C (v01 SIE    ORBIS    20120725 INTL 20110211)
+[    0.010751] ACPI: SSDT 0x00000000000E0730 001944 (v01 AMD    POWERNOW 00000001 AMD  00000001)
+[    0.010757] ACPI: IVRS 0x00000000000E2074 000054 (v01 F0F    PS4KEXEC 20161225 KEXC 20161225)
+[    0.010762] ACPI: Reserving FACP table memory at [mem 0xe016c-0xe025f]
+[    0.010765] ACPI: Reserving DSDT table memory at [mem 0xe0430-0xe05bb]
+[    0.010767] ACPI: Reserving FACS table memory at [mem 0xe012c-0xe016b]
+[    0.010769] ACPI: Reserving FACS table memory at [mem 0xe012c-0xe016b]
+[    0.010771] ACPI: Reserving APIC table memory at [mem 0xe0298-0xe0303]
+[    0.010772] ACPI: Reserving MCFG table memory at [mem 0xe0304-0xe033f]
+[    0.010774] ACPI: Reserving SSDT table memory at [mem 0xe0730-0xe2073]
+[    0.010776] ACPI: Reserving IVRS table memory at [mem 0xe2074-0xe20c7]
+[    0.011475] ACPI: No IOAPIC entries present
+[    0.011477] ACPI: Using ACPI for processor (LAPIC) configuration information
+[    0.011484] CPU topo: Max. logical packages:   1
+[    0.011486] CPU topo: Max. logical nodes:      1
+[    0.011488] CPU topo: Num. nodes per package:  1
+[    0.011494] CPU topo: Max. logical dies:       1
+[    0.011495] CPU topo: Max. dies per package:   1
+[    0.011507] CPU topo: Max. threads per core:   1
+[    0.011508] CPU topo: Num. cores per package:     8
+[    0.011509] CPU topo: Num. threads per package:   8
+[    0.011511] CPU topo: Allowing 8 present CPUs plus 0 hotplug CPUs
+[    0.011533] [gap 0xfc000000-0xffffffff] available for PCI devices
+[    0.011539] clocksource: refined-jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645519600211568 ns
+[    0.011579] Zone ranges:
+[    0.011580]   DMA      [mem 0x0000000000001000-0x0000000000ffffff]
+[    0.011584]   DMA32    [mem 0x0000000001000000-0x00000000ffffffff]
+[    0.011587]   Normal   [mem 0x0000000100000000-0x000000027effffff]
+[    0.011590] Movable zone start for each node
+[    0.011591] Early memory node ranges
+[    0.011592]   node   0: [mem 0x0000000000001000-0x0000000000007fff]
+[    0.011595]   node   0: [mem 0x0000000000080000-0x0000000000099fff]
+[    0.011598]   node   0: [mem 0x0000000000100000-0x00000000003fffff]
+[    0.011600]   node   0: [mem 0x0000000000480000-0x000000000067ffff]
+[    0.011602]   node   0: [mem 0x0000000000700000-0x000000007efe7fff]
+[    0.011605]   node   0: [mem 0x000000007f000000-0x000000007fffffff]
+[    0.011607]   node   0: [mem 0x0000000180000000-0x000000027effffff]
+[    0.011610] Initmem setup node 0 [mem 0x0000000000001000-0x000000027effffff]
+[    0.011622] On node 0, zone DMA: 1 pages in unavailable ranges
+[    0.011627] On node 0, zone DMA: 120 pages in unavailable ranges
+[    0.011648] On node 0, zone DMA: 102 pages in unavailable ranges
+[    0.011663] On node 0, zone DMA: 128 pages in unavailable ranges
+[    0.011716] On node 0, zone DMA: 128 pages in unavailable ranges
+[    0.022636] On node 0, zone DMA32: 24 pages in unavailable ranges
+[    0.044663] On node 0, zone Normal: 4096 pages in unavailable ranges
+[    0.044681] setup_percpu: NR_CPUS:8 nr_cpumask_bits:8 nr_cpu_ids:8 nr_node_ids:1
+[    0.045422] percpu: Embedded 44 pages/cpu s142464 r8192 d29568 u262144
+[    0.045440] pcpu-alloc: s142464 r8192 d29568 u262144 alloc=1*2097152
+[    0.045446] pcpu-alloc: [0] 0 1 2 3 4 5 6 7 
+[    0.045478] Kernel command line: mitigations=off
+[    0.045530] printk: log_buf_len individual max cpu contribution: 65536 bytes
+[    0.045532] printk: log_buf_len total cpu_extra contributions: 458752 bytes
+[    0.045534] printk: log_buf_len min size: 65536 bytes
+[    0.046392] printk: log buffer data + meta data: 524288 + 1835008 = 2359296 bytes
+[    0.046399] printk: early log buf free: 57912(88%)
+[    0.048221] Dentry cache hash table entries: 1048576 (order: 11, 8388608 bytes, linear)
+[    0.049148] Inode-cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.049234] software IO TLB: area num 8.
+[    0.078609] Built 1 zonelists, mobility grouping on.  Total pages: 1568265
+[    0.078622] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.108873] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=8, Nodes=1
+[    0.109025] Dynamic Preempt: full
+[    0.109128] rcu: Preemptible hierarchical RCU implementation.
+[    0.109131] 	Trampoline variant of Tasks RCU enabled.
+[    0.109132] 	Tracing variant of Tasks RCU enabled.
+[    0.109134] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.109156] RCU Tasks: Setting shift to 3 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=8.
+[    0.109170] NR_IRQS: 4352, nr_irqs: 128, preallocated irqs: 0
+[    0.109228] rcu: 	Offload RCU callbacks from CPUs: 0-7.
+[    0.109236] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.109250] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.109304] No irq handler for 0.49
+[    0.109339] Console: colour dummy device 80x25
+[    0.109345] printk: legacy console [tty0] enabled
+[    0.109759] ACPI: Core revision 20251212
+[    0.109846] ACPI: setting ELCR to 0200 (from ffff)
+[    0.109865] Failed to register legacy timer interrupt
+[    0.109870] APIC: Switch to symmetric I/O mode setup
+[    0.109903] AMD-Vi: Using global IVHD EFR:0x0, EFR2:0x0
+[    0.110015] clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x16f8f2ef495, max_idle_ns: 440795285201 ns
+[    0.110036] Calibrating delay loop (skipped), value calculated using timer frequency.. 3187.42 BogoMIPS (lpj=6374856)
+[    0.110086] Last level iTLB entries: 4KB 512, 2MB 8, 4MB 4
+[    0.110093] Last level dTLB entries: 4KB 512, 2MB 256, 4MB 128, 1GB 0
+[    0.110112] mitigations: Enabled attack vectors: SMT mitigations: off
+[    0.110120] Speculative Store Bypass: Vulnerable
+[    0.110125] Spectre V2 : Vulnerable
+[    0.110129] RETBleed: Vulnerable
+[    0.110133] Spectre V1 : Vulnerable: __user pointer sanitization and usercopy barriers only; no swapgs barriers
+[    0.110149] x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point registers'
+[    0.110157] x86/fpu: Supporting XSAVE feature 0x002: 'SSE registers'
+[    0.110162] x86/fpu: Supporting XSAVE feature 0x004: 'AVX registers'
+[    0.110168] x86/fpu: xstate_offset[2]:  576, xstate_sizes[2]:  256
+[    0.110174] x86/fpu: Enabled xstate features 0x7, context size is 832 bytes, using 'standard' format.
+[    0.114027] pid_max: default: 32768 minimum: 301
+[    0.114027] Mount-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.114027] Mountpoint-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.114027] VFS: Finished mounting rootfs on nullfs
+[    0.114027] smpboot: CPU0: AMD Jaguar (family: 0x16, model: 0x13, stepping: 0x1)
+[    0.114027] Performance Events: AMD PMU driver.
+[    0.114027] ... version:                   0
+[    0.114027] ... bit width:                 48
+[    0.114027] ... generic counters:          4
+[    0.114027] ... generic bitmap:            000000000000000f
+[    0.114027] ... fixed-purpose counters:    0
+[    0.114027] ... fixed-purpose bitmap:      0000000000000000
+[    0.114027] ... value mask:                0000ffffffffffff
+[    0.114027] ... max period:                00007fffffffffff
+[    0.114027] ... global_ctrl mask:          000000000000000f
+[    0.114027] signal: max sigframe size: 1776
+[    0.114027] rcu: Hierarchical SRCU implementation.
+[    0.114027] rcu: 	Max phase no-delay instances is 1000.
+[    0.114027] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.114027] smp: Bringing up secondary CPUs ...
+[    0.114027] smpboot: x86: Booting SMP configuration:
+[    0.114027] .... node  #0, CPUs:      #1 #2 #3 #4 #5 #6 #7
+[    0.128033] smp: Brought up 1 node, 8 CPUs
+[    0.128033] smpboot: Total of 8 processors activated (25499.42 BogoMIPS)
+[    0.128033] Memory: 6023708K/6273060K available (34457K kernel code, 1111K rwdata, 20372K rodata, 1460K init, 668K bss, 244212K reserved, 0K cma-reserved)
+[    0.130294] devtmpfs: initialized
+[    0.130588] posixtimers hash table entries: 4096 (order: 4, 65536 bytes, linear)
+[    0.130588] futex hash table entries: 2048 (131072 bytes on 1 NUMA nodes, total 128 KiB, linear).
+[    0.130588] prandom: seed boundary self test passed
+[    0.131346] prandom: 100 self tests passed
+[    0.131351] xor: automatically using best checksumming function   avx       
+[    0.132823] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.134044] audit: initializing netlink subsys (disabled)
+[    0.134149] audit: type=2000 audit(0.024:1): state=initialized audit_enabled=0 res=1
+[    0.134301] thermal_sys: Registered thermal governor 'step_wise'
+[    0.134323] cpuidle: using governor ladder
+[    0.134323] cpuidle: using governor menu
+[    0.134323] Freeing SMP alternatives memory: 188K
+[    0.134323] PCI: ECAM [mem 0xf8000000-0xfbffffff] (base 0xf8000000) for domain 0000 [bus 00-3f]
+[    0.134336] PCI: Using configuration type 1 for base access
+[    0.134557] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.134557] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.210030] raid6: sse2x4   gen()  3908 MB/s
+[    0.278030] raid6: sse2x2   gen()  4061 MB/s
+[    0.346034] raid6: sse2x1   gen()  3424 MB/s
+[    0.346041] raid6: using algorithm sse2x2 gen() 4061 MB/s
+[    0.414030] raid6: .... xor() 2600 MB/s, rmw enabled
+[    0.414037] raid6: using ssse3x2 recovery algorithm
+[    0.414141] ACPI: Added _OSI(Module Device)
+[    0.414148] ACPI: Added _OSI(Processor Device)
+[    0.414154] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.415214] ACPI: 2 ACPI AML tables successfully acquired and loaded
+[    0.415442] ACPI: OSL: SCI (IRQ9) allocation failed
+[    0.415450] ACPI Error: AE_NOT_ACQUIRED, Unable to install System Control Interrupt handler (20251212/evevent-96)
+[    0.415461] ACPI: Unable to start the ACPI Interpreter
+[    0.415467] ACPI Error: Could not remove SCI handler (20251212/evmisc-251)
+[    0.422210] iommu: Default domain type: Passthrough
+[    0.422269] SCSI subsystem initialized
+[    0.422269] libata version 3.00 loaded.
+[    0.422289] usbcore: registered new interface driver usbfs
+[    0.422314] usbcore: registered new interface driver hub
+[    0.422336] usbcore: registered new device driver usb
+[    0.422455] Advanced Linux Sound Architecture Driver Initialized.
+[    0.422791] Bluetooth: Core ver 2.22
+[    0.422807] NET: Registered PF_BLUETOOTH protocol family
+[    0.422813] Bluetooth: HCI device and connection manager initialized
+[    0.422821] Bluetooth: HCI socket layer initialized
+[    0.422827] Bluetooth: L2CAP socket layer initialized
+[    0.422834] Bluetooth: SCO socket layer initialized
+[    0.422905] PCI: Probing PCI hardware
+[    0.422905] PCI: root bus 00: using default resources
+[    0.422905] PCI: Probing PCI hardware (bus 00)
+[    0.422905] PCI host bridge to bus 0000:00
+[    0.422905] pci_bus 0000:00: root bus resource [io  0x0000-0xffff]
+[    0.422905] pci_bus 0000:00: root bus resource [mem 0x00000000-0xffffffffff]
+[    0.422905] pci_bus 0000:00: No busn resource found for root bus, will use [bus 00-ff]
+[    0.422905] pci 0000:00:00.0: [1022:1436] type 00 class 0x060000 conventional PCI endpoint
+[    0.422905] pci 0000:00:00.2: [1022:1437] type 00 class 0x080600 conventional PCI endpoint
+[    0.422905] pci 0000:00:01.0: [1002:9922] type 00 class 0x030000 PCIe Root Complex Integrated Endpoint
+[    0.422905] pci 0000:00:01.0: BAR 0 [mem 0xe0000000-0xe3ffffff 64bit pref]
+[    0.422905] pci 0000:00:01.0: BAR 2 [mem 0xe4000000-0xe47fffff 64bit pref]
+[    0.422905] pci 0000:00:01.0: BAR 4 [io  0x6000-0x60ff]
+[    0.422905] pci 0000:00:01.0: BAR 5 [mem 0xe4800000-0xe483ffff]
+[    0.422905] pci 0000:00:01.0: ROM [mem 0x00000000-0x0001ffff pref]
+[    0.422905] pci 0000:00:01.0: enabling Extended Tags
+[    0.422905] pci 0000:00:01.0: Video device with shadowed ROM at [mem 0x000c0000-0x000dffff]
+[    0.422905] pci 0000:00:01.0: supports D1 D2
+[    0.422905] pci 0000:00:01.0: PME# supported from D1 D2 D3hot
+[    0.422905] pci 0000:00:01.1: [1002:9921] type 00 class 0x040300 PCIe Root Complex Integrated Endpoint
+[    0.422905] pci 0000:00:01.1: BAR 0 [mem 0xe4840000-0xe4843fff 64bit]
+[    0.422905] pci 0000:00:01.1: enabling Extended Tags
+[    0.422905] pci 0000:00:01.1: supports D1 D2
+[    0.422905] pci 0000:00:02.0: [1022:1438] type 00 class 0x060000 conventional PCI endpoint
+[    0.422905] pci 0000:00:14.0: [104d:90c8] type 00 class 0x088000 PCIe Endpoint
+[    0.422905] pci 0000:00:14.0: BAR 0 [mem 0xfdf8000000-0xfdf9ffffff 64bit]
+[    0.422905] pci 0000:00:14.0: BAR 2 [io  0x1000-0x10ff]
+[    0.422905] pci 0000:00:14.0: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.422939] pci 0000:00:14.0: supports D1
+[    0.422945] pci 0000:00:14.0: PME# supported from D0 D1 D3hot
+[    0.423049] pci 0000:00:14.1: [104d:90c9] type 00 class 0x088001 PCIe Endpoint
+[    0.423087] pci 0000:00:14.1: BAR 0 [mem 0xc4000000-0xc4003fff 64bit]
+[    0.423098] pci 0000:00:14.1: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.423141] pci 0000:00:14.1: supports D1
+[    0.423147] pci 0000:00:14.1: PME# supported from D0 D1 D3hot
+[    0.423244] pci 0000:00:14.2: [104d:90ca] type 00 class 0x088002 PCIe Endpoint
+[    0.423282] pci 0000:00:14.2: BAR 0 [mem 0xc8000000-0xc8000fff 64bit]
+[    0.423292] pci 0000:00:14.2: BAR 5 [mem 0xc8001000-0xc8001fff]
+[    0.423299] pci 0000:00:14.2: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.423343] pci 0000:00:14.2: supports D1
+[    0.423348] pci 0000:00:14.2: PME# supported from D0 D1 D3hot
+[    0.423448] pci 0000:00:14.3: [104d:90cb] type 00 class 0x088003 PCIe Endpoint
+[    0.423485] pci 0000:00:14.3: BAR 0 [mem 0xcc000000-0xcc000fff 64bit]
+[    0.423496] pci 0000:00:14.3: ROM [mem 0x00000000-0x00000fff pref]
+[    0.423540] pci 0000:00:14.3: supports D1
+[    0.423545] pci 0000:00:14.3: PME# supported from D0 D1 D3hot
+[    0.423638] pci 0000:00:14.4: [104d:90cc] type 00 class 0x088004 PCIe Endpoint
+[    0.423676] pci 0000:00:14.4: BAR 0 [mem 0xd0000000-0xd00fffff 64bit]
+[    0.423685] pci 0000:00:14.4: BAR 2 [mem 0xd0100000-0xd0107fff 64bit]
+[    0.423692] pci 0000:00:14.4: BAR 4 [mem 0xd0200000-0xd03fffff 64bit]
+[    0.423699] pci 0000:00:14.4: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.423742] pci 0000:00:14.4: supports D1
+[    0.423748] pci 0000:00:14.4: PME# supported from D0 D1 D3hot
+[    0.423844] pci 0000:00:14.5: [104d:90cd] type 00 class 0x088005 PCIe Endpoint
+[    0.423882] pci 0000:00:14.5: BAR 0 [mem 0xd4000000-0xd4000fff 64bit]
+[    0.423890] pci 0000:00:14.5: BAR 2 [mem 0xd4001000-0xd4001fff 64bit]
+[    0.423898] pci 0000:00:14.5: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.423942] pci 0000:00:14.5: supports D1
+[    0.423947] pci 0000:00:14.5: PME# supported from D0 D1 D3hot
+[    0.424047] pci 0000:00:14.6: [104d:90ce] type 00 class 0x088006 PCIe Endpoint
+[    0.424084] pci 0000:00:14.6: BAR 0 [mem 0xd8000000-0xd8000fff 64bit]
+[    0.424093] pci 0000:00:14.6: BAR 2 [mem 0x80000000-0xbfffffff 64bit]
+[    0.424100] pci 0000:00:14.6: BAR 4 [mem 0xd9100000-0xd91fffff]
+[    0.424107] pci 0000:00:14.6: BAR 5 [mem 0xd9000000-0xd903ffff]
+[    0.424114] pci 0000:00:14.6: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.424156] pci 0000:00:14.6: supports D1
+[    0.424162] pci 0000:00:14.6: PME# supported from D0 D1 D3hot
+[    0.426100] pci 0000:00:14.7: [104d:90cf] type 00 class 0x088007 PCIe Endpoint
+[    0.426139] pci 0000:00:14.7: BAR 0 [mem 0xdc000000-0xdc1fffff 64bit]
+[    0.426147] pci 0000:00:14.7: BAR 2 [mem 0xdc200000-0xdc3fffff 64bit]
+[    0.426155] pci 0000:00:14.7: BAR 4 [mem 0xdc400000-0xdc5fffff 64bit]
+[    0.426162] pci 0000:00:14.7: ROM [mem 0x00000000-0x0000ffff pref]
+[    0.426205] pci 0000:00:14.7: supports D1
+[    0.426210] pci 0000:00:14.7: PME# supported from D0 D1 D3hot
+[    0.426297] pci 0000:00:18.0: [1022:142e] type 00 class 0x060000 conventional PCI endpoint
+[    0.426379] pci 0000:00:18.1: [1022:142f] type 00 class 0x060000 conventional PCI endpoint
+[    0.426452] pci 0000:00:18.2: [1022:1430] type 00 class 0x060000 conventional PCI endpoint
+[    0.426530] pci 0000:00:18.3: [1022:1431] type 00 class 0x060000 conventional PCI endpoint
+[    0.426607] pci 0000:00:18.4: [1022:1432] type 00 class 0x060000 conventional PCI endpoint
+[    0.426685] pci 0000:00:18.5: [1022:1433] type 00 class 0x060000 conventional PCI endpoint
+[    0.426760] pci_bus 0000:00: busn_res: [bus 00-ff] end is updated to 00
+[    0.428697] PCI: pci_cache_line_size set to 64 bytes
+[    0.428734] e820: register RAM buffer resource [mem 0x00008000-0x0000ffff]
+[    0.428742] e820: register RAM buffer resource [mem 0x0009a000-0x0009ffff]
+[    0.428748] e820: register RAM buffer resource [mem 0x00680000-0x006fffff]
+[    0.428754] e820: register RAM buffer resource [mem 0x7efe8000-0x7fffffff]
+[    0.428760] e820: register RAM buffer resource [mem 0x27f000000-0x27fffffff]
+[    0.428792] pci 0000:00:01.0: vgaarb: setting as boot VGA device
+[    0.428792] pci 0000:00:01.0: vgaarb: bridge control possible
+[    0.428792] pci 0000:00:01.0: vgaarb: VGA device added: decodes=io+mem,owns=io+mem,locks=none
+[    0.428792] vgaarb: loaded
+[    0.428792] clocksource: Switched to clocksource tsc-early
+[    0.428792] pnp: PnP ACPI: disabled
+[    0.429752] NET: Registered PF_INET protocol family
+[    0.430062] IP idents hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.487464] tcp_listen_portaddr_hash hash table entries: 4096 (order: 4, 65536 bytes, linear)
+[    0.487507] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.487520] TCP established hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.487716] TCP bind hash table entries: 65536 (order: 9, 2097152 bytes, linear)
+[    0.488265] TCP: Hash tables configured (established 65536 bind 65536)
+[    0.488490] MPTCP token hash table entries: 8192 (order: 6, 196608 bytes, linear)
+[    0.488561] UDP hash table entries: 4096 (order: 6, 262144 bytes, linear)
+[    0.488748] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.489096] RPC: Registered named UNIX socket transport module.
+[    0.489104] RPC: Registered udp transport module.
+[    0.489108] RPC: Registered tcp transport module.
+[    0.489112] RPC: Registered tcp-with-tls transport module.
+[    0.489117] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.489478] pci 0000:00:14.0: ROM [mem 0xfc080000-0xfc08ffff pref]: assigned
+[    0.489493] pci 0000:00:14.1: ROM [mem 0xfc090000-0xfc09ffff pref]: assigned
+[    0.489502] pci 0000:00:14.2: ROM [mem 0xfc0a0000-0xfc0affff pref]: assigned
+[    0.489511] pci 0000:00:14.4: ROM [mem 0xfc0b0000-0xfc0bffff pref]: assigned
+[    0.489519] pci 0000:00:14.5: ROM [mem 0xfc0c0000-0xfc0cffff pref]: assigned
+[    0.489527] pci 0000:00:14.6: ROM [mem 0xfc0d0000-0xfc0dffff pref]: assigned
+[    0.489535] pci 0000:00:14.7: ROM [mem 0xfc0e0000-0xfc0effff pref]: assigned
+[    0.489543] pci 0000:00:14.3: ROM [mem 0xfc0f0000-0xfc0f0fff pref]: assigned
+[    0.489558] pci_bus 0000:00: resource 4 [io  0x0000-0xffff]
+[    0.489565] pci_bus 0000:00: resource 5 [mem 0x00000000-0xffffffffff]
+[    0.489626] pci 0000:00:01.1: D0 power state depends on 0000:00:01.0
+[    0.489640] pci 0000:00:02.0: CLS mismatch (64 != 512), using 64 bytes
+[    0.489813] pci 0000:00:14.0: Adding to iommu group 0
+[    0.489839] pci 0000:00:14.1: Adding to iommu group 0
+[    0.489863] pci 0000:00:14.2: Adding to iommu group 0
+[    0.489890] pci 0000:00:14.3: Adding to iommu group 0
+[    0.489913] pci 0000:00:14.4: Adding to iommu group 0
+[    0.489914] Trying to unpack rootfs image as initramfs...
+[    0.489935] pci 0000:00:14.5: Adding to iommu group 0
+[    0.489963] pci 0000:00:14.6: Adding to iommu group 0
+[    0.489986] pci 0000:00:14.7: Adding to iommu group 0
+[    0.490038] pci 0000:00:00.2: can't find IRQ for PCI INT A; please try using pci=biosirq
+[    0.490052] AMD-Vi: Extended features (0x840, 0x0): IA
+[    0.490062] AMD-Vi: Interrupt remapping enabled
+[    0.490223] PCI-DMA: Using software bounce buffering for IO (SWIOTLB)
+[    0.490242] software IO TLB: mapped [mem 0x000000007afe8000-0x000000007efe8000] (64MB)
+[    0.490281] LVT offset 0 assigned for vector 0x400
+[    0.492995] perf: AMD IBS detected (0x000000ff)
+[    0.493053] platform rtc_cmos: registered fallback platform RTC device
+[    0.495264] Initialise system trusted keyrings
+[    0.495382] workingset: timestamp_bits=46 (anon: 42) max_order=21 bucket_order=0 (anon: 0)
+[    0.495891] fuse: init (API version 7.45)
+[    0.496219] cryptd: max_cpu_qlen set to 1000
+[    0.522171] NET: Registered PF_ALG protocol family
+[    0.522212] Key type asymmetric registered
+[    0.522219] Asymmetric key parser 'x509' registered
+[    0.522283] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 252)
+[    0.522292] io scheduler mq-deadline registered
+[    0.522297] io scheduler kyber registered
+[    0.522325] io scheduler bfq registered
+[    0.544718] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.545463] Non-volatile memory driver v1.3
+[    0.546782] brd: module loaded
+[    0.548795] loop: module loaded
+[    0.549006] zram: Added device: zram0
+[    0.549293] ps4-hwinfo: GPU: Liverpool [1002:9922]  southbridge: Belize B0 [104d:90cc]
+[    0.549307] aeolia_pcie 0000:00:14.4: southbridge: Belize
+[    0.549315] aeolia_pcie 0000:00:14.4:   fn0 [104d:90c8] ACPI/wakeup
+[    0.549323] aeolia_pcie 0000:00:14.4:   fn1 [104d:90c9] GbE
+[    0.549330] aeolia_pcie 0000:00:14.4:   fn2 [104d:90ca] AHCI
+[    0.549336] aeolia_pcie 0000:00:14.4:   fn3 [104d:90cb] SDHCI/eMMC
+[    0.549343] aeolia_pcie 0000:00:14.4:   fn4 [104d:90cc] PCIe/MSI-glue
+[    0.549350] aeolia_pcie 0000:00:14.4:   fn5 [104d:90cd] DMAC
+[    0.549357] aeolia_pcie 0000:00:14.4:   fn6 [104d:90ce] MEM
+[    0.549364] aeolia_pcie 0000:00:14.4:   fn7 [104d:90cf] xHCI/SATA
+[    0.549401] aeolia_pcie 0000:00:14.4: apcie glue init
+[    0.549413] aeolia_pcie 0000:00:14.4: chip-id: 5c011120 0d455ec4  rev: 01000200
+[    0.549434] AMD-Vi: Remapping Selected: a4
+[    0.562594] input: Power Button as /devices/pci0000:00/0000:00:14.4/input/input0
+[    0.606427] Freeing initrd memory: 3992K
+[    0.632633] ps4-led ps4-led: PS4 LED driver ready: 12 colors, boot color: purple
+[    0.702623] ps4-fan ps4-fan: PS4 fan hwmon ready: temp=60C threshold=75C
+[    0.702736] ps4-buzzer ps4-buzzer: PS4 buzzer driver ready.
+[    0.702865] ps4-mesa-lock: built without PS4_MESA_LOCK_TOKEN; all verification requests will fail
+[    0.702934] wireguard: WireGuard 1.0.0 loaded. See www.wireguard.com for information.
+[    0.702943] wireguard: Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+[    0.703257] tun: Universal TUN/TAP device driver, 1.6
+[    0.703358] sky2: driver version 1.30
+[    0.703421] sky2 0000:00:14.1: chip type 0xbd
+[    0.703442] sky2 0000:00:14.1: Yukon-2 OptimaEEE chip revision 1
+[    0.703819] sky2 0000:00:14.1 eth0: addr 0c:fe:45:d0:33:23
+[    0.703903] usbcore: registered new interface driver mwifiex_usb
+[    0.703947] usbcore: registered new interface driver mt7601u
+[    0.703968] usbcore: registered new interface driver mt76x0u
+[    0.704030] usbcore: registered new interface driver mt76x2u
+[    0.704095] usbcore: registered new interface driver mt7663u
+[    0.704647] VFIO - User Level meta-driver version: 0.3
+[    0.704784] xhci_aeolia 0000:00:14.7: Belize SATA PHY init
+[    1.515023] clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x16f8f2ef495, max_idle_ns: 440795285201 ns
+[    1.515264] clocksource: Switched to clocksource tsc
+[    1.696816] xhci_aeolia 0000:00:14.7: Belize SATA PHY Trace length : 6
+[    2.688900] xhci_aeolia 0000:00:14.7: AHCI vers 0001.0300, 32 command slots, 3 Gbps, ATA mode
+[    2.688912] xhci_aeolia 0000:00:14.7: 1/1 ports implemented (port mask 0x1)
+[    2.688919] xhci_aeolia 0000:00:14.7: flags: 64bit ncq sntf led only pmp fbs pio slum part sxs 
+[    2.689357] scsi host0: ahci
+[    2.689459] ata1: SATA max UDMA/133 abar m2097152@0xdc200000 port 0xdc200100 irq 26 lpm-pol 0
+[    2.690699] xhci_aeolia 0000:00:14.7: xHCI Host Controller
+[    2.690717] xhci_aeolia 0000:00:14.7: new USB bus registered, assigned bus number 1
+[    2.690817] xhci_aeolia 0000:00:14.7: hcc params 0x0228f66c hci version 0x100 quirks 0x0008000000000010
+[    2.690850] xhci_aeolia 0000:00:14.7: irq 25, io mem 0xdc000000
+[    2.690862] xhci_aeolia 0000:00:14.7: xHCI Host Controller
+[    2.690874] xhci_aeolia 0000:00:14.7: new USB bus registered, assigned bus number 2
+[    2.690884] xhci_aeolia 0000:00:14.7: Host supports USB 3.0 SuperSpeed
+[    2.690984] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 7.01
+[    2.690995] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    2.691003] usb usb1: Product: xHCI Host Controller
+[    2.691008] usb usb1: Manufacturer: Linux 7.1.7-Strawberry-General-FullLTO+ xhci-hcd
+[    2.691015] usb usb1: SerialNumber: 0000:00:14.7
+[    2.691234] hub 1-0:1.0: USB hub found
+[    2.691257] hub 1-0:1.0: 2 ports detected
+[    2.691405] usb usb2: We don't know the algorithms for LPM for this host, disabling LPM.
+[    2.691463] usb usb2: New USB device found, idVendor=1d6b, idProduct=0003, bcdDevice= 7.01
+[    2.691474] usb usb2: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    2.691481] usb usb2: Product: xHCI Host Controller
+[    2.691486] usb usb2: Manufacturer: Linux 7.1.7-Strawberry-General-FullLTO+ xhci-hcd
+[    2.691493] usb usb2: SerialNumber: 0000:00:14.7
+[    2.691634] hub 2-0:1.0: USB hub found
+[    2.691654] hub 2-0:1.0: 2 ports detected
+[    2.694714] xhci_aeolia 0000:00:14.7: xHCI Host Controller
+[    2.694726] xhci_aeolia 0000:00:14.7: new USB bus registered, assigned bus number 3
+[    2.694812] xhci_aeolia 0000:00:14.7: hcc params 0x0220f06c hci version 0x100 quirks 0x0008000000000010
+[    2.694844] xhci_aeolia 0000:00:14.7: irq 27, io mem 0xdc400000
+[    2.694854] xhci_aeolia 0000:00:14.7: xHCI Host Controller
+[    2.694863] xhci_aeolia 0000:00:14.7: new USB bus registered, assigned bus number 4
+[    2.694872] xhci_aeolia 0000:00:14.7: Host supports USB 3.0 SuperSpeed
+[    2.694945] usb usb3: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 7.01
+[    2.694956] usb usb3: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    2.694963] usb usb3: Product: xHCI Host Controller
+[    2.694968] usb usb3: Manufacturer: Linux 7.1.7-Strawberry-General-FullLTO+ xhci-hcd
+[    2.694975] usb usb3: SerialNumber: 0000:00:14.7
+[    2.695144] hub 3-0:1.0: USB hub found
+[    2.695164] hub 3-0:1.0: 1 port detected
+[    2.695292] usb usb4: We don't know the algorithms for LPM for this host, disabling LPM.
+[    2.695349] usb usb4: New USB device found, idVendor=1d6b, idProduct=0003, bcdDevice= 7.01
+[    2.695359] usb usb4: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    2.695367] usb usb4: Product: xHCI Host Controller
+[    2.695372] usb usb4: Manufacturer: Linux 7.1.7-Strawberry-General-FullLTO+ xhci-hcd
+[    2.695379] usb usb4: SerialNumber: 0000:00:14.7
+[    2.695541] hub 4-0:1.0: USB hub found
+[    2.695560] hub 4-0:1.0: 1 port detected
+[    2.695866] usbcore: registered new interface driver uas
+[    2.695910] usbcore: registered new interface driver usb-storage
+[    2.696009] i8042: PNP: No PS/2 controller found.
+[    2.696152] mousedev: PS/2 mouse device common for all mice
+[    2.696274] usbcore: registered new interface driver xpad
+[    2.696348] i2c_dev: i2c /dev entries driver
+[    2.696669] device-mapper: ioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+[    2.696963] amd_pstate: the _CPC object is not present in SBIOS or ACPI disabled
+[    2.697002] sdhci-pci 0000:00:14.3: SDHCI controller found [104d:90cb] (rev 0)
+[    2.697076] hid: raw HID events driver (C) Jiri Kosina
+[    2.697296] usbcore: registered new interface driver usbhid
+[    2.697304] usbhid: USB HID core driver
+[    2.697379] Driver 'wmi-bmof' was unable to register with bus_type 'wmi' because the bus was not initialized.
+[    2.697642] mmc0: SDHCI controller on PCI [0000:00:14.3] using ADMA
+[    2.697659] usbcore: registered new interface driver snd-usb-audio
+[    2.697929] snd_hda_intel 0000:00:01.1: can't find IRQ for PCI INT B; please try using pci=biosirq
+[    2.698075] u32 classifier
+[    2.698082]     input device check on
+[    2.698085]     Actions configured
+[    2.699999] The DCCP match is deprecated and scheduled to be removed in 2027.
+               Please contact the netfilter-devel mailing list or update your iptables rules
+[    2.700052] xt_time: kernel timezone is -0000
+[    2.700076] IPVS: Registered protocols (TCP, UDP, SCTP, AH, ESP)
+[    2.700085] IPVS: Connection hash table configured (size=4096, memory=32Kbytes)
+[    2.700164] IPVS: ipvs loaded.
+[    2.700292] ipip: IPv4 and MPLS over IPv4 tunneling driver
+[    2.700504] gre: GRE over IPv4 demultiplexer driver
+[    2.700553] Initializing XFRM netlink socket
+[    2.700602] NET: Registered PF_INET6 protocol family
+[    2.701399] Segment Routing with IPv6
+[    2.701406] RPL Segment Routing with IPv6
+[    2.701429] In-situ OAM (IOAM) with IPv6
+[    2.701470] mip6: Mobile IPv6
+[    2.701504] NET: Registered PF_PACKET protocol family
+[    2.701537] Bridge firewalling registered
+[    2.701549] NET: Registered PF_APPLETALK protocol family
+[    2.701570] NET: Registered PF_X25 protocol family
+[    2.701587] X25: Linux Version 0.2
+[    2.701694] Bluetooth: RFCOMM TTY layer initialized
+[    2.701704] Bluetooth: RFCOMM socket layer initialized
+[    2.701709] Bluetooth: RFCOMM ver 1.11
+[    2.701714] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+[    2.701718] Bluetooth: BNEP filters: protocol multicast
+[    2.701724] Bluetooth: BNEP socket layer initialized
+[    2.701729] Bluetooth: HIDP (Human Interface Emulation) ver 1.2
+[    2.701736] Bluetooth: HIDP socket layer initialized
+[    2.701777] NET: Registered PF_PHONET protocol family
+[    2.701803] 8021q: 802.1Q VLAN Support v1.8
+[    2.702363] NET: Registered PF_IEEE802154 protocol family
+[    2.702390] Key type dns_resolver registered
+[    2.702536] batman_adv: B.A.T.M.A.N. advanced 2025.5 (compatibility version 15) loaded
+[    2.702774] NET: Registered PF_VSOCK protocol family
+[    2.702795] mpls_gso: MPLS GSO support
+[    2.703512] microcode: Current revision: 0x07013005
+[    2.704867] IPI shorthand broadcast: enabled
+[    2.706463] input: HD-Audio Generic HDMI/DP,pcm=3 as /devices/pci0000:00/0000:00:01.1/sound/card0/input1
+[    2.706577] input: HD-Audio Generic HDMI/DP,pcm=7 as /devices/pci0000:00/0000:00:01.1/sound/card0/input2
+[    2.715797] sched_clock: Marking stable (2602708897, 110027858)->(2725011805, -12275050)
+[    2.716175] registered taskstats version 1
+[    2.716605] Loading compiled-in X.509 certificates
+[    2.719871] Btrfs loaded, zoned=no, fsverity=no
+[    2.720279] amdgpu 0000:00:01.0: can't find IRQ for PCI INT A; please try using pci=biosirq
+[    2.720307] amdgpu 0000:00:01.0: initializing kernel modesetting (LIVERPOOL 0x1002:0x9922 0x1002:0x9922 0x00).
+[    2.720349] amdgpu 0000:00:01.0: register mmio base: 0xE4800000
+[    2.720356] amdgpu 0000:00:01.0: register mmio size: 262144
+[    2.720504] amdgpu 0000:00:01.0: detected ip block number 0 <common_v1_0_0> (cik_common)
+[    2.720516] amdgpu 0000:00:01.0: detected ip block number 1 <gmc_v7_0_0> (gmc_v7_0)
+[    2.720525] amdgpu 0000:00:01.0: detected ip block number 2 <ih_v2_0_0> (cik_ih)
+[    2.720534] amdgpu 0000:00:01.0: detected ip block number 3 <dce_v8_1_0> (dce_v8_0)
+[    2.720542] amdgpu 0000:00:01.0: detected ip block number 4 <gfx_v7_1_0> (gfx_v7_0)
+[    2.720551] amdgpu 0000:00:01.0: detected ip block number 5 <sdma_v2_0_0> (cik_sdma)
+[    2.720583] ACPI Error: AE_BAD_PARAMETER, Thread 2164363328 could not acquire Mutex [ACPI_MTX_Tables] (0x2) (20251212/utmutex-252)
+[    2.720597] ACPI Error: Mutex [ACPI_MTX_Tables] (0x2) is not acquired, cannot release (20251212/utmutex-289)
+[    2.756361] amdgpu 0000:00:01.0: Fetched VBIOS from ROM BAR
+[    2.756375] amdgpu 0000:00:01.0: [drm] ATOM BIOS: 113-Starsha-005, build: 335091  , ver: 014.085.000.020.000000, 2015/12/14
+[    2.756492] amdgpu 0000:00:01.0: vgaarb: deactivate vga console
+[    2.756503] amdgpu 0000:00:01.0: Trusted Memory Zone (TMZ) feature not supported
+[    2.756511] amdgpu 0000:00:01.0: PCIE atomic ops is not supported
+[    2.756859] amdgpu 0000:00:01.0: vm size is 64 GB, 2 levels, block size is 10-bit, fragment size is 9-bit
+[    2.756873] amdgpu 0000:00:01.0: VRAM: 2048M 0x0000000F00000000 - 0x0000000F7FFFFFFF (2048M used)
+[    2.756883] amdgpu 0000:00:01.0: GART: 512M 0x0000000000000000 - 0x000000001FFFFFFF
+[    2.756895] amdgpu 0000:00:01.0: [drm] Detected VRAM RAM=2048M, BAR=2048M
+[    2.756902] amdgpu 0000:00:01.0: [drm] RAM width 64bits GDDR5
+[    2.757112] amdgpu 0000:00:01.0:  2048M of VRAM memory ready
+[    2.757121] amdgpu 0000:00:01.0:  2945M of GTT memory ready.
+[    2.757164] amdgpu 0000:00:01.0: [drm] GART: num cpu pages 131072, num gpu pages 131072
+[    2.757345] amdgpu 0000:00:01.0: Done gart
+[    2.757359] amdgpu 0000:00:01.0: Done init
+[    2.757390] amdgpu 0000:00:01.0: [drm] PCIE GART of 512M enabled (table at 0x0000000F00100000).
+[    2.758112] amdgpu 0000:00:01.0: PS4 GPU IRQ: vector=30 msi_enabled=1 pdev_irq=30
+[    2.758218] amdgpu 0000:00:01.0: [drm] AMDGPU Display Connectors
+[    2.758227] amdgpu 0000:00:01.0: [drm] Connector 0:
+[    2.758233] amdgpu 0000:00:01.0: [drm]   HDMI-A-1
+[    2.758238] amdgpu 0000:00:01.0: [drm]   HPD1
+[    2.758244] amdgpu 0000:00:01.0: [drm]   DDC: 0x194c 0x194c 0x194d 0x194d 0x194e 0x194e 0x194f 0x194f
+[    2.758253] amdgpu 0000:00:01.0: [drm]   Encoders:
+[    2.758258] amdgpu 0000:00:01.0: [drm]     DFP1: INTERNAL_UNIPHY
+[    2.764067] amdgpu 0000:00:01.0: SE 2, SH per SE 1, CU per SH 9, active_cu_number 18
+[    2.764185] amdgpu 0000:00:01.0: Runtime PM not available
+[    2.764543] [drm] Initialized amdgpu 3.64.0 for 0000:00:01.0 on minor 0
+[    2.780191] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from firmware (edid/my_edid.bin), 256 bytes
+[    2.780565] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from firmware, 42 modes, 1 extension block(s)
+[    2.780577] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@60Hz
+[    2.780585] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@60Hz
+[    2.780593] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080i 1920x1080@60Hz
+[    2.780600] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1680x1050 1680x1050@60Hz
+[    2.780608] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1440x900 1440x900@60Hz
+[    2.780615] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x800 1280x800@60Hz
+[    2.780623] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1024x768 1024x768@60Hz
+[    2.780630] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 800x600 800x600@60Hz
+[    2.780637] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x960 1280x960@60Hz
+[    2.780644] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@60Hz
+[    2.780651] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 800x600 800x600@60Hz
+[    2.780657] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 800x600 800x600@56Hz
+[    2.780664] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 640x480 640x480@60Hz
+[    2.780670] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1024x768 1024x768@60Hz
+[    2.780678] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@60Hz
+[    2.780685] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080i 1920x1080@60Hz
+[    2.780692] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@60Hz
+[    2.780699] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@50Hz
+[    2.780707] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080i 1920x1080@50Hz
+[    2.780714] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@50Hz
+[    2.780721] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780728] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780736] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780743] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080i 1920x1080@50Hz
+[    2.780750] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780757] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780765] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780772] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@50Hz
+[    2.780779] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@60Hz
+[    2.780786] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080i 1920x1080@60Hz
+[    2.780794] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@60Hz
+[    2.780801] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 640x480 640x480@60Hz
+[    2.780807] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@60Hz
+[    2.780814] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080i 1920x1080@60Hz
+[    2.780822] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@60Hz
+[    2.780829] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780836] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780843] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780850] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780858] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780865] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1280x720 1280x720@48Hz
+[    2.780872] amdgpu 0000:00:01.0: [drm] ps4_bridge: mode 1920x1080 1920x1080@60Hz
+[    2.783673] fbcon: amdgpudrmfb (fb0) is primary device
+[    2.795347] mmc0: new UHS-I speed SDR104 SDIO card at address 0001
+[    2.796192] Bluetooth: vendor=0x2df, device=0x912e, class=255, fn=2
+[    2.850768] usb usb3-port1: over-current condition
+[    3.010709] usb usb4-port1: over-current condition
+[    3.109213] Console: switching to colour frame buffer device 240x67
+[    3.155103] amdgpu 0000:00:01.0: [drm] fb0: amdgpudrmfb frame buffer device
+[    3.156906] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from firmware (edid/my_edid.bin), 256 bytes
+[    3.157065] ahci 0000:00:14.2: DMA bits = 31
+[    3.157106] ahci 0000:00:14.2: DMA enable
+[    3.157139] ahci 0000:00:14.2: AHCI vers 0001.0300, 32 command slots, 3 Gbps, unknown mode
+[    3.157172] ahci 0000:00:14.2: 1/1 ports implemented (port mask 0x1)
+[    3.157201] ahci 0000:00:14.2: flags: 64bit ncq sntf led only pmp fbs pio slum part sxs 
+[    3.157297] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from firmware, 42 modes, 1 extension block(s)
+[    3.157645] scsi host1: ahci
+[    3.157756] ata2: SATA max UDMA/133 abar m4096@0xc8001000 port 0xc8001100 irq 31 lpm-pol 1 ext
+[    3.164611] ata1: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
+[    3.167641] ps4-hwinfo: WLAN: [02df:912d] via SDIO
+[    3.167732] netconsole: network logging started
+[    3.168217] cfg80211: Loading compiled-in X.509 certificates for regulatory database
+[    3.169440] Loaded X.509 cert 'sforshee: 00b28ddf47aef9cea7'
+[    3.169999] Loaded X.509 cert 'wens: 61c038651aabdcf94bd0ac7ff06c7248db18c600'
+[    3.170043] clk: Disabling unused clocks
+[    3.170063] ALSA device list:
+[    3.170078]   #0: HD-Audio Generic at 0xe4840000 irq 29
+[    3.170213] faux_driver regulatory: Direct firmware load for regulatory.db failed with error -2
+[    3.170250] cfg80211: failed to load regulatory.db
+[    3.193551] ata1.00: ATA-10: ST1000LM035-1RK172, SDM4, max UDMA/133
+[    3.632571] ata2: SATA link up 3.0 Gbps (SStatus 123 SControl 300)
+[    3.632987] ata2.00: ATAPI: SONY    PS-SYSTEM   408R, 3100, max UDMA/66
+[    3.633848] ata2.00: configured for UDMA/66
+[    4.791887] ata1.00: 1953525168 sectors, multi 16: LBA48 NCQ (depth 32), AA
+[    4.791943] ata1.00: Features: HIPM DIPM
+[    4.841565] ata1.00: configured for UDMA/133
+[    4.841902] scsi 0:0:0:0: Direct-Access     ATA      ST1000LM035-1RK1 SDM4 PQ: 0 ANSI: 5
+[    4.842535] sd 0:0:0:0: Attached scsi generic sg0 type 0
+[    4.842659] sd 0:0:0:0: [sda] 1953525168 512-byte logical blocks: (1.00 TB/932 GiB)
+[    4.842710] sd 0:0:0:0: [sda] 4096-byte physical blocks
+[    4.842758] sd 0:0:0:0: [sda] Write Protect is off
+[    4.842784] sd 0:0:0:0: [sda] Mode Sense: 00 3a 00 00
+[    4.842826] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[    4.842923] sd 0:0:0:0: [sda] Preferred minimum I/O size 4096 bytes
+[    4.844687] scsi 1:0:0:0: CD-ROM            SONY     PS-SYSTEM   408R 3100 PQ: 0 ANSI: 5
+[    4.865357] sr 1:0:0:0: [sr0] scsi3-mmc drive: 0x/0x cd/rw xa/form2 cdda tray
+[    4.878366] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    4.888326] sr 1:0:0:0: Attached scsi CD-ROM sr0
+[    4.888471] sr 1:0:0:0: Attached scsi generic sg1 type 5
+[    4.947627]  sda: sda1 sda3 sda5 sda7 sda9 sda10 sda11 sda12 sda13 sda17 sda19 sda25 sda27 sda29 sda31
+[    4.950122] sd 0:0:0:0: [sda] Attached SCSI disk
+[    4.952323] Freeing unused kernel image (initmem) memory: 1460K
+[    4.954186] Write protecting the kernel read-only data: 55296k
+[    4.956131] Freeing unused kernel image (text/rodata gap) memory: 356K
+[    4.957822] Freeing unused kernel image (rodata/data gap) memory: 108K
+[    4.959208] Run /init as init process
+[    4.960630]   with arguments:
+[    4.960638]     /init
+[    4.960641]   with environment:
+[    4.960643]     HOME=/
+[    4.960645]     TERM=linux
+[   10.440365] mwifiex_sdio mmc0:0001:1: info: FW download over, size 717068 bytes
+[   11.168502] mwifiex_sdio mmc0:0001:1: WLAN FW is active
+[   11.168604] btmrvl_sdio mmc0:0001:2: sdio device tree data not available
+[   11.218927] mwifiex_sdio mmc0:0001:1: host_mlme: disable, key_api: 2
+[   11.244091] mwifiex_sdio mmc0:0001:1: info: MWIFIEX VERSION: mwifiex 1.0 (15.68.19.p54) 
+[   11.244111] mwifiex_sdio mmc0:0001:1: driver_version = mwifiex 1.0 (15.68.19.p54) 
+[   15.335644] random: crng init done
+[   27.141188] loop0: detected capacity change from 0 to 1073741824
+[   27.169692] exFAT-fs (loop0): invalid boot record signature
+[   27.169702] exFAT-fs (loop0): failed to read boot sector
+[   27.169704] exFAT-fs (loop0): failed to recognize exfat type
+[   27.245948] BTRFS: device fsid ae3019f2-9c97-4b49-9782-59172bc40309 devid 1 transid 1464 /dev/loop0 (7:0) scanned by mount (194)
+[   27.246204] BTRFS info (device loop0): first mount of filesystem ae3019f2-9c97-4b49-9782-59172bc40309
+[   27.246213] BTRFS info (device loop0): using crc32c checksum algorithm
+[   27.622617] BTRFS info (device loop0): enabling free space tree
+[   29.180752] systemd[1]: System time advanced to timestamp on /var/lib/systemd/timesync/clock: Thu 2026-10-01 12:08:34 EDT
+[   31.150113] systemd[1]: systemd 262-1-arch running in system mode (+PAM +AUDIT -SELINUX +APPARMOR -IMA +IPE +SMACK +SECCOMP +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 +KMOD +LIBCRYPTSETUP +LIBCRYPTSETUP_PLUGINS +LIBFDISK +PCRE2 +PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD +BPF_FRAMEWORK +BTF +XKBCOMMON +UTMP +LIBARCHIVE)
+[   31.150139] systemd[1]: Detected architecture x86-64.
+[   31.167397] systemd[1]: Hostname set to <PlayStation4>.
+[   31.563250] systemd[1]: bpf-restrict-fs: BPF LSM hook not enabled in the kernel, BPF LSM not supported.
+[   39.340619] systemd[1]: Queued start job for default target Graphical Interface.
+[   39.361307] systemd[1]: Created slice Slice /system/chrome-remote-desktop.
+[   39.362669] systemd[1]: Created slice Slice /system/dirmngr.
+[   39.363639] systemd[1]: Created slice Slice /system/getty.
+[   39.364613] systemd[1]: Created slice Slice /system/gpg-agent.
+[   39.365602] systemd[1]: Created slice Slice /system/gpg-agent-browser.
+[   39.366607] systemd[1]: Created slice Slice /system/gpg-agent-extra.
+[   39.367567] systemd[1]: Created slice Slice /system/gpg-agent-ssh.
+[   39.368532] systemd[1]: Created slice Slice /system/keyboxd.
+[   39.369501] systemd[1]: Created slice Slice /system/modprobe.
+[   39.370466] systemd[1]: Created slice Slice /system/systemd-zram-setup.
+[   39.371149] systemd[1]: Created slice User and Session Slice.
+[   39.371401] systemd[1]: Started Forward Password Requests to Wall Directory Watch.
+[   39.371901] systemd[1]: Set up automount Arbitrary Executable File Formats File System Automount Point.
+[   39.372078] systemd[1]: Expecting device /dev/zram0...
+[   39.372206] systemd[1]: Reached target Local dm-clone Devices.
+[   39.372354] systemd[1]: Reached target Login Prompts.
+[   39.372490] systemd[1]: Reached target Image Downloads.
+[   39.372611] systemd[1]: Reached target Local Integrity Protected Volumes.
+[   39.372776] systemd[1]: Reached target Preparation for Network.
+[   39.372941] systemd[1]: Reached target Remote File Systems.
+[   39.373075] systemd[1]: Reached target Slice Units.
+[   39.373262] systemd[1]: Reached target Local Verity Protected Volumes.
+[   39.373616] systemd[1]: Listening on Device-mapper event daemon FIFOs.
+[   39.374008] systemd[1]: Listening on LVM2 poll daemon socket.
+[   39.376404] systemd[1]: Listening on Query the User Interactively for a Password.
+[   39.379925] systemd[1]: Listening on Process Core Dump Socket.
+[   39.381980] systemd[1]: Listening on Credential Encryption/Decryption.
+[   39.383802] systemd[1]: Listening on Disk Encryption Enrollment Service Socket.
+[   39.385995] systemd[1]: Listening on Factory Reset Management.
+[   39.386266] systemd[1]: Listening on Hostname Service Socket.
+[   39.386628] systemd[1]: Listening on Journal Socket (/dev/log).
+[   39.386955] systemd[1]: Listening on Journal Sockets.
+[   39.389357] systemd[1]: Listening on Console Output Muting Service Socket.
+[   39.389568] systemd[1]: TPM PCR Measurements skipped, unmet condition check ConditionSecurity=measured-os
+[   39.389637] systemd[1]: Make TPM PCR Policy skipped, unmet condition check ConditionSecurity=measured-uki
+[   39.391366] systemd[1]: Listening on Disk Repartitioning Service Socket.
+[   39.391683] systemd[1]: Listening on Resolve Monitor Varlink Socket.
+[   39.392004] systemd[1]: Listening on Resolve Service Varlink Socket.
+[   39.394241] systemd[1]: Listening on Simple Block Device Backed Storage Provider.
+[   39.396536] systemd[1]: Listening on Simple File System Backed Storage Provider.
+[   39.398397] systemd[1]: Listening on System Install Tool.
+[   39.401327] systemd[1]: Listening on System Updates.
+[   39.401615] systemd[1]: Listening on udev Kernel Socket.
+[   39.401939] systemd[1]: Listening on udev Varlink Socket.
+[   39.402218] systemd[1]: Listening on User Database Manager Socket.
+[   39.440855] systemd[1]: Mounting Huge Pages File System...
+[   39.442805] systemd[1]: Mounting POSIX Message Queue File System...
+[   39.443203] systemd[1]: Kernel Debug File System skipped, unmet condition check ConditionPathExists=/sys/kernel/debug
+[   39.443460] systemd[1]: Kernel Trace File System skipped, unmet condition check ConditionPathExists=/sys/kernel/tracing
+[   39.443761] systemd[1]: Create List of Static Device Nodes skipped, unmet condition check ConditionFileNotEmpty=/lib/modules/7.1.7-Strawberry-General-FullLTO+/modules.devname
+[   39.445920] systemd[1]: Starting Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling...
+[   39.446277] systemd[1]: Load Kernel Module configfs skipped, unmet condition check ConditionKernelModuleLoaded=!configfs
+[   39.448377] systemd[1]: Mounting Kernel Configuration File System...
+[   39.448670] systemd[1]: Load Kernel Module drm skipped, unmet condition check ConditionKernelModuleLoaded=!drm
+[   39.448797] systemd[1]: Load Kernel Module fuse skipped, unmet condition check ConditionKernelModuleLoaded=!fuse
+[   39.450969] systemd[1]: Mounting FUSE Control File System...
+[   39.451444] systemd[1]: File System Check on Root Device skipped, unmet condition check ConditionPathIsReadWrite=!/
+[   39.451546] systemd[1]: Clear Stale Hibernate Storage Info skipped, unmet condition check ConditionPathExists=/sys/firmware/efi/efivars/HibernateLocation-8cf2644b-4b0b-428f-9387-6d876050dc67
+[   39.464199] systemd[1]: Starting Journal Service...
+[   39.466719] systemd[1]: Starting Load Kernel Modules...
+[   39.466873] systemd[1]: TPM PCR Machine ID Measurement skipped, unmet condition check ConditionSecurity=measured-os
+[   39.466977] systemd[1]: TPM PCR OS Separator skipped, unmet condition check ConditionSecurity=measured-os
+[   39.468709] systemd[1]: Starting Remount Root and Kernel File Systems...
+[   39.470851] systemd[1]: Starting Create Static Device Nodes in /dev gracefully...
+[   39.471137] systemd[1]: Early TPM SRK Setup skipped, unmet condition check ConditionSecurity=measured-os
+[   39.471238] systemd[1]: TPM PCR NvPCR Initialization Separator skipped, unmet condition check ConditionPathExists=/etc/initrd-release
+[   39.471323] systemd[1]: TPM NvPCR Product ID Measurement skipped, unmet condition check ConditionSecurity=measured-os
+[   39.473634] systemd[1]: Starting Load udev Rules from Credentials...
+[   39.477082] systemd[1]: Starting Coldplug All udev Devices...
+[   39.480634] systemd[1]: Starting Virtual Console Setup...
+[   40.075174] systemd[1]: Mounted Huge Pages File System.
+[   40.076712] systemd[1]: Mounted POSIX Message Queue File System.
+[   40.078181] systemd[1]: Mounted Kernel Configuration File System.
+[   40.079486] systemd[1]: Mounted FUSE Control File System.
+[   40.103185] systemd[1]: Finished Load udev Rules from Credentials.
+[   40.146822] systemd-journald[278]: Collecting audit messages is disabled.
+[   40.689911] systemd[1]: Started Journal Service.
+[   44.677225] BTRFS info (device loop0 state M): use zstd compression, level 3
+[   44.840335] systemd-journald[278]: Received client request to flush runtime journal.
+[   49.790281] zram0: detected capacity change from 0 to 12068864
+[   49.867540] sky2 0000:00:14.1 enp0s20f1: renamed from eth0
+[   51.466620] zswap: loaded using pool zstd
+[   53.066132] Adding 6034428k swap on /dev/zram0.  Priority:100 extents:1 across:6034428k SSDsc
+[   61.925168] Bluetooth: MGMT ver 1.23
+[   64.279930] sky2 0000:00:14.1 enp0s20f1: enabling interface
+[   66.201189] ananicy-cpp[492]: segfault at 10 ip 00005560977e61be sp 00007ffe213e6570 error 4 in ananicy-cpp[561be,556097797000+5f000] likely on CPU 6 (core 6, socket 0)
+[   66.201221] Code: ff ff f7 da 89 10 48 8b 0d ff cf 02 00 ba 1a 00 00 00 be 01 00 00 00 48 8d 3d 74 12 01 00 ff 15 10 ce 02 00 31 c0 48 89 43 18 <48> 8b 04 25 10 00 00 00 0f 0b 0f 1f 84 00 00 00 00 00 48 89 c7 ff
+[   67.248254] [UFW BLOCK] IN=tailscale0 OUT= MAC= SRC=fe80:0000:0000:0000:de9e:d78d:44cb:7f4b DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=136494 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[   67.372157] [UFW BLOCK] IN=tailscale0 OUT= MAC= SRC=fe80:0000:0000:0000:de9e:d78d:44cb:7f4b DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=136494 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[   67.624103] [UFW BLOCK] IN=tailscale0 OUT= MAC= SRC=fe80:0000:0000:0000:de9e:d78d:44cb:7f4b DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=136494 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[   79.308703] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[   79.308721] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[   79.308726] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[   79.345416] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[   79.350403] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[   79.350418] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[   79.350427] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[   79.358305] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[   79.361024] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[   79.361033] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[   79.361037] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[   79.395416] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[   79.405433] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[   79.405455] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[   79.405465] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[   79.413309] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[   82.437865] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[   82.437882] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[   82.437887] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[   82.475507] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[   82.480521] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[   82.480545] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[   82.480555] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[   82.488458] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[   82.490526] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[   82.490535] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[   82.490540] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[   82.530519] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[   82.535528] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[   82.535551] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[   82.535561] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[   82.543422] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[   84.259867] systemd-journald[278]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported
+[  111.492724] usb 1-1: new full-speed USB device number 2 using xhci_aeolia
+[  111.633983] usb 1-1: New USB device found, idVendor=1997, idProduct=2466, bcdDevice= 1.05
+[  111.633998] usb 1-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+[  111.634002] usb 1-1: Product: Wireless Receiver
+[  111.634006] usb 1-1: Manufacturer: Telink
+[  111.662324] input: Telink Wireless Receiver Mouse as /devices/pci0000:00/0000:00:14.7/usb1/1-1/1-1:1.0/0003:1997:2466.0001/input/input3
+[  111.662574] input: Telink Wireless Receiver Consumer Control as /devices/pci0000:00/0000:00:14.7/usb1/1-1/1-1:1.0/0003:1997:2466.0001/input/input4
+[  111.717002] input: Telink Wireless Receiver System Control as /devices/pci0000:00/0000:00:14.7/usb1/1-1/1-1:1.0/0003:1997:2466.0001/input/input5
+[  111.717137] hid-generic 0003:1997:2466.0001: input,hidraw0: USB HID v1.11 Mouse [Telink Wireless Receiver] on usb-0000:00:14.7-1/input0
+[  111.720643] input: Telink Wireless Receiver as /devices/pci0000:00/0000:00:14.7/usb1/1-1/1-1:1.1/0003:1997:2466.0002/input/input6
+[  111.818938] hid-generic 0003:1997:2466.0002: input,hidraw1: USB HID v1.11 Keyboard [Telink Wireless Receiver] on usb-0000:00:14.7-1/input1
+[  120.709974] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[  120.709996] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[  120.710002] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[  120.746883] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[  120.751896] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[  120.751912] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[  120.751920] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[  120.759782] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[  120.761801] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[  120.761809] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[  120.761812] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[  120.801963] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[  120.806901] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[  120.806916] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[  120.806925] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[  120.814819] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[  122.758430] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[  122.758447] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[  122.758452] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[  122.796968] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[  122.806966] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[  122.806988] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[  122.806998] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[  122.814900] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[  122.816941] amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+[  122.816951] amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+[  122.816956] [drm] ps4_bridge: icc-edid: requesting block=0 len=128 (seq=0 half=0)
+[  122.851965] [drm] ps4_bridge: icc-edid: kick seq=0 ret=20
+[  122.857005] [drm:ps4_bridge_read_edid_block_icc] *ERROR* icc i2c commandqueue failed: 255, 255
+[  122.857027] [drm] ps4_bridge: icc-edid: read iter=0 addr=0x7c00 failed ret=-5 res1=255 res2=255
+[  122.857036] amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+[  122.864904] amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+[  454.122564] sky2 0000:00:14.1 enp0s20f1: Link is up at 1000 Mbps, full duplex, flow control both
+[  454.616155] [UFW BLOCK] IN=enp0s20f1 OUT= MAC= SRC=192.168.55.60 DST=224.0.0.252 LEN=58 TOS=0x00 PREC=0x00 TTL=255 ID=55328 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[  454.870039] [UFW BLOCK] IN=enp0s20f1 OUT= MAC= SRC=192.168.55.60 DST=224.0.0.252 LEN=58 TOS=0x00 PREC=0x00 TTL=255 ID=55350 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[  455.123764] [UFW BLOCK] IN=enp0s20f1 OUT= MAC= SRC=192.168.55.60 DST=224.0.0.252 LEN=58 TOS=0x00 PREC=0x00 TTL=255 ID=55401 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[  456.053926] [UFW BLOCK] IN=enp0s20f1 OUT= MAC= SRC=fe80:0000:0000:0000:e8c7:c6e6:7418:4e42 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=227905 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[  456.306012] [UFW BLOCK] IN=enp0s20f1 OUT= MAC= SRC=fe80:0000:0000:0000:e8c7:c6e6:7418:4e42 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=227905 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[  456.531734] [UFW BLOCK] IN=enp0s20f1 OUT= MAC= SRC=fe80:0000:0000:0000:e8c7:c6e6:7418:4e42 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=227905 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[  636.080544] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=91906 PROTO=UDP SPT=49754 DPT=5355 LEN=42 
+[  636.102857] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48493 PROTO=UDP SPT=49754 DPT=5355 LEN=42 
+[  636.481048] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=545046 PROTO=UDP SPT=49754 DPT=5355 LEN=42 
+[  636.481922] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48494 PROTO=UDP SPT=49754 DPT=5355 LEN=42 
+[  636.895716] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=161927 PROTO=UDP SPT=60456 DPT=5355 LEN=42 
+[  636.896054] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48495 PROTO=UDP SPT=60456 DPT=5355 LEN=42 
+[  637.308452] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=161927 PROTO=UDP SPT=60456 DPT=5355 LEN=42 
+[  637.308634] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48496 PROTO=UDP SPT=60456 DPT=5355 LEN=42 
+[  655.629759] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=212611 PROTO=UDP SPT=55363 DPT=5355 LEN=42 
+[  655.631893] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48497 PROTO=UDP SPT=55363 DPT=5355 LEN=42 
+[  656.044884] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=963469 PROTO=UDP SPT=55363 DPT=5355 LEN=42 
+[  656.046201] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48498 PROTO=UDP SPT=55363 DPT=5355 LEN=42 
+[  656.455953] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=153889 PROTO=UDP SPT=56321 DPT=5355 LEN=42 
+[  656.457899] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48499 PROTO=UDP SPT=56321 DPT=5355 LEN=42 
+[  656.867613] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=153889 PROTO=UDP SPT=56321 DPT=5355 LEN=42 
+[  656.869041] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48500 PROTO=UDP SPT=56321 DPT=5355 LEN=42 
+[  800.527814] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:24:2f:d0:7a:6f:62:08:00 SRC=133.32.134.242 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=61 ID=51618 DF PROTO=UDP SPT=8342 DPT=43589 LEN=132 
+[  881.382283] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=128 ID=61033 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  881.382336] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:86:dd SRC=2001:0f72:2ca0:0800:7589:6db6:abd9:7758 DST=2001:0f72:2ca0:0800:0f5a:918d:0db4:0dfc LEN=172 TC=0 HOPLIMIT=64 FLOWLBL=181046 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  886.407874] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=128 ID=61034 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  886.407926] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:86:dd SRC=2001:0f72:2ca0:0800:7589:6db6:abd9:7758 DST=2001:0f72:2ca0:0800:0f5a:918d:0db4:0dfc LEN=172 TC=0 HOPLIMIT=64 FLOWLBL=181046 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  891.643695] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=128 ID=61035 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  891.643747] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:86:dd SRC=2001:0f72:2ca0:0800:7589:6db6:abd9:7758 DST=2001:0f72:2ca0:0800:0f5a:918d:0db4:0dfc LEN=172 TC=0 HOPLIMIT=64 FLOWLBL=931904 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  896.963369] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=128 ID=61036 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  896.964241] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:86:dd SRC=2001:0f72:2ca0:0800:7589:6db6:abd9:7758 DST=2001:0f72:2ca0:0800:0f5a:918d:0db4:0dfc LEN=172 TC=0 HOPLIMIT=64 FLOWLBL=634186 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  902.010966] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=128 ID=61037 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  902.011016] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:86:dd SRC=2001:0f72:2ca0:0800:7589:6db6:abd9:7758 DST=2001:0f72:2ca0:0800:0f5a:918d:0db4:0dfc LEN=172 TC=0 HOPLIMIT=64 FLOWLBL=634186 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  907.061329] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=128 ID=61038 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  907.061382] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:86:dd SRC=2001:0f72:2ca0:0800:7589:6db6:abd9:7758 DST=2001:0f72:2ca0:0800:0f5a:918d:0db4:0dfc LEN=172 TC=0 HOPLIMIT=64 FLOWLBL=336468 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  912.344615] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=192.168.55.60 LEN=152 TOS=0x00 PREC=0x00 TTL=128 ID=61039 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  912.346463] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:c8:8a:9a:fb:41:cc:86:dd SRC=2001:0f72:2ca0:0800:7589:6db6:abd9:7758 DST=2001:0f72:2ca0:0800:0f5a:918d:0db4:0dfc LEN=172 TC=0 HOPLIMIT=64 FLOWLBL=38750 PROTO=UDP SPT=41641 DPT=41641 LEN=132 
+[  946.001852] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=35015 PROTO=UDP SPT=65497 DPT=42275 LEN=255 
+[  946.001880] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=43462 PROTO=UDP SPT=65497 DPT=42275 LEN=264 
+[  946.003119] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=37455 PROTO=UDP SPT=65497 DPT=42275 LEN=303 
+[  946.003135] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=345 TOS=0x00 PREC=0x00 TTL=64 ID=60234 PROTO=UDP SPT=65497 DPT=42275 LEN=325 
+[  946.004948] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=31813 PROTO=UDP SPT=65497 DPT=42275 LEN=255 
+[  946.004965] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=44459 PROTO=UDP SPT=65497 DPT=42275 LEN=264 
+[  967.096668] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=10373 PROTO=UDP SPT=65501 DPT=46088 LEN=255 
+[  987.668934] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=12403 PROTO=UDP SPT=65506 DPT=53001 LEN=255 
+[ 1036.824849] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=14587 PROTO=UDP SPT=65511 DPT=49931 LEN=255 
+[ 1036.824877] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=6489 PROTO=UDP SPT=65511 DPT=49931 LEN=264 
+[ 1058.748543] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=43195 PROTO=UDP SPT=65517 DPT=46675 LEN=255 
+[ 1125.819723] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=49379 PROTO=UDP SPT=65531 DPT=40602 LEN=255 
+[ 1125.819753] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=49586 PROTO=UDP SPT=65531 DPT=40602 LEN=264 
+[ 1125.825299] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=51795 PROTO=UDP SPT=65531 DPT=40602 LEN=303 
+[ 1125.828010] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=345 TOS=0x00 PREC=0x00 TTL=64 ID=33552 PROTO=UDP SPT=65531 DPT=40602 LEN=325 
+[ 1151.213160] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=657 PROTO=UDP SPT=65534 DPT=50180 LEN=255 
+[ 1154.146734] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=586055 PROTO=UDP SPT=64991 DPT=5355 LEN=42 
+[ 1154.545790] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=586055 PROTO=UDP SPT=64991 DPT=5355 LEN=42 
+[ 1154.959195] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=416382 PROTO=UDP SPT=62308 DPT=5355 LEN=42 
+[ 1155.368047] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=416382 PROTO=UDP SPT=62308 DPT=5355 LEN=42 
+[ 1224.028049] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=45576 PROTO=UDP SPT=49164 DPT=49774 LEN=255 
+[ 1224.028077] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=35738 PROTO=UDP SPT=49164 DPT=49774 LEN=264 
+[ 1224.028092] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=39970 PROTO=UDP SPT=49164 DPT=49774 LEN=303 
+[ 1224.028107] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=345 TOS=0x00 PREC=0x00 TTL=64 ID=19945 PROTO=UDP SPT=49164 DPT=49774 LEN=325 
+[ 1275.222199] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=35493 PROTO=UDP SPT=49171 DPT=34132 LEN=255 
+[ 1275.222226] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=17397 PROTO=UDP SPT=49171 DPT=34132 LEN=264 
+[ 1300.313786] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=25240 PROTO=UDP SPT=49178 DPT=33480 LEN=255 
+[ 1326.230664] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=574 PROTO=UDP SPT=49182 DPT=34486 LEN=255 
+[ 1326.235919] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=6934 PROTO=UDP SPT=49182 DPT=34486 LEN=264 
+[ 1337.255074] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=920828 PROTO=UDP SPT=59168 DPT=5355 LEN=42 
+[ 1337.625777] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=623110 PROTO=UDP SPT=59168 DPT=5355 LEN=42 
+[ 1338.037017] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=903180 PROTO=UDP SPT=58259 DPT=5355 LEN=42 
+[ 1338.448729] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=903180 PROTO=UDP SPT=58259 DPT=5355 LEN=42 
+[ 1351.309031] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=41539 PROTO=UDP SPT=49186 DPT=58381 LEN=255 
+[ 1374.759443] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=2652 PROTO=UDP SPT=49187 DPT=40547 LEN=255 
+[ 1395.779381] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=17065 PROTO=UDP SPT=49190 DPT=54686 LEN=255 
+[ 1438.558373] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=30800 PROTO=UDP SPT=49197 DPT=53127 LEN=255 
+[ 1438.559317] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=22899 PROTO=UDP SPT=49197 DPT=53127 LEN=264 
+[ 1458.952554] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=45219 PROTO=UDP SPT=49200 DPT=43404 LEN=255 
+[ 1479.723788] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=34830 PROTO=UDP SPT=49207 DPT=60244 LEN=255 
+[ 1488.582637] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=1017495 PROTO=UDP SPT=49914 DPT=5355 LEN=42 
+[ 1488.585832] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48509 PROTO=UDP SPT=49914 DPT=5355 LEN=42 
+[ 1488.991096] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=1017495 PROTO=UDP SPT=49914 DPT=5355 LEN=42 
+[ 1489.406729] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=891843 PROTO=UDP SPT=61591 DPT=5355 LEN=42 
+[ 1489.815190] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=891843 PROTO=UDP SPT=61591 DPT=5355 LEN=42 
+[ 1504.610027] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=10444 PROTO=UDP SPT=49211 DPT=50937 LEN=255 
+[ 1528.180998] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=12410 PROTO=UDP SPT=49216 DPT=41044 LEN=255 
+[ 1553.757843] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=53439 PROTO=UDP SPT=49220 DPT=37619 LEN=255 
+[ 1575.600118] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=12671 PROTO=UDP SPT=49224 DPT=46867 LEN=255 
+[ 1598.098960] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=24929 PROTO=UDP SPT=49230 DPT=45039 LEN=255 
+[ 1620.628121] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=29047 PROTO=UDP SPT=49232 DPT=48727 LEN=255 
+[ 1669.169503] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=49493 PROTO=UDP SPT=49242 DPT=46312 LEN=255 
+[ 1669.171410] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=51866 PROTO=UDP SPT=49242 DPT=46312 LEN=264 
+[ 1669.173629] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=33699 PROTO=UDP SPT=49242 DPT=46312 LEN=303 
+[ 1670.935274] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=905826 PROTO=UDP SPT=61758 DPT=5355 LEN=42 
+[ 1671.332215] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=608108 PROTO=UDP SPT=61758 DPT=5355 LEN=42 
+[ 1671.744198] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=163213 PROTO=UDP SPT=54080 DPT=5355 LEN=42 
+[ 1672.163719] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=163213 PROTO=UDP SPT=54080 DPT=5355 LEN=42 
+[ 1684.791833] mwifiex_sdio mmc0:0001:1: info: trying to associate to bssid 66:2f:d0:7a:6f:64
+[ 1684.858084] mwifiex_sdio mmc0:0001:1: assoc: associated with 66:2f:d0:7a:6f:64
+[ 1684.858161] mwifiex_sdio mmc0:0001:1: info: associated to bssid 66:2f:d0:7a:6f:64 successfully
+[ 1684.863180] mwifiex_sdio mmc0:0001:1: key: send EAPOL to 66:2f:d0:7a:6f:64
+[ 1684.870311] mwifiex_sdio mmc0:0001:1: key: send EAPOL to 66:2f:d0:7a:6f:64
+[ 1685.072835] warning: `ThreadPoolForeg' uses wireless extensions which will stop working for Wi-Fi 7 hardware; use nl80211
+[ 1685.104310] [UFW BLOCK] IN=mlan0 OUT= MAC= SRC=192.168.55.69 DST=224.0.0.252 LEN=58 TOS=0x00 PREC=0x00 TTL=255 ID=35579 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[ 1686.144621] [UFW BLOCK] IN=mlan0 OUT= MAC= SRC=fe80:0000:0000:0000:dbb4:ddb0:bce3:096e DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=16192 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[ 1686.165430] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:ac:89:95:4b:24:a5:86:dd SRC=fe80:0000:0000:0000:dbb4:ddb0:bce3:096e DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=16192 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[ 1686.335155] [UFW BLOCK] IN=mlan0 OUT= MAC= SRC=fe80:0000:0000:0000:dbb4:ddb0:bce3:096e DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=16192 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[ 1686.352380] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:ac:89:95:4b:24:a5:86:dd SRC=fe80:0000:0000:0000:dbb4:ddb0:bce3:096e DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=16192 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[ 1686.545109] [UFW BLOCK] IN=mlan0 OUT= MAC= SRC=fe80:0000:0000:0000:dbb4:ddb0:bce3:096e DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=16192 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[ 1686.548615] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:ac:89:95:4b:24:a5:86:dd SRC=fe80:0000:0000:0000:dbb4:ddb0:bce3:096e DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=78 TC=0 HOPLIMIT=255 FLOWLBL=16192 PROTO=UDP SPT=5355 DPT=5355 LEN=38 
+[ 1711.875065] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=63760 PROTO=UDP SPT=49249 DPT=42587 LEN=255 
+[ 1736.452534] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=54082 PROTO=UDP SPT=49252 DPT=53296 LEN=255 
+[ 1757.137892] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=27431 PROTO=UDP SPT=49255 DPT=46014 LEN=255 
+[ 1779.254573] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=39824 PROTO=UDP SPT=49261 DPT=40293 LEN=255 
+[ 1801.372099] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=13109 PROTO=UDP SPT=49264 DPT=36423 LEN=255 
+[ 1823.287258] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=25518 PROTO=UDP SPT=49270 DPT=51643 LEN=255 
+[ 1823.289166] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=5201 PROTO=UDP SPT=49270 DPT=51643 LEN=264 
+[ 1847.762202] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=61768 PROTO=UDP SPT=49276 DPT=45435 LEN=255 
+[ 1868.652583] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=5606 PROTO=UDP SPT=49279 DPT=50386 LEN=255 
+[ 1876.179691] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=976923 PROTO=UDP SPT=49664 DPT=5355 LEN=42 
+[ 1876.234865] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=976923 PROTO=UDP SPT=49664 DPT=5355 LEN=42 
+[ 1876.590774] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=976923 PROTO=UDP SPT=49664 DPT=5355 LEN=42 
+[ 1876.630684] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=976923 PROTO=UDP SPT=49664 DPT=5355 LEN=42 
+[ 1877.005387] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=1044161 PROTO=UDP SPT=55290 DPT=5355 LEN=42 
+[ 1877.040455] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=1044161 PROTO=UDP SPT=55290 DPT=5355 LEN=42 
+[ 1877.418720] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=1044161 PROTO=UDP SPT=55290 DPT=5355 LEN=42 
+[ 1877.449998] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=1044161 PROTO=UDP SPT=55290 DPT=5355 LEN=42 
+[ 1891.697768] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=17800 PROTO=UDP SPT=49285 DPT=55173 LEN=255 
+[ 1916.277065] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=26020 PROTO=UDP SPT=49289 DPT=58541 LEN=255 
+[ 1940.237023] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=36101 PROTO=UDP SPT=49294 DPT=45102 LEN=255 
+[ 1966.555185] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=54542 PROTO=UDP SPT=49303 DPT=33971 LEN=255 
+[ 1966.557262] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=3647 PROTO=UDP SPT=49303 DPT=33971 LEN=264 
+[ 1991.644622] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=58231 PROTO=UDP SPT=49313 DPT=43771 LEN=255 
+[ 2010.219752] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=718407 PROTO=UDP SPT=49726 DPT=5355 LEN=42 
+[ 2010.222270] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=01:00:5e:00:00:fc:c8:8a:9a:fb:41:cc:08:00 SRC=192.168.55.104 DST=224.0.0.252 LEN=62 TOS=0x00 PREC=0x00 TTL=1 ID=48521 PROTO=UDP SPT=49726 DPT=5355 LEN=42 
+[ 2010.280589] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=718407 PROTO=UDP SPT=49726 DPT=5355 LEN=42 
+[ 2010.611591] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=420689 PROTO=UDP SPT=49726 DPT=5355 LEN=42 
+[ 2010.680413] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=420689 PROTO=UDP SPT=49726 DPT=5355 LEN=42 
+[ 2011.027449] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=566808 PROTO=UDP SPT=58525 DPT=5355 LEN=42 
+[ 2011.088226] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=566808 PROTO=UDP SPT=58525 DPT=5355 LEN=42 
+[ 2011.451054] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=566808 PROTO=UDP SPT=58525 DPT=5355 LEN=42 
+[ 2011.497864] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=566808 PROTO=UDP SPT=58525 DPT=5355 LEN=42 
+[ 2039.976737] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=52872 PROTO=UDP SPT=49326 DPT=39772 LEN=255 
+[ 2061.178863] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=54849 PROTO=UDP SPT=49331 DPT=60491 LEN=255 
+[ 2083.497785] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=42682 PROTO=UDP SPT=49333 DPT=34556 LEN=255 
+[ 2083.499812] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=53043 PROTO=UDP SPT=49333 DPT=34556 LEN=264 
+[ 2107.156836] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=57032 PROTO=UDP SPT=49336 DPT=47406 LEN=255 
+[ 2130.914780] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=20111 PROTO=UDP SPT=49342 DPT=40772 LEN=255 
+[ 2155.082809] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=34535 PROTO=UDP SPT=49345 DPT=38966 LEN=255 
+[ 2177.202666] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=9825 PROTO=UDP SPT=49349 DPT=47292 LEN=255 
+[ 2200.955457] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=65200 PROTO=UDP SPT=49356 DPT=38737 LEN=255 
+[ 2225.225658] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=1550 PROTO=UDP SPT=49361 DPT=55964 LEN=255 
+[ 2225.227489] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=45030 PROTO=UDP SPT=49361 DPT=55964 LEN=264 
+[ 2272.639618] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=32503 PROTO=UDP SPT=49372 DPT=41279 LEN=255 
+[ 2272.642003] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=34653 PROTO=UDP SPT=49372 DPT=41279 LEN=264 
+[ 2295.785770] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=7801 PROTO=UDP SPT=49376 DPT=36330 LEN=255 
+[ 2319.540011] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=24092 PROTO=UDP SPT=49384 DPT=60081 LEN=255 
+[ 2343.302015] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=21407 PROTO=UDP SPT=49389 DPT=59412 LEN=255 
+[ 2343.304175] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=17648 PROTO=UDP SPT=49389 DPT=59412 LEN=264 
+[ 2365.838322] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=50459 PROTO=UDP SPT=49395 DPT=41594 LEN=255 
+[ 2386.209727] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=58679 PROTO=UDP SPT=49399 DPT=35328 LEN=255 
+[ 2410.885575] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=1300 PROTO=UDP SPT=49403 DPT=50863 LEN=255 
+[ 2433.624243] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=15811 PROTO=UDP SPT=49410 DPT=35628 LEN=255 
+[ 2457.085475] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=23887 PROTO=UDP SPT=49414 DPT=52649 LEN=255 
+[ 2481.134136] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=38362 PROTO=UDP SPT=49421 DPT=54245 LEN=255 
+[ 2504.790508] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=44405 PROTO=UDP SPT=49424 DPT=38047 LEN=255 
+[ 2504.792244] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=1704 PROTO=UDP SPT=49424 DPT=38047 LEN=264 
+[ 2528.244828] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=50684 PROTO=UDP SPT=49427 DPT=51906 LEN=255 
+[ 2553.953506] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=64843 PROTO=UDP SPT=49434 DPT=58637 LEN=255 
+[ 2574.942468] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=7512 PROTO=UDP SPT=49438 DPT=46506 LEN=255 
+[ 2597.677551] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=15652 PROTO=UDP SPT=49442 DPT=58226 LEN=255 
+[ 2618.258627] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=28094 PROTO=UDP SPT=49448 DPT=49642 LEN=255 
+[ 2639.353912] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=38331 PROTO=UDP SPT=49453 DPT=43777 LEN=255 
+[ 2664.651266] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=54643 PROTO=UDP SPT=49461 DPT=50740 LEN=255 
+[ 2664.653942] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=3712 PROTO=UDP SPT=49461 DPT=50740 LEN=264 
+[ 2686.565472] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=64940 PROTO=UDP SPT=49466 DPT=51164 LEN=255 
+[ 2708.374913] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=5420 PROTO=UDP SPT=49469 DPT=55282 LEN=255 
+[ 2728.666436] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=19891 PROTO=UDP SPT=49476 DPT=60518 LEN=255 
+[ 2754.724392] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=27935 PROTO=UDP SPT=49480 DPT=43357 LEN=255 
+[ 2775.349225] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=34246 PROTO=UDP SPT=49483 DPT=51719 LEN=255 
+[ 2801.564578] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=46488 PROTO=UDP SPT=49489 DPT=52902 LEN=255 
+[ 2801.566500] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=28347 PROTO=UDP SPT=49489 DPT=52902 LEN=264 
+[ 2822.654810] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=50622 PROTO=UDP SPT=49491 DPT=48549 LEN=255 
+[ 2848.358620] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=62928 PROTO=UDP SPT=49497 DPT=41006 LEN=255 
+[ 2872.730616] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=3452 PROTO=UDP SPT=49500 DPT=40122 LEN=255 
+[ 2893.420569] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=9555 PROTO=UDP SPT=49503 DPT=41850 LEN=255 
+[ 2916.971466] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=17839 PROTO=UDP SPT=49507 DPT=46017 LEN=255 
+[ 2939.515344] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=24432 PROTO=UDP SPT=49510 DPT=60650 LEN=255 
+[ 2965.418202] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=44955 PROTO=UDP SPT=49519 DPT=60977 LEN=255 
+[ 2965.418229] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=61584 PROTO=UDP SPT=49519 DPT=60977 LEN=264 
+[ 2988.859361] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=18326 PROTO=UDP SPT=49522 DPT=49753 LEN=255 
+[ 3010.259899] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=57192 PROTO=UDP SPT=49525 DPT=57624 LEN=255 
+[ 3030.536159] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=4054 PROTO=UDP SPT=49531 DPT=47327 LEN=255 
+[ 3054.191980] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=12180 PROTO=UDP SPT=49535 DPT=46354 LEN=255 
+[ 3079.592117] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=55133 PROTO=UDP SPT=49540 DPT=50107 LEN=255 
+[ 3102.016934] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=40925 PROTO=UDP SPT=49549 DPT=49199 LEN=255 
+[ 3102.017832] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=8439 PROTO=UDP SPT=49549 DPT=49199 LEN=264 
+[ 3128.229807] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=22358 PROTO=UDP SPT=49556 DPT=49764 LEN=255 
+[ 3153.323440] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=34563 PROTO=UDP SPT=49562 DPT=51798 LEN=255 
+[ 3175.647444] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=8150 PROTO=UDP SPT=49565 DPT=44591 LEN=255 
+[ 3199.429554] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=46864 PROTO=UDP SPT=49568 DPT=43709 LEN=255 
+[ 3220.405522] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=24402 PROTO=UDP SPT=49573 DPT=33016 LEN=255 
+[ 3241.493429] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=63244 PROTO=UDP SPT=49576 DPT=37379 LEN=255 
+[ 3241.495303] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=6298 PROTO=UDP SPT=49576 DPT=37379 LEN=264 
+[ 3263.103367] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=10106 PROTO=UDP SPT=49582 DPT=55423 LEN=255 
+[ 3287.780767] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=33985 PROTO=UDP SPT=49587 DPT=48753 LEN=255 
+[ 3308.158936] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=9267 PROTO=UDP SPT=49591 DPT=38790 LEN=255 
+[ 3333.969078] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=64686 PROTO=UDP SPT=49598 DPT=52802 LEN=255 
+[ 3355.933155] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=13531 PROTO=UDP SPT=49601 DPT=59900 LEN=255 
+[ 3376.156374] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=27673 PROTO=UDP SPT=49604 DPT=34148 LEN=255 
+[ 3399.914463] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=5216 PROTO=UDP SPT=49613 DPT=51283 LEN=255 
+[ 3422.852016] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=46113 PROTO=UDP SPT=49617 DPT=50785 LEN=255 
+[ 3422.854008] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=50498 PROTO=UDP SPT=49617 DPT=50785 LEN=264 
+[ 3445.991518] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=35993 PROTO=UDP SPT=49624 DPT=51799 LEN=255 
+[ 3469.345592] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=62468 PROTO=UDP SPT=49625 DPT=55479 LEN=255 
+[ 3495.466855] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=52396 PROTO=UDP SPT=49632 DPT=43129 LEN=255 
+[ 3516.654483] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=42054 PROTO=UDP SPT=49639 DPT=50746 LEN=255 
+[ 3541.859373] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=40615 PROTO=UDP SPT=49645 DPT=49123 LEN=255 
+[ 3541.860194] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=10076 PROTO=UDP SPT=49645 DPT=49123 LEN=264 
+[ 3563.245006] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=3790 PROTO=UDP SPT=49651 DPT=59967 LEN=255 
+[ 3587.617921] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=44671 PROTO=UDP SPT=49655 DPT=53837 LEN=255 
+[ 3609.638984] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=19985 PROTO=UDP SPT=49659 DPT=49949 LEN=255 
+[ 3632.578535] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=1122 PROTO=UDP SPT=49666 DPT=38611 LEN=255 
+[ 3657.871602] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=43416 PROTO=UDP SPT=49671 DPT=46096 LEN=255 
+[ 3680.088397] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=53657 PROTO=UDP SPT=49676 DPT=42430 LEN=255 
+[ 3701.696525] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=4370 PROTO=UDP SPT=49684 DPT=39686 LEN=255 
+[ 3701.697588] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=56046 PROTO=UDP SPT=49684 DPT=39686 LEN=264 
+[ 3726.682848] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=16660 PROTO=UDP SPT=49690 DPT=54554 LEN=255 
+[ 3751.912183] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=33100 PROTO=UDP SPT=49698 DPT=36418 LEN=255 
+[ 3778.294855] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=41288 PROTO=UDP SPT=49702 DPT=34605 LEN=255 
+[ 3799.390442] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=49540 PROTO=UDP SPT=49706 DPT=47666 LEN=255 
+[ 3821.202573] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=63935 PROTO=UDP SPT=49713 DPT=36206 LEN=255 
+[ 3841.581170] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=6540 PROTO=UDP SPT=49717 DPT=59891 LEN=255 
+[ 3841.582693] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=16934 PROTO=UDP SPT=49717 DPT=59891 LEN=264 
+[ 3866.362610] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=24945 PROTO=UDP SPT=49726 DPT=33999 LEN=255 
+[ 3893.060102] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=40305 PROTO=UDP SPT=49733 DPT=38027 LEN=255 
+[ 3914.600466] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=51818 PROTO=UDP SPT=49737 DPT=43795 LEN=255 
+[ 3963.749682] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=43747 PROTO=UDP SPT=49749 DPT=45764 LEN=255 
+[ 3963.751465] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=58149 PROTO=UDP SPT=49749 DPT=45764 LEN=264 
+[ 3963.753925] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=37978 PROTO=UDP SPT=49749 DPT=45764 LEN=303 
+[ 3988.943080] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=21045 PROTO=UDP SPT=49758 DPT=53867 LEN=255 
+[ 4009.527165] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=62058 PROTO=UDP SPT=49762 DPT=49353 LEN=255 
+[ 4033.567591] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=37376 PROTO=UDP SPT=49766 DPT=57684 LEN=255 
+[ 4054.377805] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=533 PROTO=UDP SPT=49772 DPT=49865 LEN=255 
+[ 4074.663364] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=14856 PROTO=UDP SPT=49775 DPT=60403 LEN=255 
+[ 4097.494698] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=17024 PROTO=UDP SPT=49780 DPT=53466 LEN=255 
+[ 4118.176646] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=19086 PROTO=UDP SPT=49785 DPT=34030 LEN=255 
+[ 4142.548779] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=42119 PROTO=UDP SPT=49791 DPT=33497 LEN=255 
+[ 4142.549860] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=29994 PROTO=UDP SPT=49791 DPT=33497 LEN=264 
+[ 4165.397004] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=31971 PROTO=UDP SPT=49798 DPT=50772 LEN=255 
+[ 4188.034042] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=7181 PROTO=UDP SPT=49802 DPT=57834 LEN=255 
+[ 4209.018053] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=12369 PROTO=UDP SPT=49806 DPT=36042 LEN=255 
+[ 4229.601940] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=6575 PROTO=UDP SPT=49811 DPT=42757 LEN=255 
+[ 4278.547574] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=22791 PROTO=UDP SPT=49819 DPT=50906 LEN=255 
+[ 4278.551686] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=33304 PROTO=UDP SPT=49819 DPT=50906 LEN=264 
+[ 4303.329491] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=37254 PROTO=UDP SPT=49826 DPT=43930 LEN=255 
+[ 4303.331169] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=23065 PROTO=UDP SPT=49826 DPT=43930 LEN=264 
+[ 4326.165337] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=43389 PROTO=UDP SPT=49829 DPT=45815 LEN=255 
+[ 4375.630716] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=321 PROTO=UDP SPT=49840 DPT=35323 LEN=255 
+[ 4375.632017] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=2637 PROTO=UDP SPT=49840 DPT=35323 LEN=264 
+[ 4397.339108] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=8509 PROTO=UDP SPT=49844 DPT=52622 LEN=255 
+[ 4421.708234] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=25077 PROTO=UDP SPT=49852 DPT=42841 LEN=255 
+[ 4421.710077] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=59909 PROTO=UDP SPT=49852 DPT=42841 LEN=264 
+[ 4443.622429] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=33201 PROTO=UDP SPT=49856 DPT=49436 LEN=255 
+[ 4465.742020] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=51466 PROTO=UDP SPT=49865 DPT=55080 LEN=255 
+[ 4488.476840] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=59766 PROTO=UDP SPT=49869 DPT=36556 LEN=255 
+[ 4509.262533] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=2339 PROTO=UDP SPT=49873 DPT=38507 LEN=255 
+[ 4556.779139] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=22985 PROTO=UDP SPT=49883 DPT=41858 LEN=255 
+[ 4556.779169] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=33394 PROTO=UDP SPT=49883 DPT=41858 LEN=264 
+[ 4580.714307] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=35155 PROTO=UDP SPT=49889 DPT=57459 LEN=255 
+[ 4605.011799] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=43327 PROTO=UDP SPT=49893 DPT=60825 LEN=255 
+[ 4605.012556] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=37556 PROTO=UDP SPT=49893 DPT=60825 LEN=264 
+[ 4699.854072] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=8703 PROTO=UDP SPT=49908 DPT=54348 LEN=255 
+[ 4699.856948] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=43524 PROTO=UDP SPT=49908 DPT=54348 LEN=264 
+[ 4699.858593] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=58138 PROTO=UDP SPT=49908 DPT=54348 LEN=303 
+[ 4699.860547] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=345 TOS=0x00 PREC=0x00 TTL=64 ID=37915 PROTO=UDP SPT=49908 DPT=54348 LEN=325 
+[ 4724.109520] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=20913 PROTO=UDP SPT=49914 DPT=44686 LEN=255 
+[ 4724.109547] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=6885 PROTO=UDP SPT=49914 DPT=44686 LEN=264 
+[ 4772.052294] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=48027 PROTO=UDP SPT=49919 DPT=55155 LEN=255 
+[ 4772.052321] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=3317 PROTO=UDP SPT=49919 DPT=55155 LEN=264 
+[ 4839.007783] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=21637 PROTO=UDP SPT=49931 DPT=36958 LEN=255 
+[ 4839.010144] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=58664 PROTO=UDP SPT=49931 DPT=36958 LEN=264 
+[ 4839.012020] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=56895 PROTO=UDP SPT=49931 DPT=36958 LEN=303 
+[ 4862.879385] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=35995 PROTO=UDP SPT=49934 DPT=50022 LEN=255 
+[ 4862.881127] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=64859 PROTO=UDP SPT=49934 DPT=50022 LEN=264 
+[ 4929.022553] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=42184 PROTO=UDP SPT=49949 DPT=33955 LEN=255 
+[ 4929.023332] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=30095 PROTO=UDP SPT=49949 DPT=33955 LEN=264 
+[ 4929.024614] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=11899 PROTO=UDP SPT=49949 DPT=33955 LEN=303 
+[ 4949.912609] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=58379 PROTO=UDP SPT=49957 DPT=40057 LEN=255 
+[ 4973.978718] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=33885 PROTO=UDP SPT=49961 DPT=46272 LEN=255 
+[ 4998.454230] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=36072 PROTO=UDP SPT=49966 DPT=47770 LEN=255 
+[ 5020.881505] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=64586 PROTO=UDP SPT=49972 DPT=48135 LEN=255 
+[ 5041.976933] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=19907 PROTO=UDP SPT=49976 DPT=42539 LEN=255 
+[ 5041.978803] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=9829 PROTO=UDP SPT=49976 DPT=42539 LEN=264 
+[ 5065.426595] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=34262 PROTO=UDP SPT=49983 DPT=35299 LEN=255 
+[ 5090.723425] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=44359 PROTO=UDP SPT=49988 DPT=49929 LEN=255 
+[ 5114.581258] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=52723 PROTO=UDP SPT=49992 DPT=47047 LEN=255 
+[ 5140.286011] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=2471 PROTO=UDP SPT=49999 DPT=55189 LEN=255 
+[ 5165.681849] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=31294 PROTO=UDP SPT=50004 DPT=54658 LEN=255 
+[ 5165.682472] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=62336 PROTO=UDP SPT=50004 DPT=54658 LEN=264 
+[ 5188.620984] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=43979 PROTO=UDP SPT=50011 DPT=34048 LEN=255 
+[ 5214.017011] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=52177 PROTO=UDP SPT=50015 DPT=46666 LEN=255 
+[ 5236.343255] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=60375 PROTO=UDP SPT=50019 DPT=38059 LEN=255 
+[ 5258.359358] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=45925 PROTO=UDP SPT=50028 DPT=60178 LEN=255 
+[ 5284.779175] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=23373 PROTO=UDP SPT=50033 DPT=32844 LEN=255 
+[ 5284.779202] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=11516 PROTO=UDP SPT=50033 DPT=32844 LEN=264 
+[ 5307.717646] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=39769 PROTO=UDP SPT=50041 DPT=44725 LEN=255 
+[ 5333.014609] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=47967 PROTO=UDP SPT=50045 DPT=51387 LEN=255 
+[ 5377.763279] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=54566 PROTO=UDP SPT=50056 DPT=54113 LEN=255 
+[ 5377.763957] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=3703 PROTO=UDP SPT=50056 DPT=54113 LEN=264 
+[ 5422.428001] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=3406 PROTO=UDP SPT=50063 DPT=60695 LEN=255 
+[ 5422.429557] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=58936 PROTO=UDP SPT=50063 DPT=60695 LEN=264 
+[ 5422.431889] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=323 TOS=0x00 PREC=0x00 TTL=64 ID=4055 PROTO=UDP SPT=50063 DPT=60695 LEN=303 
+[ 5445.350890] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=5001 PROTO=UDP SPT=50068 DPT=52849 LEN=255 
+[ 5468.181474] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=32736 PROTO=UDP SPT=50072 DPT=60435 LEN=255 
+[ 5488.566142] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=14105 PROTO=UDP SPT=50079 DPT=43611 LEN=255 
+[ 5509.244965] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=57178 PROTO=UDP SPT=50084 DPT=38680 LEN=255 
+[ 5532.703962] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=34564 PROTO=UDP SPT=50089 DPT=54450 LEN=255 
+[ 5553.175289] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=46865 PROTO=UDP SPT=50095 DPT=49154 LEN=255 
+[ 5578.375541] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=24403 PROTO=UDP SPT=50100 DPT=54387 LEN=255 
+[ 5604.685999] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=40911 PROTO=UDP SPT=50108 DPT=55592 LEN=255 
+[ 5604.687913] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=284 TOS=0x00 PREC=0x00 TTL=64 ID=8225 PROTO=UDP SPT=50108 DPT=55592 LEN=264 
+[ 5620.522458] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=756598 PROTO=UDP SPT=63137 DPT=5355 LEN=42 
+[ 5620.548113] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=756598 PROTO=UDP SPT=63137 DPT=5355 LEN=42 
+[ 5620.926810] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=756598 PROTO=UDP SPT=63137 DPT=5355 LEN=42 
+[ 5620.956517] [UFW BLOCK] IN=mlan0 OUT= MAC=33:33:00:01:00:03:c8:8a:9a:fb:41:cc:86:dd SRC=fe80:0000:0000:0000:c3d0:990e:de1d:69f4 DST=ff02:0000:0000:0000:0000:0000:0001:0003 LEN=82 TC=0 HOPLIMIT=1 FLOWLBL=756598 PROTO=UDP SPT=63137 DPT=5355 LEN=42 
+[ 5630.700383] [UFW BLOCK] IN=enp0s20f1 OUT= MAC=0c:fe:45:d0:33:23:f8:a2:6d:a4:b5:be:08:00 SRC=192.168.55.30 DST=192.168.55.60 LEN=275 TOS=0x00 PREC=0x00 TTL=64 ID=53180 PROTO=UDP SPT=50114 DPT=51828 LEN=255 

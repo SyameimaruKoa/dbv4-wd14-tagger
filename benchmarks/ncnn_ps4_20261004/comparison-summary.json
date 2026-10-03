@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-04 JST; host clock logs retained",
+  "source_commit": "6b518dc",
+  "profile": "ultra",
+  "gpu": "AMD Liverpool (PlayStation 4) RADV",
+  "part_size_mib": 128,
+  "precision": "fp32",
+  "warmup": 1,
+  "iterations": 1,
+  "atol": 0.0001,
+  "rtol": 0.001,
+  "input_sha256": "501fbf0fee15841b31ff8ea29fd3516b7329d652588b7b4f7dd1c0128faa9264",
+  "metadata_version": "07cfcadc104847e8",
+  "conditions": [
+    {
+      "name": "ultra-stream128-b1",
+      "ms_per_image": 87825.22813200012,
+      "max_absolute_difference": 2.7418136596679688e-06,
+      "rating_max_absolute_difference": 1.3969838619232178e-08,
+      "labels": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "resources": {
+        "drm_device": "/sys/class/drm/card0/device",
+        "tegra_load_counter": null,
+        "sample_interval_seconds": 0.2,
+        "baseline": {
+          "time": 3789.56614177,
+          "rss_mib": 70.63671875,
+          "vram_mib": 89.7421875,
+          "gtt_mib": 22.296875,
+          "system_available_mib": 4973.0,
+          "system_swap_free_mib": 5334.6328125
+        },
+        "peak_rss_mib": 274.140625,
+        "peak_vram_mib": 690.328125,
+        "peak_gtt_mib": 32.609375,
+        "measured_gpu_busy_percent_mean": null,
+        "measured_gpu_busy_percent_peak": null,
+        "gpu_counters_scope": "whole device, including other processes",
+        "minimum_system_available_mib": 4825.53515625,
+        "minimum_system_swap_free_mib": 5219.8203125
+      }
+    },
+    {
+      "name": "ultra-stream128-b4",
+      "ms_per_image": 80302.5387237501,
+      "max_absolute_difference": 2.7418136596679688e-06,
+      "rating_max_absolute_difference": 1.3969838619232178e-08,
+      "labels": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "resources": {
+        "drm_device": "/sys/class/drm/card0/device",
+        "tegra_load_counter": null,
+        "sample_interval_seconds": 0.2,
+        "baseline": {
+          "time": 4324.371271674,
+          "rss_mib": 70.78515625,
+          "vram_mib": 89.7421875,
+          "gtt_mib": 23.2421875,
+          "system_available_mib": 5079.3125,
+          "system_swap_free_mib": 5278.21484375
+        },
+        "peak_rss_mib": 229.40625,
+        "peak_vram_mib": 690.328125,
+        "peak_gtt_mib": 36.609375,
+        "measured_gpu_busy_percent_mean": null,
+        "measured_gpu_busy_percent_peak": null,
+        "gpu_counters_scope": "whole device, including other processes",
+        "minimum_system_available_mib": 4880.88671875,
+        "minimum_system_swap_free_mib": 5278.21484375
+      }
+    }
+  ],
+  "exit_codes": {
+    "partition-tests": 0,
+    "unit-tests": 0,
+    "ultra-stream128-b1": 0,
+    "ultra-stream128-b4": 0,
+    "integration": 0,
+    "launcher-probe": 0
+  },
+  "integration": {
+    "tests": 2,
+    "passed": true,
+    "seconds": 415.846,
+    "client_timeout": 600,
+    "xmp_modes": [
+      "standalone",
+      "original",
+      "preprocessed"
+    ]
+  },
+  "unit_tests": {
+    "run": 119,
+    "skipped": 5,
+    "passed": true
+  },
+  "kernel_error_matches": {
+    "kernel-after-b1.log": [],
+    "kernel-after-b4.log": [],
+    "kernel-after-final.log": [],
+    "kernel-after-integration.log": [],
+    "kernel-before.log": []
+  },
+  "notes": [
+    "b4 runs batch1 graph sequentially; JSON compares representative first output",
+    "Single measured iteration; no robust performance ranking",
+    "MemoryHigh3G MemoryMax3500M MemorySwapMax1G in systemd user services",
+    "GPU memory counters device-wide; GPU busy and temperature not measured",
+    "Gist Geekbench Feature Matching workload was not run; its hang is not fixed or ruled out",
+    "Transferred original model privately via Git; temporary transfer repositories removed"
+  ]
+}

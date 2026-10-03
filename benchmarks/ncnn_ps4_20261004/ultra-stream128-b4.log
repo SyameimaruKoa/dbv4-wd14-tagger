@@ -1,0 +1,148 @@
+Running as unit: dbv4-ps4-ultra-b4.service
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  fp16-p/s/u/a=1/1/1/0  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 22.1.2, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 22.1.2, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 22.1.2, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 22.1.2, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)): ultra, fp32, ラベル数 12476
+[INFO] ncnn streaming: 14 sections, largest 242.7 MiB weights
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[benchmark] Model initialization and startup probe: 90.41s
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[benchmark] Warm-up 1/1
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[ncnn streaming] section 1/14
+[ncnn streaming] section 2/14
+[ncnn streaming] section 3/14
+[ncnn streaming] section 4/14
+[ncnn streaming] section 5/14
+[ncnn streaming] section 6/14
+[ncnn streaming] section 7/14
+[ncnn streaming] section 8/14
+[ncnn streaming] section 9/14
+[ncnn streaming] section 10/14
+[ncnn streaming] section 11/14
+[ncnn streaming] section 12/14
+[ncnn streaming] section 13/14
+[ncnn streaming] section 14/14
+[benchmark] Iteration 1/1: 80302.54 ms/img
+benchmarks/ncnn_ps4_20261004/ultra-stream128-b4.json: 80302.54 ms/img
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 12min 23.247s
+             CPU time consumed: 2min 28.268s
+                   Memory peak: 894.6M (swap: 0B)
