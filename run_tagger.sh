@@ -478,7 +478,7 @@ configure_storage_paths
 if [ "$LOGIN_MODE" -eq 1 ]; then
     echo "[INFO] Hugging Faceログインモードを開始します。"
     VENV_DIR=""
-    for venv_name in venv_webgpu venv_gpu venv_intel venv_amd venv_std venv_client; do
+    for venv_name in venv_ncnn venv_webgpu venv_gpu venv_intel venv_amd venv_std venv_client; do
         if [ -x "$SCRIPT_DIR/$venv_name/bin/hf" ]; then
             VENV_DIR="$SCRIPT_DIR/$venv_name"
             echo "[INFO] 既存の仮想環境を使用します: $venv_name"

@@ -513,7 +513,7 @@ function Show-TensorRtInstallInstructions {
 if ($Login -or ($RemainingArgs -contains '--login')) {
     $HfExecutable = $null
     $VenvPython = $null
-    foreach ($VenvName in @('venv_gpu', 'venv_std', 'venv_client', 'venv_webgpu', 'venv_intel', 'venv_amd', 'venv_cuda', 'venv_tensorrt', 'venv_cpu')) {
+    foreach ($VenvName in @('venv_ncnn', 'venv_gpu', 'venv_std', 'venv_client', 'venv_webgpu', 'venv_intel', 'venv_amd', 'venv_cuda', 'venv_tensorrt', 'venv_cpu')) {
         $Candidate = Join-Path $ScriptDir "$VenvName/Scripts/hf.exe"
         if (Test-Path $Candidate) {
             $HfExecutable = $Candidate
