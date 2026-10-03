@@ -513,25 +513,52 @@ function Show-TensorRtInstallInstructions {
 #region Main Logic
 
 if ($Login -or ($RemainingArgs -contains '--login')) {
-    $HfExecutable = $null
     $VenvPython = $null
-    foreach ($VenvName in @('venv_ncnn', 'venv_gpu', 'venv_std', 'venv_client', 'venv_webgpu', 'venv_intel', 'venv_amd', 'venv_cuda', 'venv_tensorrt', 'venv_cpu')) {
-        $Candidate = Join-Path $ScriptDir "$VenvName/Scripts/hf.exe"
-        if (Test-Path $Candidate) {
-            $HfExecutable = $Candidate
-            Write-Host "[INFO] 既存の仮想環境を使用します: $VenvName" -ForegroundColor Cyan
-            break
+    $RepairPython = $null
+    $Candidates = @(Get-ChildItem -Path $ScriptDir -Directory | Where-Object {
+        $_.Name -like 'venv_*' -or $_.Name -eq '.venv'
+    } | Sort-Object Name)
+    foreach ($Directory in $Candidates) {
+        $RelativePython = if ($IsWindowsOS) { 'Scripts/python.exe' } else { 'bin/python' }
+        $Candidate = Join-Path $Directory.FullName $RelativePython
+        if (-not (Test-Path -LiteralPath $Candidate -PathType Leaf)) { continue }
+        try {
+            & $Candidate -c 'import sys' 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { continue }
+            if (-not $RepairPython) { $RepairPython = $Candidate }
+            & $Candidate -m huggingface_hub.cli.hf --help 2>$null | Out-Null
+            if ($LASTEXITCODE -eq 0) { $VenvPython = $Candidate; break }
         }
+        catch { Write-Warning "起動できない環境をスキップします: $($Directory.Name)" }
     }
-    if (-not $HfExecutable) {
-        $VenvPython = Prepare-Environment -UseGpu $false -IsClient $false
-        $HfExecutable = Join-Path (Split-Path -Parent $VenvPython) 'hf.exe'
+    if (-not $VenvPython) {
+        $VenvPython = $RepairPython
+        if (-not $VenvPython) {
+            $BasePython = $null
+            foreach ($Command in @('python', 'python3', 'py')) {
+                if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) { continue }
+                & $Command -c 'import sys' 2>$null | Out-Null
+                if ($LASTEXITCODE -eq 0) { $BasePython = $Command; break }
+            }
+            if (-not $BasePython) { throw 'ログイン用Pythonが見つかりません。' }
+            $LoginEnvironment = Join-Path $ScriptDir 'venv_login'
+            & $BasePython -m venv $LoginEnvironment
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $RelativePython = if ($IsWindowsOS) { 'Scripts/python.exe' } else { 'bin/python' }
+            $VenvPython = Join-Path $LoginEnvironment $RelativePython
+        }
+        & $VenvPython -m pip --version 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            & $VenvPython -m ensurepip --upgrade
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        }
+        & $VenvPython -m pip install --upgrade huggingface_hub
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $VenvPython -m huggingface_hub.cli.hf --help 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Hugging Face CLIを起動できません。' }
     }
-    if (-not (Test-Path $HfExecutable)) {
-        Write-Error "Hugging Face CLIが見つかりません: $HfExecutable"
-        exit 1
-    }
-    & $HfExecutable auth login
+    Write-Host "[INFO] ログイン用Python: $VenvPython" -ForegroundColor Cyan
+    & $VenvPython -m huggingface_hub.cli.hf auth login
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     Write-Host "[INFO] Hugging Faceログインが完了しました。" -ForegroundColor Green
     exit 0

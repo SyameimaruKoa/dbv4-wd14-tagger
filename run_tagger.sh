@@ -478,20 +478,47 @@ configure_storage_paths
 
 if [ "$LOGIN_MODE" -eq 1 ]; then
     echo "[INFO] Hugging Faceログインモードを開始します。"
-    VENV_DIR=""
-    for venv_name in venv_ncnn venv_webgpu venv_gpu venv_intel venv_amd venv_std venv_client; do
-        if [ -x "$SCRIPT_DIR/$venv_name/bin/hf" ]; then
-            VENV_DIR="$SCRIPT_DIR/$venv_name"
-            echo "[INFO] 既存の仮想環境を使用します: $venv_name"
+    LOGIN_PYTHON=""
+    REPAIR_PYTHON=""
+    # Discover every backend environment, including MIGraphX/ROCm and custom names.
+    for candidate_dir in "$SCRIPT_DIR"/venv_* "$SCRIPT_DIR"/.venv; do
+        candidate_python="$candidate_dir/bin/python"
+        [ -x "$candidate_python" ] || continue
+        if ! "$candidate_python" -c 'import sys' >/dev/null 2>&1; then
+            echo "[WARN] 起動できない環境をスキップします: $candidate_dir"
+            continue
+        fi
+        [ -n "$REPAIR_PYTHON" ] || REPAIR_PYTHON="$candidate_python"
+        if "$candidate_python" -m huggingface_hub.cli.hf --help >/dev/null 2>&1; then
+            LOGIN_PYTHON="$candidate_python"
             break
         fi
     done
-    if [ -z "$VENV_DIR" ]; then
-        setup_env "cpu" "0"
+    if [ -z "$LOGIN_PYTHON" ]; then
+        LOGIN_PYTHON="$REPAIR_PYTHON"
+        if [ -z "$LOGIN_PYTHON" ]; then
+            base_python=$(command -v python3 || command -v python) || {
+                echo "[ERROR] ログイン用Pythonが見つかりません。"; exit 1;
+            }
+            "$base_python" -m venv "$SCRIPT_DIR/venv_login" || exit $?
+            LOGIN_PYTHON="$SCRIPT_DIR/venv_login/bin/python"
+        fi
+        # Login does not need an inference runtime or GPU packages.
+        "$LOGIN_PYTHON" -m pip --version >/dev/null 2>&1 || {
+            "$LOGIN_PYTHON" -m ensurepip --upgrade || exit $?;
+        }
+        "$LOGIN_PYTHON" -m pip install --upgrade huggingface_hub || exit $?
+        "$LOGIN_PYTHON" -m huggingface_hub.cli.hf --help >/dev/null 2>&1 || {
+            echo "[ERROR] Hugging Face CLIを起動できません。"; exit 1;
+        }
     fi
-    "$VENV_DIR/bin/hf" auth login
-    echo "[INFO] Hugging Faceログインモードを終了します。"
-    exit 0
+    echo "[INFO] ログイン用Python: $LOGIN_PYTHON"
+    "$LOGIN_PYTHON" -m huggingface_hub.cli.hf auth login
+    login_status=$?
+    if [ "$login_status" -eq 0 ]; then
+        echo "[INFO] Hugging Faceログインが完了しました。"
+    fi
+    exit "$login_status"
 fi
 
 # デバッグログ制御
