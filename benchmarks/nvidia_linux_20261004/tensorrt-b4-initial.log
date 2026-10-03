@@ -1,0 +1,42 @@
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: /opt/dbv4-wd14-tagger/.dbv4/models/53e96223459a3046
+Traceback (most recent call last):
+  File "/opt/dbv4-wd14-tagger/gpu_runtime.py", line 107, in prepare_tensorrt_linux
+    provider_handle = ctypes.CDLL(str(provider_so), mode=ctypes.RTLD_GLOBAL)
+  File "/usr/lib/python3.13/ctypes/__init__.py", line 361, in __init__
+    self._handle = self._load_library(name, mode, handle, winmode)
+                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/ctypes/__init__.py", line 403, in _load_library
+    return _dlopen(name, mode)
+OSError: libnvonnxparser.so.10: cannot open shared object file: No such file or directory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 271, in <module>
+    main()
+    ~~~~^^
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 262, in main
+    result, measured_start = run(args, monitor)
+                             ~~~^^^^^^^^^^^^^^^
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 162, in run
+    runtime = load_runtime_model(
+        args.provider != "cpu", args.profile, provider=args.provider,
+    ...<3 lines>...
+        ncnn_part_size_mib=args.ncnn_part_size_mib,
+    )
+  File "/opt/dbv4-wd14-tagger/embed_tags_universal.py", line 691, in load_runtime_model
+    providers = build_providers(
+        use_gpu, provider, gpu_index, directml_device_index, openvino_device,
+        tensorrt_lib_dir, target_vendor)
+  File "/opt/dbv4-wd14-tagger/embed_tags_universal.py", line 422, in build_providers
+    gpu_runtime.prepare_tensorrt(tensorrt_lib_dir)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/opt/dbv4-wd14-tagger/gpu_runtime.py", line 136, in prepare_tensorrt
+    directory, handles = prepare(explicit_dir)
+                         ~~~~~~~^^^^^^^^^^^^^^
+  File "/opt/dbv4-wd14-tagger/gpu_runtime.py", line 109, in prepare_tensorrt_linux
+    raise RuntimeError(
+    ...<2 lines>...
+    ) from exc
+RuntimeError: TensorRT Linux preflight failed (/opt/dbv4-wd14-tagger/venv_gpu/lib/python3.13/site-packages/tensorrt_libs/libnvinfer.so.10). Set --tensorrt-lib-dir or install matching tensorrt-cu12 libraries: libnvonnxparser.so.10: cannot open shared object file: No such file or directory
