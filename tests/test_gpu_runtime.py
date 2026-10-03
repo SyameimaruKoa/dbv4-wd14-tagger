@@ -141,13 +141,14 @@ class GPUInitializationTests(unittest.TestCase):
     def test_tensorrt_loads_plugin_and_ort_bridge(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {}, clear=True):
             root = Path(directory)
-            for name in ['libnvinfer.so.10', 'libnvinfer_plugin.so.10']:
+            for name in ['libnvinfer.so.10', 'libnvinfer_plugin.so.10', 'libnvonnxparser.so.10']:
                 (root/name).touch()
             with patch.object(gpu.ctypes, 'CDLL') as load:
                 found, handles = gpu.prepare_tensorrt_linux(root)
                 self.assertEqual(found, root)
-                self.assertEqual(len(handles), 3)
-                self.assertEqual(load.call_count, 3)
+                self.assertEqual(len(handles), 4)
+                self.assertEqual(load.call_count, 4)
+                self.assertEqual(load.call_args_list[-2].args[0], str(root/'libnvonnxparser.so.10'))
                 self.assertTrue(load.call_args.args[0].endswith('libonnxruntime_providers_tensorrt.so'))
 
     def test_explicit_tensorrt_failure_is_not_cuda_success(self):

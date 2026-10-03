@@ -103,6 +103,13 @@ def prepare_tensorrt_linux(explicit_dir):
             plugin_handle = ctypes.CDLL(
                 str(directory / "libnvinfer_plugin.so.10"), mode=ctypes.RTLD_GLOBAL
             )
+        # The pip runtime directory is not on the process startup loader path.
+        # ORT links the parser too, so preload it before loading the EP bridge.
+        parser_handle = None
+        if directory and (directory / "libnvonnxparser.so.10").is_file():
+            parser_handle = ctypes.CDLL(
+                str(directory / "libnvonnxparser.so.10"), mode=ctypes.RTLD_GLOBAL
+            )
         provider_so = Path(ort.__file__).resolve().parent / "capi" / "libonnxruntime_providers_tensorrt.so"
         provider_handle = ctypes.CDLL(str(provider_so), mode=ctypes.RTLD_GLOBAL)
     except OSError as exc:
@@ -110,7 +117,7 @@ def prepare_tensorrt_linux(explicit_dir):
             f"TensorRT Linux preflight failed ({source}). Set --tensorrt-lib-dir "
             f"or install matching tensorrt-cu12 libraries: {exc}"
         ) from exc
-    return directory, (runtime_handle, plugin_handle, provider_handle)
+    return directory, (runtime_handle, plugin_handle, parser_handle, provider_handle)
 
 
 def prepare_cuda():
