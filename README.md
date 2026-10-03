@@ -331,7 +331,7 @@ Windows PowerShellでは`.\run_tagger.ps1 -Login`を実行する。
 `ultra`はONNX本体の公開リポジトリとは別に、タグと前処理データを`animetimm/convnextv2_huge.dbv4-full`から取得する。利用前に[モデルページ](https://huggingface.co/animetimm/convnextv2_huge.dbv4-full)で利用条件に同意し、同意したアカウントで`--login`を実行する。401が出る場合は、そのアカウントにアクセス権があるか確認する。
 `ultra`などのアクセス確認で401が返った場合は、モデルページを開いて再ログインを促し、同じ実行内でアクセスを再確認する。利用条件への同意や管理者承認がまだ完了していない場合は、案内を表示して停止する。
 
-既存のGPU／CPU仮想環境から`hf`を利用できる環境を再利用し、環境が一つもない場合だけCPU環境を作成する。ブラウザで作成したread権限のtokenを入力すると、認証情報は`.dbv4/huggingface/token`へ保存され、ログイン後は推論を実行せず終了する。
+リポジトリ内の`venv_*`と`.venv`を探索し、PythonとHugging Face CLIが実際に起動する環境を再利用する。壊れた環境はスキップし、`hf`起動ファイルがなくてもPythonからCLIを呼び出す。CLIが不足する場合は既存の起動可能な環境へ`huggingface_hub`だけを追加・更新し、環境がなければ軽量な`venv_login`を作成する。ログインにGPU・推論ライブラリの導入は不要。ブラウザで作成したread権限のtokenを入力すると、認証情報は`.dbv4/huggingface/token`へ保存され、ログイン後は推論を実行せず終了する。
 
 通常実行：
 

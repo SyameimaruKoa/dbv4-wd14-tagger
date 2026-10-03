@@ -22,7 +22,8 @@ class LoginDiscoveryTests(unittest.TestCase):
                     'echo "' + name + ' $*" >> "$TRACE"\n'
                     + ('exit 9\n' if state == 'broken' else
                     'if [[ "$1" == -c ]]; then exit 0; fi\n'
-                    + ('if [[ "$*" == *"--help"* ]]; then exit 3; fi\n' if state == 'missing' else '')
+                    + ('if [[ "$*" == *"pip install"* ]]; then touch "$TRACE.ready"; fi\n'
+                    'if [[ "$*" == *"--help"* && ! -f "$TRACE.ready" ]]; then exit 3; fi\n' if state == 'missing' else '')
                     + 'if [[ "$*" == *"auth login"* ]]; then exit "$LOGIN_STATUS"; fi\nexit 0\n'))
                 python.chmod(0o755)
             result = subprocess.run(['bash', str(root / 'run_tagger.sh'), '--login'],
@@ -43,6 +44,13 @@ class LoginDiscoveryTests(unittest.TestCase):
                 result, trace = self.run_login([(name, 'ready')])
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn(name + ' -m huggingface_hub.cli.hf auth login', trace)
+
+    def test_missing_cli_repairs_only_login_dependency(self):
+        result, trace = self.run_login([('venv_ncnn', 'missing')])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('-m pip install --upgrade huggingface_hub', trace)
+        self.assertNotIn('onnxruntime', trace)
+        self.assertIn('-m huggingface_hub.cli.hf auth login', trace)
 
     def test_login_failure_is_returned(self):
         result, trace = self.run_login([('venv_intel', 'ready')], 7)
