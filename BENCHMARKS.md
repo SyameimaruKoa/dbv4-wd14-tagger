@@ -126,6 +126,18 @@ FP16 storage／packed／arithmeticのb1/b4は6条件すべて非有限出力に�
 
 [元重みと分割重みの全バイトSHA256照合](benchmarks/ncnn_switch_20261003/model-integrity.json)は一致し、binは `86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6` のまま。[実GPU統合テスト](benchmarks/ncnn_switch_20261003/integration.log)は2件成功（362.557秒、終了コード0）。全確率・rating・閾値と、単独実行／原画像転送／前処理済み転送のXMP一致を確認した。Client期限は600秒に設定した。[通常Bashランチャー](benchmarks/ncnn_switch_20261003/launcher-probe.log)の `--provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 --gpu-index 0 --probe-provider` も終了コード0。再起動前の測定完了と再起動後の実GPU統合試験の双方を確認した。別モデルへの置き換えは行っていない。
 
+### Intel Iris Xe／a13m追加調査（2026-10-03）
+
+`ssh a13m`、指定フォルダ `C:\Users\kouki\Documents\MyApp\wd14-tagger-xmp` をGit経由で同じPRブランチへ更新した。[機種とドライバー](benchmarks/ncnn_intel_a13m_20261003/hardware.log)はCore i7-1355U、Intel Iris Xe、ドライバー32.0.101.7092、Windows 11 Home 10.0.26300、RAM約31.7GiB。ncnn 1.0.20260526はIris Xeの同名エントリーを4件列挙し、GPU 0を明示した。この列挙数を物理GPU 4台とは扱わない。
+
+同じultra FP32・入力SHA256・metadataで、[batch 1](benchmarks/ncnn_intel_a13m_20261003/fp32-b1.json)はwarm-up 1回・測定3回、中央値 **32,900.08 ms/枚**、ロード40.62秒。[batch 4](benchmarks/ncnn_intel_a13m_20261003/fp32-b4.json)はwarm-up 1回・測定1回、**33,299.30 ms/枚**、ロード36.46秒。4枚は固定batch 1グラフを逐次実行した。両条件とも全12,476確率がCPU参照の `atol=1e-4, rtol=1e-3` 内、最大差0.00000327826、rating最大差0.0000000135042、採用タグ差0件、終了コード0。20回測定した他PCの中央値とは反復数が異なる。WindowsのRSS・GPU共有メモリ・使用率は未取得。
+
+[実GPU統合テスト](benchmarks/ncnn_intel_a13m_20261003/integration.log)は2件成功（181.163秒、終了コード0）。全確率・rating・閾値、単独実行／原画像転送／前処理済み転送のXMP一致を確認し、Client期限は300秒に設定した。[PowerShell構文解析](benchmarks/ncnn_intel_a13m_20261003/powershell-parser.log)は0エラー。[通常PowerShellランチャー](benchmarks/ncnn_intel_a13m_20261003/launcher-probe.log)の明示ncnn起動も終了コード0。
+
+[OpenVINO比較](benchmarks/ncnn_intel_a13m_20261003/openvino-b1.log)は実名 `Intel(R) Iris(R) Xe Graphics (iGPU)` のGPUを確認し、OpenVINOExecutionProviderがactiveでも起動検証で非有限出力を検出して終了コード1。測定JSONは生成せず、batch 4は未実行。成功速度として扱わない。最初の直接測定ではリポジトリ内の既存HFトークンが環境へ指定されていなかったため認証待ちになり、`HF_HOME`／`HF_TOKEN_PATH` を指定して再ログインなしで再開した。[環境・モデルSHA256](benchmarks/ncnn_intel_a13m_20261003/environment.json)も保存している。
+
+IntelとSwitchのbin SHA256は同一。paramのSHA256は層名が異なるため一致しないが、[全層の型・接続・パラメーター照合](benchmarks/ncnn_intel_a13m_20261003/graph-integrity.json)は層名と空白を除いて一致した。[Intel全条件の精度照合](benchmarks/ncnn_intel_a13m_20261003/comparison-summary.json)と[Switchの精度照合](benchmarks/ncnn_switch_20261003/comparison-summary.json)を保存した。[最終通常テスト](benchmarks/ncnn_switch_20261003/unit-tests-final.log)は113件実行、実GPU用4件を除いて成功した。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。

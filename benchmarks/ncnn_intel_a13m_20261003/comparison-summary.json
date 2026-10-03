@@ -1,0 +1,46 @@
+[
+  {
+    "file": "fp32-b1.json",
+    "all_12476_probabilities_within_tolerance": true,
+    "atol": 0.0001,
+    "rtol": 0.001,
+    "input_sha256": "501fbf0fee15841b31ff8ea29fd3516b7329d652588b7b4f7dd1c0128faa9264",
+    "metadata_version": "07cfcadc104847e8",
+    "comparison": {
+      "max_absolute_difference": 3.2782554626464844e-06,
+      "mean_absolute_difference": 3.5065095271846758e-09,
+      "selected_tag_symmetric_difference": [],
+      "rating_absolute_difference": {
+        "general": 0.0,
+        "sensitive": 1.3504177331924438e-08,
+        "questionable": 6.984919309616089e-09,
+        "explicit": 1.5133991837501526e-09
+      }
+    },
+    "median_ms_per_image": 32900.07559999998,
+    "warmup": 1,
+    "iterations": 3
+  },
+  {
+    "file": "fp32-b4.json",
+    "all_12476_probabilities_within_tolerance": true,
+    "atol": 0.0001,
+    "rtol": 0.001,
+    "input_sha256": "501fbf0fee15841b31ff8ea29fd3516b7329d652588b7b4f7dd1c0128faa9264",
+    "metadata_version": "07cfcadc104847e8",
+    "comparison": {
+      "max_absolute_difference": 3.2782554626464844e-06,
+      "mean_absolute_difference": 3.5065095271846758e-09,
+      "selected_tag_symmetric_difference": [],
+      "rating_absolute_difference": {
+        "general": 0.0,
+        "sensitive": 1.3504177331924438e-08,
+        "questionable": 6.984919309616089e-09,
+        "explicit": 1.5133991837501526e-09
+      }
+    },
+    "median_ms_per_image": 33299.303199999995,
+    "warmup": 1,
+    "iterations": 1
+  }
+]
