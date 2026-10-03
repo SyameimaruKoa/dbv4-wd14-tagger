@@ -28,7 +28,8 @@ class NcnnIntegrationTests(unittest.TestCase):
         cls.runtime = app.load_runtime_model(
             True, 'ultra', provider='ncnn',
             gpu_index=int(os.environ.get('DBV4_NCNN_GPU_INDEX', '0')),
-            model_file=os.environ.get('DBV4_NCNN_MODEL_PREFIX'))
+            model_file=os.environ.get('DBV4_NCNN_MODEL_PREFIX'),
+            ncnn_part_size_mib=int(os.environ.get('DBV4_NCNN_PART_SIZE_MIB', '0')))
         cls.image = benchmark_image()
         cls.probabilities = cls.runtime.predict_images([cls.image])[0]
 

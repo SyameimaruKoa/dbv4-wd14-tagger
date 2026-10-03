@@ -210,3 +210,63 @@ class NcnnRuntimeModel:
                 )
             results.append(infer_output_to_probabilities(raw))
         return results
+
+
+class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
+    """Execute unchanged graph sections with one section resident at a time.
+
+    This trades model reloads and CPU/GPU transfers for a lower memory peak.
+    It is opt-in; normal ncnn inference retains its resident model.
+    """
+
+    def __init__(self, metadata, preprocessor, model_prefix, gpu_index=0,
+                 precision='fp32', part_size_mib=128):
+        from partition_ncnn_model import partition_model
+
+        self.part_directory, self.parts = partition_model(model_prefix, part_size_mib)
+        self.gpu_index = gpu_index
+        first = self.part_directory / self.parts[0]['param']
+        super().__init__(metadata, preprocessor,
+                         Path(str(first)[:-len('.ncnn.param')]), gpu_index, precision)
+        self.close()
+        print(f'[INFO] ncnn streaming: {len(self.parts)} sections, '
+              f'largest {max(p["bytes"] for p in self.parts) / 1048576:.1f} MiB weights',
+              flush=True)
+
+    def predict_preprocessed(self, batch_nchw):
+        import ncnn
+
+        results = []
+        for sample in batch_nchw:
+            tensor = np.ascontiguousarray(sample, dtype=np.float32)
+            if tensor.ndim != 3 or tensor.shape[0] != 3:
+                raise ValueError(f'ncnn入力はCHW 3チャネルが必要です: {tensor.shape}')
+            for index, part in enumerate(self.parts):
+                print(f'[ncnn streaming] section {index + 1}/{len(self.parts)}', flush=True)
+                self.net = ncnn.Net()
+                extractor = output = mat = None
+                try:
+                    for name, value in self.options.items():
+                        setattr(self.net.opt, name, value)
+                    self.net.set_vulkan_device(self.gpu_index)
+                    if self.net.load_param(str(self.part_directory / part['param'])) != 0:
+                        raise RuntimeError(f'Cannot load ncnn section {index}')
+                    if self.net.load_model(str(self.part_directory / part['bin'])) != 0:
+                        raise RuntimeError(f'Cannot load ncnn section weights {index}')
+                    extractor = self.net.create_extractor()
+                    # Owned ncnn allocation also supplies native alignment.
+                    mat = ncnn.Mat(tensor).clone()
+                    if extractor.input(part['input'], mat) != 0:
+                        raise RuntimeError(f'Cannot input ncnn section {index}')
+                    status, output = extractor.extract(part['output'])
+                    if status != 0:
+                        raise RuntimeError(f'ncnn section {index} failed: {status}')
+                    tensor = np.asarray(output).copy()
+                finally:
+                    output = extractor = mat = None
+                    self.close()
+            raw = tensor.reshape(-1)
+            if raw.size != self.metadata.label_count:
+                raise ValueError(f'ncnn label count mismatch: {raw.size} != {self.metadata.label_count}')
+            results.append(infer_output_to_probabilities(raw))
+        return results

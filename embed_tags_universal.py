@@ -615,6 +615,7 @@ def load_runtime_model(
     target_vendor: Optional[str] = None,
     ncnn_precision: str = "fp32",
     status_callback: Optional[Any] = None,
+    ncnn_part_size_mib: int = 0,
 ) -> RuntimeModel:
     if use_webgpu and provider not in (None, "webgpu"):
         raise ValueError("--webgpu conflicts with --provider")
@@ -665,7 +666,14 @@ def load_runtime_model(
                 raise ValueError(f"ncnn変換には正方形CHW入力が必要です: {sample.shape}")
             source_repo = model_repo or profile.get("metadata_repo_id", profile["repo_id"])
             ensure_ncnn_model(prefix, source_repo, int(sample.shape[1]), metadata.label_count)
-        runtime = NcnnRuntimeModel(metadata, preprocessor, prefix, gpu_index, ncnn_precision)
+        if ncnn_part_size_mib < 0:
+            raise ValueError('--ncnn-part-size-mib must be nonnegative')
+        if ncnn_part_size_mib:
+            from ncnn_backend import StreamingNcnnRuntimeModel
+            runtime = StreamingNcnnRuntimeModel(metadata, preprocessor, prefix,
+                                               gpu_index, ncnn_precision, ncnn_part_size_mib)
+        else:
+            runtime = NcnnRuntimeModel(metadata, preprocessor, prefix, gpu_index, ncnn_precision)
         runtime.predict_images([Image.new("RGB", (640, 480), (127, 63, 191))])
         return runtime
     metadata = DBV4Metadata.load(
@@ -758,7 +766,8 @@ def runtime_cli_options(args):
     return {name: getattr(args, name, None) for name in (
         "provider", "webgpu_device_index", "openvino_device", "tensorrt_lib_dir", "target_vendor")
     } | {name: getattr(args, name, 0) for name in ("gpu_index", "directml_device_index")} | {
-        "ncnn_precision": getattr(args, "ncnn_precision", "fp32")}
+        "ncnn_precision": getattr(args, "ncnn_precision", "fp32"),
+        "ncnn_part_size_mib": getattr(args, "ncnn_part_size_mib", 0)}
 
 
 def ensure_profile_access(profile_name: str, profile: Dict[str, Any]) -> None:
@@ -2497,6 +2506,7 @@ def create_parser() -> argparse.ArgumentParser:
     values.add_argument("-ep", "--provider", choices=["cpu", "cuda", "tensorrt", "intel", "directml", "webgpu", "migraphx", "rocm", "ncnn"], metavar="EP名", help="cpu/cuda/tensorrt/intel/directml/webgpu/migraphx/rocm/ncnn（利用不可時は停止）")
     values.add_argument("-gi", "--gpu-index", type=int, default=0, help="★GPU番号 0")
     values.add_argument("--ncnn-precision", choices=["fp32", "fp16-storage", "fp16-packed", "fp16-arithmetic"], default="fp32", help="ncnn演算精度・保存形式（★fp32）")
+    values.add_argument("--ncnn-part-size-mib", type=int, default=0, help="ncnn重みの分割目安MiB（0=分割なし、低メモリ環境では128）")
     values.add_argument("-di", "--directml-device-index", type=int, default=0, help="★DirectML番号 0")
     values.add_argument("-wi", "--webgpu-device-index", type=int)
     values.add_argument("-tv", "--target-vendor", choices=["nvidia", "intel", "amd"], metavar="ベンダー名", help="nvidia/intel/amd")

@@ -147,6 +147,7 @@ def run(args, monitor):
         gpu_index=args.gpu_index, ncnn_precision=args.ncnn_precision,
         openvino_device=args.openvino_device,
         model_file=args.model_file,
+        ncnn_part_size_mib=args.ncnn_part_size_mib,
     )
     load_seconds = time.perf_counter() - start
     print(f'[benchmark] Model initialization and startup probe: {load_seconds:.2f}s', flush=True)
@@ -176,6 +177,7 @@ def run(args, monitor):
     result = {
         "provider": args.provider,
         "precision": args.ncnn_precision if args.provider == "ncnn" else None,
+        "ncnn_part_size_mib": args.ncnn_part_size_mib if args.provider == 'ncnn' else None,
         "profile": args.profile,
         "gpu_index": args.gpu_index,
         "openvino_device": args.openvino_device,
@@ -230,6 +232,7 @@ def main():
                                                       "fp16-packed", "fp16-arithmetic"),
                         default="fp32")
     parser.add_argument("--model-file")
+    parser.add_argument("--ncnn-part-size-mib", type=int, default=0)
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--reference", type=Path)
