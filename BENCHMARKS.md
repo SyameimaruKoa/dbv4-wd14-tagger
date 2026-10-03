@@ -98,6 +98,22 @@ TensorRT/CUDAは起動検証の実行EPも確認した。Intelのncnn統合試�
 
 Intelの[OpenVINO比較](benchmarks/ncnn_windows_20261003/openvino-b1.log)はORT 1.24.1・OpenVINO 2025.4.1、実名確認済みのGPU.0 `Intel(R) UHD Graphics 630 (iGPU)`で実行した。GPU EPがactiveでも起動検証で非有限出力を検出し終了コード1で停止したため、確率差・速度JSONは生成していない。batch 4は同じ起動検証の失敗後には実行していない。GPU.1のNVIDIAに取り違えた結果ではない。OpenVINOの成功値として扱わず、同じIntel GPUで成功したncnnを代替候補として維持する。
 
+### AMD Bazzite別OSでの再確認（2026-10-03）
+
+同じBarcelo搭載PCのBazzite 44.20260929.0／kernel 7.2.7-ogc1.1.fc44／Mesa 26.2.2へrootで接続し、`/opt/dbv4-wd14-tagger`（実パス `/var/opt/dbv4-wd14-tagger`）をGit経由でPRブランチへ更新した。既存の差分156件は実行権限のみで、rootでGitの記録に合わせた。NVIDIA実機への接続・再測定は行っていない。
+
+OS標準Python 3.14.7を変更せず、uvでリポジトリ内にPython 3.13.16と`venv_ncnn`を用意した。ncnnは1.0.20260526。ExifTool 13.59は公式Gitから`.dbv4/runtime/exiftool`へ配置し、PATHに追加して試験した。ultraのモデル3ファイルを転送し、既存のbin／param／manifestとのSHA256一致を確認した。[環境とハッシュ](benchmarks/ncnn_amd_bazzite_20261003/environment.log)、[依存版](benchmarks/ncnn_amd_bazzite_20261003/packages.log)を保存している。
+
+[通常テスト](benchmarks/ncnn_amd_bazzite_20261003/unit-tests-complete.log)は111件成功（実GPU2件skip）。初回はテストが直接importするhttpxの不足で失敗し、venvへ追加後に通過した。[実GPU統合テスト](benchmarks/ncnn_amd_bazzite_20261003/integration.log)は2件成功（40.697秒、終了コード0）。GPU 0 `AMD Radeon Graphics (RADV RENOIR)`で、全12,476確率・rating・閾値、単独実行／原画像転送／前処理済み転送のXMP一致を確認した。ncnnだけの環境でもHFログインできるよう、Bash／PowerShellの既存venv探索に`venv_ncnn`を追加した。
+
+[FP32 batch 1](benchmarks/ncnn_amd_bazzite_20261003/fp32-b1.json)はwarm-up 3回・20回の中央値 **7,509.21 ms/枚**、ロード9.74秒、最大確率差0.00000262260、rating最大差0.0000000108266、採用タグ差0件。アプリが `RADV_DEBUG=syncshaders` を適用した。GPU使用率平均97.86%・最大99%、RSSピーク198.77 MiB、VRAM493.02 MiB、GTT2,992.02 MiB。GPUカウンターはデバイス全体の値である。OS・driver・稼働条件が異なるため、旧Ubuntuとの時間差をOS単独の効果とは扱わない。
+
+[FP32 batch 4](benchmarks/ncnn_amd_bazzite_20261003/fp32-b4.json)もwarm-up 3回・20回で成功し、中央値 **7,558.89 ms/枚**、ロード10.26秒、最大確率差0.00000262260、採用タグ差0件。RSSピーク198.97 MiB、VRAM493.02 MiB、GTT2,992.02 MiB、GPU使用率平均98.63%・最大99%。4枚はbatch 1グラフで逐次実行した。[全条件の照合](benchmarks/ncnn_amd_bazzite_20261003/comparison-summary.json)で、FP32 b1/b4の全12,476確率がCPU参照の許容差 `atol=1e-4, rtol=1e-3` 内であることを確認した。
+
+FP16 storage／packed／arithmeticのb1/b4は6条件すべて非有限出力により起動検証で停止した。[個別終了コード](benchmarks/ncnn_amd_bazzite_20261003/matrix.log)はすべて1で、速度JSONは生成していない。新MesaでもFP16の成功・メモリ削減効果は確認できなかったため、この環境のultraはFP32を推奨する。matrixの外側の正常終了は全条件の成功を意味しない。
+
+[通常Bashランチャー](benchmarks/ncnn_amd_bazzite_20261003/launcher-probe.log)の `--provider ncnn --gpu -m ultra --gpu-index 0 --probe-provider` も実GPUの起動検証に成功（終了コード0）。uvで作ったvenvへpipを追加して既存ランチャーで再利用した。[ログイン候補の確認](benchmarks/ncnn_amd_bazzite_20261003/login-environment-check.log)は、隔離したHF実行ファイルだけをstubにして実際のBashランチャーを実行し、唯一の`venv_ncnn`を選ぶことを確認した。これはHFへの実ログイン結果とは区別する。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。

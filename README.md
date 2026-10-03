@@ -82,6 +82,8 @@ LinuxでAMD GPUを検出した場合、ncnnのVulkan初期化前に `RADV_DEBUG`
 
 AMD実機のultraはFP32で確率・rating・タグとXMPの一致を確認した。FP16の3設定は非有限出力で停止したため、この組み合わせではFP32を使用する。
 
+同じAMD PCのBazzite 44／Mesa 26.2.2でもFP32のbatch 1／4とXMP・Server/Clientを確認した。OS標準Python 3.14を変更せず、リポジトリ内のPython 3.13と`venv_ncnn`を使った。ExifToolを`.dbv4/runtime/exiftool`へ配置した場合は、実行前に `export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"` を設定する。`--login`／`-Login`は既存の`venv_ncnn`も探索し、ログイン用に再利用する。
+
 初回変換は推論より多くのRAMを必要とする。保存するパラメーターの勾配を無効化し、pnnxが形状確認時に不要な勾配履歴を保持することを防ぐ。TorchScriptを作成するプロセスを終了してからpnnxを起動し、変換前半のメモリも解放する。pnnx自体がメモリ不足で終了する場合は、余裕のあるPCで変換してキャッシュ3ファイルを配置する。[CPUでの変換照合](validate_ncnn_conversion.py)、[ultra測定ランナー](benchmark_ncnn_matrix.sh)、[実GPUのXMP・Server/Client検証](tests/test_ncnn_integration.py)も用意している。
 
 ### 将来向け1B級
