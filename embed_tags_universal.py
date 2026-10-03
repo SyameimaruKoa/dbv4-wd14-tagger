@@ -427,7 +427,7 @@ def build_providers(use_gpu: bool, provider=None, gpu_index=0,
                 device = openvino_device or APP_CONFIG.get("openvino_gpu_device", "GPU.0")
                 actual_name = gpu_runtime.prepare_openvino(device)
                 print(f"[INFO] OpenVINO {device}: {actual_name}")
-                # DBV4's norm/reduction intermediates can exceed FP16 range.
+                # The GPU's default FP16 produced non-finite DBV4 outputs.
                 # Keep the ONNX model's FP32 precision on the selected GPU.
                 options = {"device_type": device, "load_config": json.dumps({
                     "GPU": {"INFERENCE_PRECISION_HINT": "f32"}})}

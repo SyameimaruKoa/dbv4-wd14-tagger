@@ -688,6 +688,7 @@ if ($PSBoundParameters.ContainsKey('RatingThresh')) { $PyArgs += ("--rating-thre
 if ($IgnoreSensitive) { $PyArgs += "--ignore-sensitive" }
 
 # 最後にパス
+if ($RemainingArgs) { $PyArgs += $RemainingArgs }
 if ($Path) { $PyArgs += $Path }
 
 # 実行
