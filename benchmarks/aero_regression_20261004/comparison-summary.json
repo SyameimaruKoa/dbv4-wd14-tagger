@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-04",
+  "host": "aero",
+  "source_commit": "9546b80627238fb43e0fa07063841d5ddd8ff8c4",
+  "profile": "ultra",
+  "atol": 0.0001,
+  "rtol": 0.001,
+  "warmup": 1,
+  "iterations": 3,
+  "input_sha256": "501fbf0fee15841b31ff8ea29fd3516b7329d652588b7b4f7dd1c0128faa9264",
+  "metadata_version": "07cfcadc104847e8",
+  "conditions": [
+    {
+      "name": "cuda-b1",
+      "median_ms_per_image": 403.69179999999005,
+      "max_absolute_difference": 3.039836883544922e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "ncnn_device": null
+    },
+    {
+      "name": "cuda-b4",
+      "median_ms_per_image": 397.78929999999946,
+      "max_absolute_difference": 3.337860107421875e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "ncnn_device": null
+    },
+    {
+      "name": "intel-openvino-b1",
+      "median_ms_per_image": 7967.458599999986,
+      "max_absolute_difference": 5.453824996948242e-06,
+      "rating_max_absolute_difference": 2.293381839990616e-08,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "OpenVINOExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "ncnn_device": null
+    },
+    {
+      "name": "intel-openvino-b4",
+      "median_ms_per_image": 8637.681775000005,
+      "max_absolute_difference": 5.334615707397461e-06,
+      "rating_max_absolute_difference": 3.4458935260772705e-08,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "OpenVINOExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "ncnn_device": null
+    },
+    {
+      "name": "rtx-ncnn-b1",
+      "median_ms_per_image": 1012.657699999977,
+      "max_absolute_difference": 3.5762786865234375e-06,
+      "rating_max_absolute_difference": 2.0023435354232788e-08,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "ncnn Vulkan"
+      ],
+      "ncnn_device": "NVIDIA GeForce RTX 2070 with Max-Q Design"
+    },
+    {
+      "name": "rtx-ncnn-b4",
+      "median_ms_per_image": 1014.6892499999893,
+      "max_absolute_difference": 3.5762786865234375e-06,
+      "rating_max_absolute_difference": 2.0023435354232788e-08,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "ncnn Vulkan"
+      ],
+      "ncnn_device": "NVIDIA GeForce RTX 2070 with Max-Q Design"
+    },
+    {
+      "name": "tensorrt-b1",
+      "median_ms_per_image": 313.29590000001417,
+      "max_absolute_difference": 4.708766937255859e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "TensorrtExecutionProvider",
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "ncnn_device": null
+    },
+    {
+      "name": "tensorrt-b4",
+      "median_ms_per_image": 307.0861499999893,
+      "max_absolute_difference": 4.708766937255859e-06,
+      "rating_max_absolute_difference": 1.1920928955078125e-07,
+      "label_count": 12476,
+      "allclose": true,
+      "selected_tag_difference": [],
+      "active_providers": [
+        "TensorrtExecutionProvider",
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "ncnn_device": null
+    }
+  ],
+  "exit_codes": {
+    "cuda-b1": 0,
+    "cuda-b4": 0,
+    "cuda-integration": 0,
+    "intel-openvino-b1": 0,
+    "intel-openvino-b4": 0,
+    "intel-openvino-integration": 0,
+    "launcher-auto-rtx": 0,
+    "launcher-intel": 0,
+    "rtx-ncnn-b1": 0,
+    "rtx-ncnn-b4": 0,
+    "rtx-ncnn-integration": 0,
+    "tensorrt-b1": 0,
+    "tensorrt-b4": 0,
+    "tensorrt-integration": 0,
+    "unit-tests": 0
+  },
+  "integrations": {
+    "rtx-ncnn": {
+      "tests": 2,
+      "seconds": 18.472,
+      "passed": true
+    },
+    "cuda": {
+      "tests": 2,
+      "seconds": 15.447,
+      "passed": true
+    },
+    "tensorrt": {
+      "tests": 2,
+      "seconds": 16.558,
+      "passed": true
+    },
+    "intel-openvino": {
+      "tests": 2,
+      "seconds": 289.005,
+      "passed": true
+    }
+  },
+  "unit_tests": {
+    "run": 114,
+    "skipped": 8,
+    "passed": true,
+    "repair": "Installed missing httpx"
+  }
+}

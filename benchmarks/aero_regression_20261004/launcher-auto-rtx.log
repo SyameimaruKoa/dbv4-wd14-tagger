@@ -1,0 +1,24 @@
+[INFO] NVIDIA GPUを検出しました。TensorRTを最優先で確認します: Virtual Display / StarDesk Virtual Display Adapter / NVIDIA GeForce RTX 2070 with Max-Q Design / Intel(R) UHD Graphics 630
+[INFO] 実行プロバイダーを確認します: tensorrt
+[INFO] 環境確認: tensorrt
+  -> ライブラリの確認・インストールを行います...
+[WARN] ultra縺ｯRTX 2070 Max-Q繝ｻDirectML繝ｻbatch-size=4縺ｧ繝斐・繧ｯ6,583MiB縲∵ｸｬ螳壼燕繧帝勁縺丞｢怜・5,743MiB繧堤｢ｺ隱肴ｸ医∩縺ｧ縺吶・GB莉･荳翫・GPU繧呈耳螂ｨ縺励∫ｩｺ縺榊ｮｹ驥丈ｸ崎ｶｳ譎ゅ・batch-size繧剃ｸ九￡縺ｦ縺上□縺輔＞縲・
+[INFO] ONNX螟夜Κ繝・・繧ｿ繧貞酔荳繝・ぅ繝ｬ繧ｯ繝医Μ縺ｫ驟咲ｽｮ: C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\.dbv4\models\53e96223459a3046
+[INFO] DBV4繝｢繝・Ν: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] 繝ｩ繝吶Ν謨ｰ: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 蜈･蜉・shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] 繧｢繧ｯ繝・ぅ繝悶・繝ｭ繝舌う繝: ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] TensorRT縺ｮ襍ｷ蜍墓､懆ｨｼ荳ｭ縺ｧ縺吶ょ・蝗槭・繧ｨ繝ｳ繧ｸ繝ｳ讒狗ｯ峨′螳御ｺ・☆繧九∪縺ｧServer縺ｯ謗･邯壹ｒ蜿励￠莉倥￠縺ｾ縺帙ｓ縲・
+[INFO] 襍ｷ蜍墓､懆ｨｼ縺ｧ螳溯｡後＆繧後◆EP: ['TensorrtExecutionProvider']
+[INFO] 自動選択しました: tensorrt
+[INFO] Pythonスクリプトを実行...
+[WARN] ultra縺ｯRTX 2070 Max-Q繝ｻDirectML繝ｻbatch-size=4縺ｧ繝斐・繧ｯ6,583MiB縲∵ｸｬ螳壼燕繧帝勁縺丞｢怜・5,743MiB繧堤｢ｺ隱肴ｸ医∩縺ｧ縺吶・GB莉･荳翫・GPU繧呈耳螂ｨ縺励∫ｩｺ縺榊ｮｹ驥丈ｸ崎ｶｳ譎ゅ・batch-size繧剃ｸ九￡縺ｦ縺上□縺輔＞縲・
+[INFO] ONNX螟夜Κ繝・・繧ｿ繧貞酔荳繝・ぅ繝ｬ繧ｯ繝医Μ縺ｫ驟咲ｽｮ: C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\.dbv4\models\53e96223459a3046
+[INFO] DBV4繝｢繝・Ν: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] 繝ｩ繝吶Ν謨ｰ: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 蜈･蜉・shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] 繧｢繧ｯ繝・ぅ繝悶・繝ｭ繝舌う繝: ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] TensorRT縺ｮ襍ｷ蜍墓､懆ｨｼ荳ｭ縺ｧ縺吶ょ・蝗槭・繧ｨ繝ｳ繧ｸ繝ｳ讒狗ｯ峨′螳御ｺ・☆繧九∪縺ｧServer縺ｯ謗･邯壹ｒ蜿励￠莉倥￠縺ｾ縺帙ｓ縲・
+[INFO] 襍ｷ蜍墓､懆ｨｼ縺ｧ螳溯｡後＆繧後◆EP: ['TensorrtExecutionProvider']

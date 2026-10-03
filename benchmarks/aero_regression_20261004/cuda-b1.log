@@ -1,0 +1,14 @@
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ONNX外部データを同一ディレクトリに配置: C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\.dbv4\models\53e96223459a3046
+[INFO] DBV4モデル: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] ラベル数: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 入力 shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] アクティブプロバイダ: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] 起動検証で実行されたEP: ['CUDAExecutionProvider']
+[benchmark] Model initialization and startup probe: 9.76s
+[benchmark] Warm-up 1/1
+[benchmark] Iteration 1/3: 397.87 ms/img
+[benchmark] Iteration 2/3: 405.70 ms/img
+[benchmark] Iteration 3/3: 403.69 ms/img
+benchmarks\aero_regression_20261004\cuda-b1.json: 403.69 ms/img
