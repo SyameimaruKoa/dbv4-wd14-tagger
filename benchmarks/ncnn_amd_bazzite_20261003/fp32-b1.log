@@ -1,0 +1,36 @@
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 22.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+[INFO] ncnn Vulkan GPU 0 (AMD Radeon Graphics (RADV RENOIR)): ultra, fp32, ラベル数 12476
+[benchmark] Model initialization and startup probe: 9.74s
+[benchmark] Warm-up 1/3
+[benchmark] Warm-up 2/3
+[benchmark] Warm-up 3/3
+[benchmark] Iteration 1/20: 7212.71 ms/img
+[benchmark] Iteration 2/20: 7373.84 ms/img
+[benchmark] Iteration 3/20: 7504.66 ms/img
+[benchmark] Iteration 4/20: 7509.17 ms/img
+[benchmark] Iteration 5/20: 7499.11 ms/img
+[benchmark] Iteration 6/20: 7502.86 ms/img
+[benchmark] Iteration 7/20: 7515.86 ms/img
+[benchmark] Iteration 8/20: 7499.98 ms/img
+[benchmark] Iteration 9/20: 7528.35 ms/img
+[benchmark] Iteration 10/20: 7509.26 ms/img
+[benchmark] Iteration 11/20: 7529.36 ms/img
+[benchmark] Iteration 12/20: 7532.82 ms/img
+[benchmark] Iteration 13/20: 7530.16 ms/img
+[benchmark] Iteration 14/20: 7498.26 ms/img
+[benchmark] Iteration 15/20: 7515.56 ms/img
+[benchmark] Iteration 16/20: 7506.35 ms/img
+[benchmark] Iteration 17/20: 7528.68 ms/img
+[benchmark] Iteration 18/20: 7517.42 ms/img
+[benchmark] Iteration 19/20: 7513.41 ms/img
+[benchmark] Iteration 20/20: 7508.06 ms/img
+benchmarks/ncnn_amd_bazzite_20261003/fp32-b1.json: 7509.21 ms/img
