@@ -150,6 +150,27 @@ PowerShellの `RemainingArgs` がPythonへ渡っていなかった箇所も修�
 
 [通常のGPU自動選択](benchmarks/openvino_intel_a13m_20261004/auto-launcher-probe.log)もIntel OpenVINOを選び、GPU.0の実名とOpenVINO EPの実行を確認して終了コード0。明示指定しなくてもこのa13mでは修正後の経路を使う。[最終通常テスト](benchmarks/openvino_intel_a13m_20261004/unit-tests.log)は114件実行、実GPU用4件を除いて成功した。
 
+### AERO RTX／UHD 630の再確認（2026-10-04）
+
+AEROをGit経由で `9546b80` へ更新し、ultraのbatch 1／4を再検証した。[実機情報](benchmarks/aero_regression_20261004/hardware.log)はCore i7-8750H、Windows 11 Home 10.0.26200、RAM約31.9 GiB、RTX 2070 Max-Q（driver 32.0.16.1714）とIntel UHD 630（31.0.101.2145）。ncnnはRTXのVulkan index 2、OpenVINOは実名確認済みのIntel `GPU.0` を指定した。SwitchとAMDには接続していない。
+
+[全8条件の照合](benchmarks/aero_regression_20261004/comparison-summary.json)で同じ入力SHA256・metadata version・全12,476確率をCPU参照と比較し、`atol=1e-4, rtol=1e-3` 内、採用タグ差0件、rating最大差1.2e-7未満を確認した。全試験・通常起動の終了コードは0。
+
+| 実GPU経路 | batch 1 ms/枚 | batch 4 ms/枚 | CPUとの最大確率差（b1 / b4） |
+| --- | ---: | ---: | --- |
+| RTX ncnn FP32 | 1,012.66 | 1,014.69 | 0.00000357628 / 0.00000357628 |
+| RTX CUDA | 403.69 | 397.79 | 0.00000303984 / 0.00000333786 |
+| RTX TensorRT | 313.30 | 307.09 | 0.00000470877 / 0.00000470877 |
+| UHD 630 OpenVINO FP32 | 7,967.46 | 8,637.68 | 0.00000545382 / 0.00000533462 |
+
+warm-up 1回・測定3回。ncnn b4はbatch 1グラフの逐次処理。GPU試験は順番に実行したが、CUDA／TensorRT測定中に通常テストのCPU処理が短時間重なっている。旧20回測定との差を修正による速度改善とは扱わない。WindowsのGPUメモリ・負荷ピークは未測定。OpenVINOのロード・起動検証はb1で117.56秒、b4で115.12秒かかったが正常終了した。以前NaNで停止したUHD 630でも、今回のFP32指定で有効な出力を確認できた。
+
+[RTX ncnn](benchmarks/aero_regression_20261004/rtx-ncnn-integration.log)、[CUDA](benchmarks/aero_regression_20261004/cuda-integration.log)、[TensorRT](benchmarks/aero_regression_20261004/tensorrt-integration.log)、[Intel OpenVINO](benchmarks/aero_regression_20261004/intel-openvino-integration.log)の統合テストは各2件成功。全確率・rating・閾値と、単独／原画像／前処理済みServer/Client転送のXMP一致を確認した。Client期限は300秒、Intelの2件全体は289.005秒。起動検証のログで各要求EPの実行も確認した。
+
+[通常GPU自動起動](benchmarks/aero_regression_20261004/launcher-auto-rtx.log)はTensorRTを選択して実行EPを確認し、[Intel明示起動](benchmarks/aero_regression_20261004/launcher-intel.log)もUHD 630のOpenVINO実行を確認した。追加引数は実際に転送され、ヘルプ表示で終わっていない。ネイティブPowerShell子プロセスのログ取り込みでは日本語の一部が文字化けしているため、元の記録を保持し、判定には読み取れるデバイス名・EP名・終了コードを使った。
+
+[通常テスト](benchmarks/aero_regression_20261004/unit-tests.log)は114件実行、8件skipで成功。4件はWindows対象外のBash試験、4件は別途有効化が必要なGPU試験。初回はテスト専用依存 `httpx` 不足で失敗し、`venv_intel` へ追加して全件を再実行した。今回の確認範囲では新たな推論・通信・XMPの異常を認めず、追加のアプリ修正は行っていない。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。

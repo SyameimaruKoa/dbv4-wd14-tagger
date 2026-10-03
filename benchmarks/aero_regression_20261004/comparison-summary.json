@@ -167,5 +167,13 @@
     "skipped": 8,
     "passed": true,
     "repair": "Installed missing httpx"
-  }
+  },
+  "notes": [
+    "ncnn batch4 runs fixed batch1 graph sequentially",
+    "GPU tests sequential; CPU unit-test rerun briefly overlapped CUDA/TensorRT measurements",
+    "Three iterations; no controlled performance improvement claim against older 20-iteration measurements",
+    "Windows GPU memory and utilization peaks not measured",
+    "Native PowerShell child-process capture has Japanese encoding damage; ASCII device/EP markers and exits verified",
+    "Switch and AMD offline and not accessed"
+  ]
 }
