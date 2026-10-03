@@ -114,6 +114,18 @@ FP16 storage／packed／arithmeticのb1/b4は6条件すべて非有限出力に�
 
 [通常Bashランチャー](benchmarks/ncnn_amd_bazzite_20261003/launcher-probe.log)の `--provider ncnn --gpu -m ultra --gpu-index 0 --probe-provider` も実GPUの起動検証に成功（終了コード0）。uvで作ったvenvへpipを追加して既存ランチャーで再利用した。[ログイン候補の確認](benchmarks/ncnn_amd_bazzite_20261003/login-environment-check.log)は、隔離したHF実行ファイルだけをstubにして実際のBashランチャーを実行し、唯一の`venv_ncnn`を選ぶことを確認した。これはHFへの実ログイン結果とは区別する。
 
+### Nintendo Switch Linux・4GB共有メモリ（2026-10-03）
+
+`ssh ns` の Ubuntu 24.04.4／aarch64／kernel 4.9.140-l4t、NVIDIA Tegra X1 (nvgpu)、RAM約3.9GiB、zram swap 3GiBで検証した。ncnnは1.0.20260526、Pythonは3.12.3。NVIDIA ICD `/etc/vulkan/icd.d/nvidia_icd.json` を `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` に指定し、GPU 0の実名を確認した。ソフトウェアVulkanではない。[小さなSigmoidグラフ](benchmarks/ncnn_switch_20261003/small-vulkan-only.json)は全48値でNumPyの解析解と一致（最大差0.0000000596046、終了コード0）。最初のCPU側のプローブはsegfaultしたが、Vulkan側はncnn所有の入力を使って正常終了した。両者は条件が異なり、CPUプローブの原因は確定していない。
+
+標準のultra FP32一括ロードは[メモリ監視](benchmarks/ncnn_switch_20261003/ultra-memory-watch.json)が約49.66秒で自プロセスを停止した。空きメモリ256MiBを残す方針に対し最低233.57MiB、RSSピーク2,226.46MiB、終了コード-15。起動検証・速度測定には到達しておらず、OOM killerの終了として扱わない。
+
+同じ元モデルを `--ncnn-part-size-mib 128` で14区間に分け、残差分岐をまたがず1区間ずつVulkanで実行した。最大区間の重みは242.7MiB、重み・演算層・FP32精度・前処理・12,476ラベルを保持する。分割用の重み境界はncnn自身の層ローダーで求め、全binバイト数の一致を検査してからキャッシュを公開する。[実機分割テスト](benchmarks/ncnn_switch_20261003/partition-tests.log)は重みバイト保全・分岐・解析解との一致と非FP32の拒否の2件とも成功した。
+
+[同一ultraの分割FP32測定](benchmarks/ncnn_switch_20261003/ultra-stream128-b1.json)はwarm-up 1回・測定1回で **75,004.67 ms/枚**、初回の分割生成と起動検証を含むロード217.71秒、終了コード0。全確率がCPU参照の `atol=1e-4, rtol=1e-3` 内、最大絶対差0.00000333786、rating最大差0.0000000111759、採用タグ差0件。[メモリ・GPU負荷記録](benchmarks/ncnn_switch_20261003/ultra-stream128-memory-watch.json)はRSSピーク660.27MiB、システム空きメモリ最小1,375.48MiB、Tegra GPU負荷最大99.7%。RSSにはGPU割り当て全量が含まれず、GPU負荷はデバイス全体の値。zramは共有RAMの圧縮領域であり、ディスクswapとは異なる。20回反復した他PCの中央値と同じ精度の速度推定としては扱わない。
+
+[元重みと分割重みの全バイトSHA256照合](benchmarks/ncnn_switch_20261003/model-integrity.json)は一致し、binは `86c013447913351be6ab1688a5d801ed46e13a5a5b5a84d67c81fbcbb258f0e6` のまま。[実GPU統合テスト](benchmarks/ncnn_switch_20261003/integration.log)は2件成功（362.557秒、終了コード0）。全確率・rating・閾値と、単独実行／原画像転送／前処理済み転送のXMP一致を確認した。Client期限は600秒に設定した。[通常Bashランチャー](benchmarks/ncnn_switch_20261003/launcher-probe.log)の `--provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 --gpu-index 0 --probe-provider` も終了コード0。再起動前の測定完了と再起動後の実GPU統合試験の双方を確認した。別モデルへの置き換えは行っていない。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。

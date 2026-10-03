@@ -218,6 +218,7 @@ param (
     [string]$Provider,
     [ValidateSet('fp32','fp16-storage','fp16-packed','fp16-arithmetic')]
     [string]$NcnnPrecision = 'fp32',
+    [ValidateRange(0,2147483647)][int]$NcnnPartSizeMiB = 0,
     [Alias('wg')]
     [switch]$WebGpu,
     [Alias('gi')]
@@ -264,6 +265,7 @@ function Show-Help {
     Write-Host "    -d <0～1の数値>           旧rating閾値（例: 0.5）"
     Write-Host "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/directml/webgpu/ncnn"
     Write-Host "    -NcnnPrecision <形式>     fp32/fp16-storage/fp16-packed/fp16-arithmetic"
+    Write-Host "    -NcnnPartSizeMiB <MiB>    重み分割目安（0=なし、低メモリでは128）"
     Write-Host "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
     Write-Host "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
     Write-Host "    -wi <0以上の整数>         WebGPU番号"
@@ -575,7 +577,7 @@ if ($AutoProviderSelection) {
             if (-not $Client) {
                 $ProbeArgs = @($PythonScript, '--probe-provider', '--provider', $Candidate,
                     '--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex",
-                    '--ncnn-precision', $NcnnPrecision)
+                    '--ncnn-precision', $NcnnPrecision, '--ncnn-part-size-mib', "$NcnnPartSizeMiB")
                 if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $ProbeArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
                 if ($ModelProfile) { $ProbeArgs += @('--model-profile', $ModelProfile) }
                 if ($ModelRepo) { $ProbeArgs += @('--model-repo', $ModelRepo) }
@@ -661,6 +663,7 @@ if ($Gpu) { $PyArgs += "--gpu" }
 if ($Provider) { $PyArgs += @('--provider', $Provider) }
 $PyArgs += @('--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex")
 $PyArgs += @('--ncnn-precision', $NcnnPrecision)
+$PyArgs += @('--ncnn-part-size-mib', "$NcnnPartSizeMiB")
 if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $PyArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
 if ($TargetVendor) { $PyArgs += @('--target-vendor', $TargetVendor) }
 if ($OpenVinoDevice) { $PyArgs += @('--openvino-device', $OpenVinoDevice) }

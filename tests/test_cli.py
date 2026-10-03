@@ -92,11 +92,13 @@ class CliShortOptionTests(unittest.TestCase):
         args = create_parser().parse_args([
             "--provider", "ncnn", "--ncnn-precision", "fp16-arithmetic",
             "--gpu-index", "2",
+            "--ncnn-part-size-mib", "128",
         ])
         options = runtime_cli_options(args)
         self.assertEqual(options["provider"], "ncnn")
         self.assertEqual(options["ncnn_precision"], "fp16-arithmetic")
         self.assertEqual(options["gpu_index"], 2)
+        self.assertEqual(options["ncnn_part_size_mib"], 128)
 
 
 if __name__ == "__main__":

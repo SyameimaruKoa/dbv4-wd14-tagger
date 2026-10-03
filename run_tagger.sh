@@ -74,6 +74,7 @@ show_help() {
     echo "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/webgpu/migraphx/rocm/ncnn"
     echo "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
     echo "    --ncnn-precision <形式>    fp32/fp16-storage/fp16-packed/fp16-arithmetic"
+    echo "    --ncnn-part-size-mib <MiB>  重み分割目安（0=なし、低メモリでは128）"
     echo "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
     echo "    -wi <0以上の整数>         WebGPU番号"
     echo "    -tv <ベンダー名>          nvidia/intel/amd"
@@ -417,7 +418,7 @@ fi
 # 引数解析
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -U|-um|--client-upload-mode|-ep|--provider|-gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|-td|--tensorrt-lib-dir|--ncnn-precision)
+        -U|-um|--client-upload-mode|-ep|--provider|-gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|-td|--tensorrt-lib-dir|--ncnn-precision|--ncnn-part-size-mib)
             if [ "$#" -lt 2 ] || [[ "$2" == -* ]]; then
                 echo "[ERROR] $1には値が必要です。"; exit 1
             fi ;;
@@ -454,7 +455,7 @@ while [[ $# -gt 0 ]]; do
             esac
             shift 2 ;;
         -td|--tensorrt-lib-dir) TENSORRT_LIB_DIR_ARG="$2"; PY_ARGS+=("--tensorrt-lib-dir" "$2"); shift 2 ;;
-        -gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|--ncnn-precision)
+        -gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|--ncnn-precision|--ncnn-part-size-mib)
             PY_ARGS+=("$1" "$2"); shift 2 ;;
         -wg|--webgpu) USE_GPU=1; WEBGPU_MODE=1; shift ;;
         -I|--force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
