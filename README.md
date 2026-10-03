@@ -60,7 +60,35 @@ DBV4移行前の既定モデル`SmilingWolf/wd-swinv2-tagger-v3`を`wd14_v3`と�
 
 GPU・OS・実行プロバイダー別の速度、CPU比、バッチサイズの効果、メモリ使用量は [ベンチマーク結果と分析](BENCHMARKS.md) を参照。既存のDirectML VRAM実測とLinux実機確認も移動した。
 
-Windowsで`-Gpu`だけを指定した場合は、専用かつ効率のよい実行経路を優先し、NVIDIAはTensorRT→CUDA、AMDはDirectML、IntelはOpenVINOを最初に確認する。TensorRTの依存環境にはCUDA実行系も含まれるため、TensorRTだけが利用できない場合は同じ`venv_tensorrt`をCUDA用として再利用し、依存パッケージを別環境へ再インストールしない。それ以外で利用できない場合は、DirectML、WebGPU、CPUの順に実行前の事前確認を行ってフォールバックする。AMDには専用ONNX Runtime経路がないためDirectMLが第一候補となる。WebGPUはDirectMLより後の最終GPUフォールバック、または`-Provider webgpu`による明示指定に限って使用する。`-Provider`を指定すれば選択を固定でき、自動フォールバックしない。CPU、Client、CUDA、TensorRT、Intel、DirectML、WebGPUはそれぞれ独立した`venv_*`を使い、別バックエンドのONNX Runtimeを同じ仮想環境へ混在させない。LinuxでもNVIDIAの自動選択はTensorRTを優先し、`--provider cuda`を明示すればCUDAだけを導入する。
+Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、AMDはDirectML→ncnn Vulkanを先に確認する。LinuxではNVIDIAはTensorRT→CUDA→ncnn Vulkan、IntelはOpenVINO→ncnn Vulkan、ROCm利用可能なAMDはMIGraphX→ROCm→ncnn Vulkan、旧AMD・PS4 Linux・Switch Linuxはncnn Vulkanから確認する。両OSともncnnの次はWebGPU、CPUの順に起動検証する。`--provider` / `-Provider`を指定すると選択を固定し、初期化に失敗した場合は理由を表示して停止する。TensorRTだけが利用できずCUDAが使える場合は、同じ`venv_tensorrt`をCUDA用に再利用する。各バックエンドは独立した`venv_*`を使用する。
+
+### ncnn Vulkan
+
+```bash
+./run_tagger.sh --provider ncnn --gpu -m ultra -p /path/to/images
+./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-precision fp16-storage -p /path/to/images
+```
+
+```powershell
+.\run_tagger.ps1 -Provider ncnn -Gpu -ModelProfile ultra -Path "C:\Images"
+.\run_tagger.ps1 -Provider ncnn -Gpu -ModelProfile ultra -NcnnPrecision fp16-storage -Path "C:\Images"
+```
+
+初回は `animetimm/convnextv2_huge.dbv4-full` の同一PyTorch重みを `timm` と `pnnx` で変換し、`.dbv4/models/ultra/model.ncnn.param` と `.bin` に保存する。2回目以降はこのキャッシュを再利用し、ONNX用ファイルは保持する。変換用 `torch`・`timm`・`pnnx` は必要時に導入する。変換にはモデルのHugging Faceアクセス権と十分なメインメモリ・空き容量が必要。小メモリ環境では別のPCで `python convert_ncnn_model.py animetimm/convnextv2_huge.dbv4-full .dbv4/models/ultra --input-size 512 --labels 12476` を実行し、生成された `.param`、`.bin`、`.json` の3ファイルを同じパスにコピーできる。2ファイルだけを配置する場合は `--model-file` / `-ModelFile` で `model.ncnn.param` のパスを明示する。
+
+精度は `fp32`（既定）、`fp16-storage`、`fp16-packed`、`fp16-arithmetic`。モデル変換は共通で、実行時のncnn設定だけを切り替える。ncnn形式はbatch 1のグラフで、複数枚は順に推論する。VulkanドライバーとVulkan対応のncnn Python bindingが必要。Python wheelにVulkanが含まれない環境ではVulkan有効でncnnをビルドするか、WebGPUを使用する。既存のタグ、rating、XMP、Server/Client処理は同じ確率配列を利用する。実機比較の状態は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+
+Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-part-size-mib 128` で区間ごとに読み込み、実GPU推論とCPU参照の一致を確認した。例えば `./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 -p /path/to/images`。元のモデル・重みは変更せず、分岐をまたがない位置で切り、1区間ずつ読み込み・解放する。128MiBは重み量の目安で、今回の最大区間は約243MiB。初回は同じ容量の分割キャッシュを追加するため約2.58GiBの空き容量が必要。毎画像で重みを再読み込みするので、メモリに余裕のあるPCでは既定の分割なし（0）を使う。Switchの初回測定は約75秒/枚だったため、Server/Clientでは `client_timeout` と `client_batch_timeout` を600秒などに設定する。旧NVIDIA ICDを選ぶ必要がある環境では、実行前に `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` を `/etc/vulkan/icd.d/nvidia_icd.json` へ設定する。実測条件は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+
+LinuxでAMD GPUを検出した場合、ncnnのVulkan初期化前に `RADV_DEBUG` へ `syncshaders` を追加する。AMD RADV実機で確認した連続演算時の確率差を抑える同期設定で、既存の環境変数のフラグは保持する。起動ログに適用を表示し、ベンチマークにも環境変数を記録する。
+
+AMD実機のultraはFP32で確率・rating・タグとXMPの一致を確認した。FP16の3設定は非有限出力で停止したため、この組み合わせではFP32を使用する。
+
+同じAMD PCのBazzite 44／Mesa 26.2.2でもFP32のbatch 1／4とXMP・Server/Clientを確認した。OS標準Python 3.14を変更せず、リポジトリ内のPython 3.13と`venv_ncnn`を使った。ExifToolを`.dbv4/runtime/exiftool`へ配置した場合は、実行前に `export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"` を設定する。`--login`／`-Login`は既存の`venv_ncnn`も探索し、ログイン用に再利用する。
+
+Windows 11のCore i7-1355U／Intel Iris Xeでも、ultra FP32のbatch 1／4とXMP・両Client転送の一致を確認した。ncnnは約33秒/枚で、Client期限は300秒に設定して検証した。同じGPUのOpenVINOは起動検査で非有限出力となったため、この環境では `-Provider ncnn` を明示して利用できる。省メモリの分割設定はPowerShellでは `-NcnnPartSizeMiB`（既定0）で指定する。[測定・失敗記録](BENCHMARKS.md)を参照。
+
+初回変換は推論より多くのRAMを必要とする。保存するパラメーターの勾配を無効化し、pnnxが形状確認時に不要な勾配履歴を保持することを防ぐ。TorchScriptを作成するプロセスを終了してからpnnxを起動し、変換前半のメモリも解放する。pnnx自体がメモリ不足で終了する場合は、余裕のあるPCで変換してキャッシュ3ファイルを配置する。[CPUでの変換照合](validate_ncnn_conversion.py)、[ultra測定ランナー](benchmark_ncnn_matrix.sh)、[実GPUのXMP・Server/Client検証](tests/test_ncnn_integration.py)も用意している。
 
 ### 将来向け1B級
 
@@ -340,6 +368,7 @@ Clientは最大2バッチの通信を並行させ、次のバッチのアップ�
 既定の`client_upload_mode: "preprocessed"`では、ClientがServerと同じ前処理を実行し、モデル入力のfloat32テンソルを可逆圧縮して送る。前処理の照合結果が一致した形式は元画像送信と同じテンソルが推論に渡る。Client側のCPU負荷を抑えたい場合は`"original"`を選ぶ。既存の`config.json`に`"original"`が保存されている場合、その設定は自動変更されない。Bashでは`-U p`、PowerShellでは`-um p`で今回だけ前処理済み転送を選べる。`o`で元画像送信を選べる。JPEG等のコーデック版差がある画像は結果を保つため元画像で送る。前処理済みモードには対応するServerが必要。前処理自体が一致しない場合はClient仮想環境内のPillow・NumPy・AVIFプラグインをServerの版へ自動更新してClientを再起動する。準備・再照合・転送のいずれかで前処理済みモードを使用できなければ理由を警告し、元画像送信で処理を続ける。
 新しいClientとServer間のバッチ応答は、サイズが大きい場合にgzipで圧縮する。古いServerからの非圧縮応答も引き続き利用できる。圧縮を有効にするにはServerの更新と再起動が必要。
 バッチ応答の待ち時間は`client_batch_timeout`（既定120秒）と`client_timeout × バッチ枚数`の大きい方を使う。初回のGPU推論が期限切れになった場合は、その実行中の残りを1枚ずつ再試行する。
+固定batch 1の単画像通信は`client_timeout`（既定15秒）を使う。WindowsのIntel UHD 630でultraをncnn実行すると1枚約140秒かかったため、クライアントの`config.json`で`client_timeout`と`client_batch_timeout`を例えば300秒に設定する。300秒設定で原画像・前処理済み転送のXMP一致を確認した。
 
 Intel OpenVINOを使用する場合は既存の --gpu 経路を維持し、openvino_gpu_device に使用デバイスを指定できるぞ。
 追加のGPU指定にも短縮形を使える。実行プロバイダは`-ep`、WebGPUは`-wg`、GPU番号は`-gi`、DirectML番号は`-di`、WebGPU番号は`-wi`、対象ベンダーは`-tv`、OpenVINOデバイスは`-od`、TensorRTライブラリ場所は`-td`。Bash・PowerShell・Python CLIで同じ短縮形を使える。

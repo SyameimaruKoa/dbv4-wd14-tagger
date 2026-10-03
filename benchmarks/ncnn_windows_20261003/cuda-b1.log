@@ -1,0 +1,34 @@
+﻿[WARN] ultra縺ｯRTX 2070 Max-Q繝ｻDirectML繝ｻbatch-size=4縺ｧ繝斐・繧ｯ6,583MiB縲∵ｸｬ螳壼燕繧帝勁縺丞｢怜・5,743MiB繧堤｢ｺ隱肴ｸ医∩縺ｧ縺吶・GB莉･荳翫・GPU繧呈耳螂ｨ縺励∫ｩｺ縺榊ｮｹ驥丈ｸ崎ｶｳ譎ゅ・batch-size繧剃ｸ九￡縺ｦ縺上□縺輔＞縲・
+[INFO] ONNX螟夜Κ繝・・繧ｿ繧貞酔荳繝・ぅ繝ｬ繧ｯ繝医Μ縺ｫ驟咲ｽｮ: C:\Users\kouki\Documents\MyApp\dbv4-wd14-tagger\.dbv4\models\53e96223459a3046
+[INFO] DBV4繝｢繝・Ν: itterative/convnextv2_huge.dbv4-full-onnx (ultra)
+[INFO] 繝ｩ繝吶Ν謨ｰ: 12476
+[INFO] metadata version: 07cfcadc104847e8
+[INFO] 蜈･蜉・shape: ['batch_size', 'num_channels', 'height', 'width']
+[INFO] 繧｢繧ｯ繝・ぅ繝悶・繝ｭ繝舌う繝: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] 襍ｷ蜍墓､懆ｨｼ縺ｧ螳溯｡後＆繧後◆EP: ['CUDAExecutionProvider']
+[benchmark] Model initialization and startup probe: 6.29s
+[benchmark] Warm-up 1/3
+[benchmark] Warm-up 2/3
+[benchmark] Warm-up 3/3
+[benchmark] Iteration 1/20: 490.58 ms/img
+[benchmark] Iteration 2/20: 490.87 ms/img
+[benchmark] Iteration 3/20: 490.61 ms/img
+[benchmark] Iteration 4/20: 491.22 ms/img
+[benchmark] Iteration 5/20: 490.29 ms/img
+[benchmark] Iteration 6/20: 490.76 ms/img
+[benchmark] Iteration 7/20: 490.73 ms/img
+[benchmark] Iteration 8/20: 490.41 ms/img
+[benchmark] Iteration 9/20: 490.55 ms/img
+[benchmark] Iteration 10/20: 491.80 ms/img
+[benchmark] Iteration 11/20: 491.54 ms/img
+[benchmark] Iteration 12/20: 490.47 ms/img
+[benchmark] Iteration 13/20: 490.24 ms/img
+[benchmark] Iteration 14/20: 491.07 ms/img
+[benchmark] Iteration 15/20: 489.03 ms/img
+[benchmark] Iteration 16/20: 491.62 ms/img
+[benchmark] Iteration 17/20: 490.54 ms/img
+[benchmark] Iteration 18/20: 491.33 ms/img
+[benchmark] Iteration 19/20: 490.26 ms/img
+[benchmark] Iteration 20/20: 491.01 ms/img
+benchmarks\ncnn_windows_20261003\cuda-b1.json: 490.67 ms/img
+

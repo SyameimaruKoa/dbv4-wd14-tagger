@@ -1,0 +1,18 @@
+Running as unit: dbv4-ncnn-configure-headers-20261003.service; invocation ID: 023b93d3b3d841e597e0f4bcab431152
+-- CMAKE_INSTALL_PREFIX = /opt/dbv4-wd14-tagger/.dbv4/runtime/ncnn-candidate-build/install
+-- NCNN_VERSION_STRING = 1.0.20261003
+-- Target arch: x86 64bit
+-- Found Python: /opt/dbv4-wd14-tagger/venv_ncnn/bin/python (found suitable version "3.13.16", minimum required is "3.9") found components: Interpreter Development.Module missing components: Development.Embed
+-- Performing Test HAS_FLTO_THIN
+-- Performing Test HAS_FLTO_THIN - Success
+-- Performing Test HAS_FLTO
+-- Performing Test HAS_FLTO - Success
+-- Found pybind11: /opt/dbv4-wd14-tagger/.dbv4/runtime/venv_ncnn_buildtools/lib/python3.13/site-packages/pybind11/include (found version "3.1.0")
+-- Configuring done (10.6s)
+-- Generating done (0.1s)
+-- Build files have been written to: /opt/dbv4-wd14-tagger/.dbv4/runtime/ncnn-candidate-build
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 10.803s
+             CPU time consumed: 49.740s
+                   Memory peak: 517.8M (swap: 0B)

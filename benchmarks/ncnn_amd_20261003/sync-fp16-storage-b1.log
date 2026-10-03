@@ -1,0 +1,40 @@
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[INFO] ncnn Vulkan GPU 0 (AMD Radeon Graphics (RADV RENOIR)): ultra, fp16-storage, ラベル数 12476
+Traceback (most recent call last):
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 239, in <module>
+    main()
+    ~~~~^^
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 230, in main
+    result, measured_start = run(args, monitor)
+                             ~~~^^^^^^^^^^^^^^^
+  File "/opt/dbv4-wd14-tagger/benchmark_ncnn.py", line 140, in run
+    runtime = load_runtime_model(
+        args.provider != "cpu", args.profile, provider=args.provider,
+        gpu_index=args.gpu_index, ncnn_precision=args.ncnn_precision,
+        model_file=args.model_file,
+    )
+  File "/opt/dbv4-wd14-tagger/embed_tags_universal.py", line 669, in load_runtime_model
+    runtime.predict_images([Image.new("RGB", (640, 480), (127, 63, 191))])
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/dbv4-wd14-tagger/ncnn_backend.py", line 153, in predict_images
+    return self.predict_preprocessed(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        np.stack([self.preprocessor(image) for image in images])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ) if images else []
+    ^
+  File "/opt/dbv4-wd14-tagger/ncnn_backend.py", line 178, in predict_preprocessed
+    results.append(infer_output_to_probabilities(raw))
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/dbv4-wd14-tagger/dbv4.py", line 658, in infer_output_to_probabilities
+    raise ValueError("DBV4 outputに非有限値があります。")
+ValueError: DBV4 outputに非有限値があります。

@@ -1,0 +1,42 @@
+Running as unit: dbv4-auto-fp32-b4.service; invocation ID: d91c70c0f37744f7881f4d0dfe47a13c
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[INFO] ncnn Vulkan GPU 0 (AMD Radeon Graphics (RADV RENOIR)): ultra, fp32, ラベル数 12476
+[benchmark] Model initialization and startup probe: 10.39s
+[benchmark] Warm-up 1/3
+[benchmark] Warm-up 2/3
+[benchmark] Warm-up 3/3
+[benchmark] Iteration 1/20: 6659.11 ms/img
+[benchmark] Iteration 2/20: 6655.96 ms/img
+[benchmark] Iteration 3/20: 6660.58 ms/img
+[benchmark] Iteration 4/20: 6657.49 ms/img
+[benchmark] Iteration 5/20: 6660.53 ms/img
+[benchmark] Iteration 6/20: 6664.03 ms/img
+[benchmark] Iteration 7/20: 6656.03 ms/img
+[benchmark] Iteration 8/20: 6660.02 ms/img
+[benchmark] Iteration 9/20: 6660.83 ms/img
+[benchmark] Iteration 10/20: 6665.71 ms/img
+[benchmark] Iteration 11/20: 6657.46 ms/img
+[benchmark] Iteration 12/20: 6659.13 ms/img
+[benchmark] Iteration 13/20: 6660.94 ms/img
+[benchmark] Iteration 14/20: 6657.80 ms/img
+[benchmark] Iteration 15/20: 6656.11 ms/img
+[benchmark] Iteration 16/20: 6655.51 ms/img
+[benchmark] Iteration 17/20: 6658.44 ms/img
+[benchmark] Iteration 18/20: 6658.76 ms/img
+[benchmark] Iteration 19/20: 6660.51 ms/img
+[benchmark] Iteration 20/20: 6659.95 ms/img
+benchmarks/ncnn_amd_20261003/sync-fp32-b4.json: 6659.12 ms/img
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 10min 25.704s
+             CPU time consumed: 13.851s
+                   Memory peak: 396.5M (swap: 0B)

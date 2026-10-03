@@ -1,0 +1,113 @@
+{
+  "atol": 0.0001,
+  "rtol": 0.001,
+  "cpu_reference": "../ncnn_local_20261002/cpu-b1.json",
+  "results": [
+    {
+      "case": "fp32-b1",
+      "exit_code": 0,
+      "all_12476_within_cpu_tolerance": true,
+      "median_ms_per_image": 7509.212856500085,
+      "load_seconds": 9.744054200000164,
+      "comparison": {
+        "max_absolute_difference": 2.6226043701171875e-06,
+        "mean_absolute_difference": 4.075032755679331e-09,
+        "selected_tag_symmetric_difference": [],
+        "rating_absolute_difference": {
+          "general": 0.0,
+          "sensitive": 3.259629011154175e-09,
+          "questionable": 1.0826624929904938e-08,
+          "explicit": 2.6193447411060333e-09
+        }
+      },
+      "resources": {
+        "drm_device": "/sys/class/drm/card1/device",
+        "sample_interval_seconds": 0.2,
+        "baseline": {
+          "time": 1222.053939478,
+          "rss_mib": 70.7421875,
+          "vram_mib": 336.8203125,
+          "gtt_mib": 146.9140625,
+          "gpu_busy_percent": 0.0
+        },
+        "peak_rss_mib": 198.76953125,
+        "peak_vram_mib": 493.0234375,
+        "peak_gtt_mib": 2992.0234375,
+        "measured_gpu_busy_percent_mean": 97.85714285714286,
+        "measured_gpu_busy_percent_peak": 99.0,
+        "gpu_counters_scope": "whole device, including other processes"
+      }
+    },
+    {
+      "case": "fp32-b4",
+      "exit_code": 0,
+      "all_12476_within_cpu_tolerance": true,
+      "median_ms_per_image": 7558.886811625001,
+      "load_seconds": 10.26495668299981,
+      "comparison": {
+        "max_absolute_difference": 2.6226043701171875e-06,
+        "mean_absolute_difference": 4.075032755679331e-09,
+        "selected_tag_symmetric_difference": [],
+        "rating_absolute_difference": {
+          "general": 0.0,
+          "sensitive": 3.259629011154175e-09,
+          "questionable": 1.0826624929904938e-08,
+          "explicit": 2.6193447411060333e-09
+        }
+      },
+      "resources": {
+        "drm_device": "/sys/class/drm/card1/device",
+        "sample_interval_seconds": 0.2,
+        "baseline": {
+          "time": 1403.079571455,
+          "rss_mib": 70.72265625,
+          "vram_mib": 336.8203125,
+          "gtt_mib": 146.9140625,
+          "gpu_busy_percent": 65.0
+        },
+        "peak_rss_mib": 198.97265625,
+        "peak_vram_mib": 493.0234375,
+        "peak_gtt_mib": 2992.0234375,
+        "measured_gpu_busy_percent_mean": 98.63157894736842,
+        "measured_gpu_busy_percent_peak": 99.0,
+        "gpu_counters_scope": "whole device, including other processes"
+      }
+    },
+    {
+      "case": "fp16-storage-b1",
+      "exit_code": 1,
+      "startup_failed_nonfinite": true,
+      "timing_json_generated": false
+    },
+    {
+      "case": "fp16-storage-b4",
+      "exit_code": 1,
+      "startup_failed_nonfinite": true,
+      "timing_json_generated": false
+    },
+    {
+      "case": "fp16-packed-b1",
+      "exit_code": 1,
+      "startup_failed_nonfinite": true,
+      "timing_json_generated": false
+    },
+    {
+      "case": "fp16-packed-b4",
+      "exit_code": 1,
+      "startup_failed_nonfinite": true,
+      "timing_json_generated": false
+    },
+    {
+      "case": "fp16-arithmetic-b1",
+      "exit_code": 1,
+      "startup_failed_nonfinite": true,
+      "timing_json_generated": false
+    },
+    {
+      "case": "fp16-arithmetic-b4",
+      "exit_code": 1,
+      "startup_failed_nonfinite": true,
+      "timing_json_generated": false
+    }
+  ]
+}

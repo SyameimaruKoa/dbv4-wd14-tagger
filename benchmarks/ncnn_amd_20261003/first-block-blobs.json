@@ -1,0 +1,106 @@
+[
+  {
+    "blob": "1",
+    "shape": [
+      352,
+      128,
+      128
+    ],
+    "max_absolute_difference": 3.337860107421875e-06,
+    "mean_absolute_difference": 1.1033161939622005e-07,
+    "cpu_min": -9.834877967834473,
+    "cpu_max": 10.555452346801758,
+    "allclose": true
+  },
+  {
+    "blob": "3",
+    "shape": [
+      128,
+      128,
+      352
+    ],
+    "max_absolute_difference": 0.006839752197265625,
+    "mean_absolute_difference": 4.9211223085876554e-05,
+    "cpu_min": -43.89799118041992,
+    "cpu_max": 40.66340255737305,
+    "allclose": false
+  },
+  {
+    "blob": "7",
+    "shape": [
+      352,
+      128,
+      128
+    ],
+    "max_absolute_difference": 0.0070037841796875,
+    "mean_absolute_difference": 6.152931018732488e-05,
+    "cpu_min": -42.10923767089844,
+    "cpu_max": 46.572837829589844,
+    "allclose": false
+  },
+  {
+    "blob": "9",
+    "shape": [
+      128,
+      128,
+      352
+    ],
+    "max_absolute_difference": 0.003321051597595215,
+    "mean_absolute_difference": 1.1871588867506944e-05,
+    "cpu_min": -4.871630668640137,
+    "cpu_max": 4.355557918548584,
+    "allclose": false
+  },
+  {
+    "blob": "12",
+    "shape": [
+      128,
+      128,
+      1408
+    ],
+    "max_absolute_difference": 0.0045146942138671875,
+    "mean_absolute_difference": 7.790826930431649e-05,
+    "cpu_min": -10.9656400680542,
+    "cpu_max": 8.932560920715332,
+    "allclose": false
+  },
+  {
+    "blob": "13",
+    "shape": [
+      128,
+      128,
+      1408
+    ],
+    "max_absolute_difference": 0.0023169517517089844,
+    "mean_absolute_difference": 2.03157433134038e-05,
+    "cpu_min": -0.1700407862663269,
+    "cpu_max": 8.932560920715332,
+    "allclose": false
+  },
+  {
+    "blob": "17",
+    "shape": [
+      1,
+      1,
+      1408
+    ],
+    "max_absolute_difference": 0.022342681884765625,
+    "mean_absolute_difference": 0.0011752579594030976,
+    "cpu_min": 2.049924373626709,
+    "cpu_max": 338.3693542480469,
+    "allclose": false
+  },
+  {
+    "blob": "20",
+    "shape": [
+      1,
+      1,
+      1
+    ],
+    "max_absolute_difference": 0.00102996826171875,
+    "mean_absolute_difference": 0.00102996826171875,
+    "cpu_min": 36.2265739440918,
+    "cpu_max": 36.2265739440918,
+    "allclose": true
+  }
+]

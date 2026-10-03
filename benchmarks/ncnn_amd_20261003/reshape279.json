@@ -1,0 +1,39 @@
+[
+  {
+    "blob": "278",
+    "shape": [
+      32,
+      32,
+      1408
+    ],
+    "max_absolute_difference": 2.518296241760254e-06,
+    "mean_absolute_difference": 1.2389882897423377e-07,
+    "cpu_min": -0.9532749056816101,
+    "cpu_max": 0.7514486312866211,
+    "allclose": true
+  },
+  {
+    "blob": "279",
+    "shape": [
+      1024,
+      1408
+    ],
+    "max_absolute_difference": 0.02579067274928093,
+    "mean_absolute_difference": 0.0001245298481080681,
+    "cpu_min": -0.9532749056816101,
+    "cpu_max": 0.7514486312866211,
+    "allclose": false
+  },
+  {
+    "blob": "280",
+    "shape": [
+      1024,
+      5632
+    ],
+    "max_absolute_difference": 0.37681329250335693,
+    "mean_absolute_difference": 0.003368327859789133,
+    "cpu_min": -7.082428932189941,
+    "cpu_max": 11.161949157714844,
+    "allclose": false
+  }
+]

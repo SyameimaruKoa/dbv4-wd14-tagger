@@ -1,0 +1,19 @@
+test_borrowed_input_storage_survives_until_extraction (test_ncnn_backend.NcnnBackendTests.test_borrowed_input_storage_survives_until_extraction) ... ok
+test_cached_converter_files_do_not_require_conversion_dependencies (test_ncnn_backend.NcnnBackendTests.test_cached_converter_files_do_not_require_conversion_dependencies) ... ok
+test_cpu_only_binding_reports_missing_vulkan_support (test_ncnn_backend.NcnnBackendTests.test_cpu_only_binding_reports_missing_vulkan_support) ... ok
+test_killed_converter_reports_memory_failure_without_publishing_cache (test_ncnn_backend.NcnnBackendTests.test_killed_converter_reports_memory_failure_without_publishing_cache) ... ok
+test_runtime_returns_dbv4_probabilities_for_each_image (test_ncnn_backend.NcnnBackendTests.test_runtime_returns_dbv4_probabilities_for_each_image) ... ok
+test_software_vulkan_device_is_rejected (test_ncnn_backend.NcnnBackendTests.test_software_vulkan_device_is_rejected) ... ok
+test_amd_sync_preserves_existing_flags_and_is_idempotent (test_ncnn_backend.VulkanEnvironmentTests.test_amd_sync_preserves_existing_flags_and_is_idempotent) ... ok
+test_other_vendor_keeps_driver_environment (test_ncnn_backend.VulkanEnvironmentTests.test_other_vendor_keeps_driver_environment) ... ok
+test_close_releases_net_and_can_be_repeated (test_ncnn_backend.VulkanShutdownTests.test_close_releases_net_and_can_be_repeated) ... ok
+test_windows_shutdown_releases_models_before_instance_once (test_ncnn_backend.VulkanShutdownTests.test_windows_shutdown_releases_models_before_instance_once) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.019s
+
+OK
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[INFO] ncnn Vulkan GPU 0 (test GPU): ultra, fp32, ラベル数 4
+[INFO] ncnn Vulkan GPU 0 (test GPU): ultra, fp16-packed, ラベル数 4
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。

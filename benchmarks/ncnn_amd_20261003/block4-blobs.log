@@ -1,0 +1,30 @@
+Running as unit: dbv4-ncnn-block4-20261003.service; invocation ID: b4ce327ae03240d68ffcb32338f6fdc1
+CPU blob 278: (32, 32, 1408)
+CPU blob 280: (1024, 5632)
+CPU blob 282: (32, 32, 5632)
+CPU blob 286: (1, 1, 5632)
+CPU blob 297: (32, 32, 5632)
+CPU blob 302: (1408, 32, 32)
+CPU blob 331: (1408, 32, 32)
+CPU blob 360: (1408, 32, 32)
+[0 AMD Radeon Graphics (RADV RENOIR)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Radeon Graphics (RADV RENOIR)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Radeon Graphics (RADV RENOIR)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  queueC=0[1]  queueT=0[1]  rebar=1  r-score=14
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-p/s/u/a=1/1/1/1  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  subgroup=8(8~8)  ops=1/1/1/1/1/1/1/1/1/1
+[1 llvmpipe (LLVM 21.1.8, 256 bits)]  fp16-cm=8x8x8  int8-cm=8x8x8  bf16-cm=0  fp8-cm=0
+{"blob": "278", "shape": [32, 32, 1408], "max_absolute_difference": 2.518296241760254e-06, "mean_absolute_difference": 1.2389882897423377e-07, "cpu_min": -0.9532749056816101, "cpu_max": 0.7514486312866211, "allclose": true}
+{"blob": "280", "shape": [1024, 5632], "max_absolute_difference": 2.702535390853882, "mean_absolute_difference": 0.03309939056634903, "cpu_min": -7.082428932189941, "cpu_max": 11.161949157714844, "allclose": false}
+{"blob": "282", "shape": [32, 32, 5632], "max_absolute_difference": 0.01772761344909668, "mean_absolute_difference": 2.0363293515401892e-05, "cpu_min": -0.1700407862663269, "cpu_max": 11.161949157714844, "allclose": false}
+{"blob": "286", "shape": [1, 1, 5632], "max_absolute_difference": 2.145545482635498, "mean_absolute_difference": 0.028822017833590508, "cpu_min": 0.4171615540981293, "cpu_max": 28.466442108154297, "allclose": false}
+{"blob": "297", "shape": [32, 32, 5632], "max_absolute_difference": 0.5537059307098389, "mean_absolute_difference": 0.0015974127454683185, "cpu_min": -7.0655131340026855, "cpu_max": 7.165066719055176, "allclose": false}
+{"blob": "302", "shape": [1408, 32, 32], "max_absolute_difference": 4.492332458496094, "mean_absolute_difference": 0.042929042130708694, "cpu_min": -436.50738525390625, "cpu_max": 352.4886474609375, "allclose": false}
+{"blob": "331", "shape": [1408, 32, 32], "max_absolute_difference": 5.9254302978515625, "mean_absolute_difference": 0.08104033768177032, "cpu_min": -499.42425537109375, "cpu_max": 446.40264892578125, "allclose": false}
+{"blob": "360", "shape": [1408, 32, 32], "max_absolute_difference": 31.6854248046875, "mean_absolute_difference": 0.25194552540779114, "cpu_min": -948.9198608398438, "cpu_max": 643.9461059570312, "allclose": false}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 43.349s
+             CPU time consumed: 1min 26.735s
+                   Memory peak: 3.3G (swap: 0B)

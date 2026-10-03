@@ -71,8 +71,10 @@ show_help() {
     echo "    -T <ファイル名/パス>       タグCSV（例: selected_tags.csv）"
     echo "    -q <0～1の数値>           タグ採用閾値（例: 0.35、未指定時はモデルの推奨値）"
     echo "    -s <2|4|6>                旧センシティブ分割（DBV4では5段階固定）"
-    echo "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/webgpu/migraphx"
+    echo "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/webgpu/migraphx/rocm/ncnn"
     echo "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
+    echo "    --ncnn-precision <形式>    fp32/fp16-storage/fp16-packed/fp16-arithmetic"
+    echo "    --ncnn-part-size-mib <MiB>  重み分割目安（0=なし、低メモリでは128）"
     echo "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
     echo "    -wi <0以上の整数>         WebGPU番号"
     echo "    -tv <ベンダー名>          nvidia/intel/amd"
@@ -101,7 +103,15 @@ show_help() {
 
 # --- GPU検出関数 ---
 detect_gpu_vendor() {
-    # 1. Tegra SoC (Nintendo Switch / Jetson 等) の検出
+    if [ -r /proc/device-tree/model ] && tr -d '\0' </proc/device-tree/model | grep -Eiq 'Nintendo Switch'; then
+        echo "switch"
+        return
+    fi
+    if [ -r /sys/devices/virtual/dmi/id/product_name ] && grep -Eiq 'PlayStation.?4|PS4' /sys/devices/virtual/dmi/id/product_name; then
+        echo "ps4"
+        return
+    fi
+    # Tegra SoC (Jetson 等) の検出
     if [ -e "/dev/nvhost-gpu" ] || [ -e "/dev/nvhost-ctrl-gpu" ] || [ -e "/etc/nv_tegra_release" ] || [ -d "/usr/lib/aarch64-linux-gnu/tegra" ]; then
         echo "nvidia"
         return
@@ -201,8 +211,16 @@ setup_env() {
             venv_name="venv_intel"
         elif [ "$backend" = "webgpu" ]; then
             venv_name="venv_webgpu"
+        elif [ "$backend" = "ncnn" ]; then
+            venv_name="venv_ncnn"
         elif [ "$backend" = "amd" ]; then
-            venv_name="venv_amd"
+            if [ "$PROVIDER" = "migraphx" ]; then
+                venv_name="venv_migraphx"
+            elif [ "$PROVIDER" = "rocm" ]; then
+                venv_name="venv_rocm"
+            else
+                venv_name="venv_amd"
+            fi
         fi
     fi
 
@@ -262,10 +280,14 @@ setup_env() {
         $PIP_CMD install -r "$REQ_FILE" 'onnxruntime-openvino==1.24.1' 'openvino==2025.4.1' || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "webgpu" ]; then
         $PIP_CMD install -r "$REQ_FILE" onnxruntime onnxruntime-ep-webgpu || { echo "[ERROR] WebGPUライブラリのインストールに失敗しました。"; exit 1; }
+    elif [ "$backend" = "ncnn" ]; then
+        $PIP_CMD install -r "$REQ_FILE" onnxruntime ncnn || { echo "[ERROR] ncnnライブラリのインストールに失敗しました。"; exit 1; }
     elif [ "$backend" = "amd" ]; then
         # AMD用 ROCm対応パッケージ（onnxruntime-rocm または onnxruntime-migraphx）をインストールするのじゃ
         if [ "$PROVIDER" = "migraphx" ]; then
             $PIP_CMD install -r "$REQ_FILE" onnxruntime-migraphx -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ || exit 1
+        elif [ "$PROVIDER" = "rocm" ]; then
+            $PIP_CMD install -r "$REQ_FILE" onnxruntime-rocm -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ || exit 1
         else
             $PIP_CMD install -r "$REQ_FILE" onnxruntime-rocm -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ 2>/dev/null || \
             $PIP_CMD install -r "$REQ_FILE" onnxruntime-migraphx -f https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4/ -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/ || { echo "[ERROR] ライブラリのインストールに失敗しました。"; exit 1; }
@@ -290,6 +312,95 @@ setup_env() {
     fi
 }
 
+auto_backend_mode() {
+    case "$1" in
+        tensorrt|cuda) echo nvidia ;;
+        intel) echo intel ;;
+        migraphx|rocm) echo amd ;;
+        ncnn) echo ncnn ;;
+        webgpu) echo webgpu ;;
+        *) echo cpu ;;
+    esac
+}
+
+auto_venv_name() {
+    case "$1" in
+        tensorrt|cuda) echo venv_gpu ;;
+        intel) echo venv_intel ;;
+        migraphx) echo venv_migraphx ;;
+        rocm) echo venv_rocm ;;
+        ncnn) echo venv_ncnn ;;
+        webgpu) echo venv_webgpu ;;
+        *) echo venv_std ;;
+    esac
+}
+
+select_auto_provider() {
+    local detected="$1" candidate mode venv_name probe_python openvino_libs
+    local candidates=()
+    case "$detected" in
+        nvidia) candidates=(tensorrt cuda ncnn webgpu cpu) ;;
+        intel) candidates=(intel ncnn webgpu cpu) ;;
+        amd)
+            if command -v rocminfo >/dev/null 2>&1 || [ -d /opt/rocm ] ||
+                [ -x "$SCRIPT_DIR/venv_migraphx/bin/python" ] ||
+                [ -x "$SCRIPT_DIR/venv_rocm/bin/python" ] ||
+                [ -x "$SCRIPT_DIR/venv_amd/bin/python" ] ||
+                ldconfig -p 2>/dev/null | grep -q 'libamdhip64'; then
+                candidates=(migraphx rocm ncnn webgpu cpu)
+            else
+                candidates=(ncnn webgpu cpu)
+            fi ;;
+        amd_webgpu|amd_unsupported|ps4|switch) candidates=(ncnn webgpu cpu) ;;
+        *) candidates=(ncnn webgpu cpu) ;;
+    esac
+    for candidate in "${candidates[@]}"; do
+        mode=$(auto_backend_mode "$candidate")
+        venv_name=$(auto_venv_name "$candidate")
+        echo "[INFO] 自動Provider候補を検証します: $candidate"
+        if ! (PROVIDER="$candidate"; setup_env "$mode" "$IS_CLIENT"); then
+            echo "[WARN] $candidate の環境を準備できませんでした。"
+            continue
+        fi
+        probe_python="$SCRIPT_DIR/$venv_name/bin/python"
+        local probe_args=("${PY_ARGS[@]}" --provider "$candidate" --probe-provider)
+        if [ "$candidate" != "cpu" ]; then
+            probe_args+=(--gpu)
+        fi
+        if [ "$candidate" = "webgpu" ] && [ "$detected" != "none" ]; then
+            case "$detected" in
+                amd*|ps4) probe_args+=(--target-vendor amd) ;;
+                intel) probe_args+=(--target-vendor intel) ;;
+                nvidia|switch) probe_args+=(--target-vendor nvidia) ;;
+            esac
+        fi
+        if [ "$candidate" = "intel" ]; then
+            openvino_libs=$("$probe_python" -c 'import importlib.util,pathlib; print(pathlib.Path(importlib.util.find_spec("openvino").origin).parent / "libs")' 2>/dev/null)
+            if ! LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}" "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"; then
+                echo "[WARN] $candidate の起動検証に失敗しました。"
+                continue
+            fi
+        elif ! "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"; then
+            echo "[WARN] $candidate の起動検証に失敗しました。"
+            continue
+        fi
+        PROVIDER="$candidate"
+        BACKEND_MODE="$mode"
+        PY_ARGS+=(--provider "$candidate")
+        if [ "$candidate" = "webgpu" ]; then
+            case "$detected" in
+                amd*|ps4) PY_ARGS+=(--target-vendor amd) ;;
+                intel) PY_ARGS+=(--target-vendor intel) ;;
+                nvidia|switch) PY_ARGS+=(--target-vendor nvidia) ;;
+            esac
+        fi
+        echo "[INFO] 自動選択しました: $candidate"
+        return 0
+    done
+    echo "[ERROR] 利用可能なProviderがありません。"
+    return 1
+}
+
 # 引数なしチェック
 if [ $# -eq 0 ]; then
     configure_storage_paths
@@ -307,7 +418,7 @@ fi
 # 引数解析
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -U|-um|--client-upload-mode|-ep|--provider|-gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|-td|--tensorrt-lib-dir)
+        -U|-um|--client-upload-mode|-ep|--provider|-gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|-td|--tensorrt-lib-dir|--ncnn-precision|--ncnn-part-size-mib)
             if [ "$#" -lt 2 ] || [[ "$2" == -* ]]; then
                 echo "[ERROR] $1には値が必要です。"; exit 1
             fi ;;
@@ -338,12 +449,13 @@ while [[ $# -gt 0 ]]; do
                 cuda|tensorrt) FORCE_TYPE="nvidia" ;;
                 intel) FORCE_TYPE="intel" ;;
                 webgpu) WEBGPU_MODE=1 ;;
-                migraphx) FORCE_TYPE="amd" ;;
-                *) echo "[ERROR] Linux provider: cpu/cuda/tensorrt/intel/webgpu/migraphx"; exit 1 ;;
+                ncnn) BACKEND_MODE="ncnn" ;;
+                migraphx|rocm) FORCE_TYPE="amd" ;;
+                *) echo "[ERROR] Linux provider: cpu/cuda/tensorrt/intel/webgpu/migraphx/rocm/ncnn"; exit 1 ;;
             esac
             shift 2 ;;
         -td|--tensorrt-lib-dir) TENSORRT_LIB_DIR_ARG="$2"; PY_ARGS+=("--tensorrt-lib-dir" "$2"); shift 2 ;;
-        -gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device)
+        -gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|--ncnn-precision|--ncnn-part-size-mib)
             PY_ARGS+=("$1" "$2"); shift 2 ;;
         -wg|--webgpu) USE_GPU=1; WEBGPU_MODE=1; shift ;;
         -I|--force-intel) USE_GPU=1; FORCE_TYPE="intel"; shift ;;
@@ -367,7 +479,7 @@ configure_storage_paths
 if [ "$LOGIN_MODE" -eq 1 ]; then
     echo "[INFO] Hugging Faceログインモードを開始します。"
     VENV_DIR=""
-    for venv_name in venv_webgpu venv_gpu venv_intel venv_amd venv_std venv_client; do
+    for venv_name in venv_ncnn venv_webgpu venv_gpu venv_intel venv_amd venv_std venv_client; do
         if [ -x "$SCRIPT_DIR/$venv_name/bin/hf" ]; then
             VENV_DIR="$SCRIPT_DIR/$venv_name"
             echo "[INFO] 既存の仮想環境を使用します: $venv_name"
@@ -416,7 +528,9 @@ fi
 # GPUモード決定ロジック
 BACKEND_MODE="cpu"
 if [ $USE_GPU -eq 1 ]; then
-    if [ "$WEBGPU_MODE" -eq 1 ]; then
+    if [ "$PROVIDER" = "ncnn" ]; then
+        BACKEND_MODE="ncnn"
+    elif [ "$WEBGPU_MODE" -eq 1 ]; then
         echo "[INFO] Vulkan経由のWebGPUモードで実行します。"
         BACKEND_MODE="webgpu"
         PY_ARGS+=("--webgpu")
@@ -429,37 +543,15 @@ if [ $USE_GPU -eq 1 ]; then
     elif [ "$FORCE_TYPE" = "amd" ]; then
         echo "[WARN] AMD GPU モードを強制使用しますが、アーキテクチャ未サポートによるコアダンプの危険性があります。"
         BACKEND_MODE="amd"
+    elif [ "$IS_CLIENT" = "1" ]; then
+        BACKEND_MODE="cpu"
     else
         # 自動判別
         DETECTED=$(detect_gpu_vendor)
-        if [ "$DETECTED" = "nvidia" ]; then
-            echo "[INFO] NVIDIA GPU を検出しました。TensorRTモードを優先します。"
-            BACKEND_MODE="nvidia"
-            PROVIDER="tensorrt"
-            PY_ARGS+=("--provider" "tensorrt")
-        elif [ "$DETECTED" = "intel" ]; then
-            echo "[INFO] Intel GPU を検出しました。OpenVINOモードで実行します。"
-            BACKEND_MODE="intel"
-        elif [ "$DETECTED" = "amd_webgpu" ]; then
-            echo "[INFO] AMD Barceloを検出しました。WebGPUモードで実行します。"
-            BACKEND_MODE="webgpu"
-            PY_ARGS+=("--webgpu")
-        elif [ "$DETECTED" = "amd" ]; then
-            echo "[INFO] AMD GPU を検出しました。ROCmモードで実行します。"
-            BACKEND_MODE="amd"
-        elif [ "$DETECTED" = "amd_unsupported" ]; then
-            echo "[WARN] サポート外のAMD内蔵GPU(gfx90c等)を検出しました。コアダンプ回避のため、安全なCPUモードで実行します。"
-            BACKEND_MODE="cpu"
-        else
-            echo "[WARN] GPUが見つからない、または判別できませんでした。CPUモードで実行します。"
-            BACKEND_MODE="cpu"
-        fi
+        select_auto_provider "$DETECTED" || exit 1
     fi
     if [ -z "$PROVIDER" ] && [ "$BACKEND_MODE" = "intel" ]; then
         PY_ARGS+=("--provider" "intel")
-    fi
-    if [ -z "$PROVIDER" ] && [ "${DETECTED:-}" = "amd_webgpu" ]; then
-        PY_ARGS+=("--target-vendor" "amd")
     fi
     # Explicit providers are checked in Python; GPU failures must not become CPU success.
     if [ "$BACKEND_MODE" != "cpu" ]; then

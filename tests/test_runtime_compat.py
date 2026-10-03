@@ -466,8 +466,11 @@ class RuntimeCompatibilityTests(unittest.TestCase):
         handler.send_response = lambda status: None
         handler.send_header = lambda name, value: None
         handler.end_headers = lambda: None
-        handler.wfile = SimpleNamespace(write=lambda body: (_ for _ in ()).throw(BrokenPipeError()))
-        self.assertFalse(handler._send_json_response(200, b"{}"))
+        for error in (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            with self.subTest(error=error.__name__):
+                handler.wfile = SimpleNamespace(
+                    write=lambda body: (_ for _ in ()).throw(error()))
+                self.assertFalse(handler._send_json_response(200, b"{}"))
 
     def test_parallel_server_limits_active_requests(self):
         active = 0

@@ -1,0 +1,6 @@
+diff --git a/python/src/main.cpp b/python/src/main.cpp
+--- a/python/src/main.cpp
++++ b/python/src/main.cpp
+@@ -212,0 +213,2 @@
++    .def_readwrite("use_shader_local_memory", &Option::use_shader_local_memory)
++    .def_readwrite("use_local_pool_allocator", &Option::use_local_pool_allocator)

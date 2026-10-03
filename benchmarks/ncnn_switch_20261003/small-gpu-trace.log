@@ -1,0 +1,16 @@
+imported
+Net False
+load_param
+0
+load_model
+0
+extractor
+input
+0
+extract
+Fatal Python error: Segmentation fault
+
+Current thread 0x0000007f97439720 (most recent call first):
+  File "<stdin>", line 19 in <module>
+
+Extension modules: numpy._core._multiarray_umath, numpy.linalg._umath_linalg (total: 2)

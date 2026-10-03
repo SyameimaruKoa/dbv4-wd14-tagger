@@ -1,0 +1,69 @@
+{
+  "cpu_reference": "../ncnn_local_20261002/cpu-b1.json",
+  "atol": 0.0001,
+  "rtol": 0.001,
+  "input_sha256": "501fbf0fee15841b31ff8ea29fd3516b7329d652588b7b4f7dd1c0128faa9264",
+  "metadata_version": "07cfcadc104847e8",
+  "results": [
+    {
+      "file": "rtx-fp32-b1.json",
+      "median_ms_per_image": 1131.6172999995615,
+      "load_seconds": 7.6863406000002215,
+      "all_12476_within_cpu_tolerance": true,
+      "max_difference_from_cpu": 3.5762786865234375e-06,
+      "max_difference_from_ncnn_b1": 0.0,
+      "tag_difference_from_ncnn_b1": [],
+      "rating_max_difference_from_ncnn_b1": 0.0
+    },
+    {
+      "file": "rtx-fp32-b4.json",
+      "median_ms_per_image": 1128.6412624999684,
+      "load_seconds": 12.265955300001224,
+      "all_12476_within_cpu_tolerance": true,
+      "max_difference_from_cpu": 3.5762786865234375e-06,
+      "max_difference_from_ncnn_b1": 0.0,
+      "tag_difference_from_ncnn_b1": [],
+      "rating_max_difference_from_ncnn_b1": 0.0
+    },
+    {
+      "file": "cuda-b1.json",
+      "median_ms_per_image": 490.6698499999038,
+      "load_seconds": 6.290392899998551,
+      "all_12476_within_cpu_tolerance": true,
+      "max_difference_from_cpu": 3.039836883544922e-06,
+      "max_difference_from_ncnn_b1": 8.940696716308594e-07,
+      "tag_difference_from_ncnn_b1": [],
+      "rating_max_difference_from_ncnn_b1": 1.1920928955078125e-07
+    },
+    {
+      "file": "cuda-b4.json",
+      "median_ms_per_image": 472.29617500011045,
+      "load_seconds": 6.230441399999108,
+      "all_12476_within_cpu_tolerance": true,
+      "max_difference_from_cpu": 3.337860107421875e-06,
+      "max_difference_from_ncnn_b1": 1.2069940567016602e-06,
+      "tag_difference_from_ncnn_b1": [],
+      "rating_max_difference_from_ncnn_b1": 1.1920928955078125e-07
+    },
+    {
+      "file": "tensorrt-b1.json",
+      "median_ms_per_image": 377.54004999987956,
+      "load_seconds": 12.951128499998958,
+      "all_12476_within_cpu_tolerance": true,
+      "max_difference_from_cpu": 4.708766937255859e-06,
+      "max_difference_from_ncnn_b1": 3.0994415283203125e-06,
+      "tag_difference_from_ncnn_b1": [],
+      "rating_max_difference_from_ncnn_b1": 1.1920928955078125e-07
+    },
+    {
+      "file": "tensorrt-b4.json",
+      "median_ms_per_image": 359.47497499955716,
+      "load_seconds": 8.652206300001126,
+      "all_12476_within_cpu_tolerance": true,
+      "max_difference_from_cpu": 4.708766937255859e-06,
+      "max_difference_from_ncnn_b1": 3.0994415283203125e-06,
+      "tag_difference_from_ncnn_b1": [],
+      "rating_max_difference_from_ncnn_b1": 1.1920928955078125e-07
+    }
+  ]
+}

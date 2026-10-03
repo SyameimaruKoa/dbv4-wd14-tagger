@@ -2,7 +2,7 @@ import unittest
 import contextlib
 import io
 
-from embed_tags_universal import create_parser
+from embed_tags_universal import create_parser, runtime_cli_options
 
 
 class CliShortOptionTests(unittest.TestCase):
@@ -87,6 +87,18 @@ class CliShortOptionTests(unittest.TestCase):
         self.assertFalse(args.record_ratio)
         self.assertTrue(args.gen_config)
         self.assertTrue(args.webgpu)
+
+    def test_ncnn_provider_and_precision_reach_runtime(self):
+        args = create_parser().parse_args([
+            "--provider", "ncnn", "--ncnn-precision", "fp16-arithmetic",
+            "--gpu-index", "2",
+            "--ncnn-part-size-mib", "128",
+        ])
+        options = runtime_cli_options(args)
+        self.assertEqual(options["provider"], "ncnn")
+        self.assertEqual(options["ncnn_precision"], "fp16-arithmetic")
+        self.assertEqual(options["gpu_index"], 2)
+        self.assertEqual(options["ncnn_part_size_mib"], 128)
 
 
 if __name__ == "__main__":

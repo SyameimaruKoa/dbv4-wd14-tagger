@@ -1,0 +1,37 @@
+﻿{
+    "cases":  [
+                  {
+                      "gpu":  "NVIDIA GeForce RTX 2070",
+                      "candidates":  [
+                                         "tensorrt",
+                                         "cuda",
+                                         "ncnn",
+                                         "webgpu",
+                                         "cpu"
+                                     ],
+                      "vendor":  "nvidia"
+                  },
+                  {
+                      "gpu":  "Intel UHD Graphics 630",
+                      "candidates":  [
+                                         "intel",
+                                         "ncnn",
+                                         "webgpu",
+                                         "cpu"
+                                     ],
+                      "vendor":  "intel"
+                  },
+                  {
+                      "gpu":  "AMD Radeon Graphics",
+                      "candidates":  [
+                                         "directml",
+                                         "ncnn",
+                                         "webgpu",
+                                         "cpu"
+                                     ],
+                      "vendor":  "amd"
+                  }
+              ],
+    "powershell_version":  "5.1.26100.9549",
+    "parse_errors":  0
+}
