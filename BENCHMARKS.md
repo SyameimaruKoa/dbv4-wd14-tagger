@@ -183,6 +183,8 @@ warm-up 1回・測定3回。ncnn b4はbatch 1グラフの逐次処理。GPU試�
 
 [kernel.errors.txt](benchmarks/aero_regression_20261004/power-investigation/kernel.errors.txt)は04:39:54作成、04:53:42最終更新のCISA GPUカーネル検証診断で、Windowsカーネルのクラッシュダンプではない。2件の診断文は[OpenVINOの既存報告 #31511](https://github.com/openvinotoolkit/openvino/issues/31511)と一致する。同報告も出力が得られた状態での診断を扱っている。今回のFP32全確率・XMP検証は成功しているが、診断が解消済みとは主張しない。診断ファイル生成を今回のS3移行の原因と結び付ける証拠はない。S3では外観が電源OFFに見える場合があることは[Microsoftの電源状態資料](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/system-power-states)にも記載されている。
 
+利用者による追加確認で、充電器のSwitchBotに「毎朝05:00に1分間電源を切る」設定が残っていたことが判明した。05:00:03のAC切断と時刻が一致し、今回のスリープを引き起こした外部電源操作として説明できる。SwitchBot本体の履歴は未取得で、設定解除済みとは扱わない。追加確認でもスリープ前後のBootIdは266のまま、05:40時点のOS稼働時間は約66分、04:34:15の起動から継続していた。今回の接続停止調査は外部電源操作後の無操作S3スリープとして完了し、上記の推論・精度・通信・XMP試験結果は有効。IntelのCISA診断は別の依存ライブラリ側の記録として保持する。
+
 ### 再測定
 
 実機では[測定スクリプト](benchmark_ncnn.py)を各Providerの仮想環境で実行し、JSONを保存する。
