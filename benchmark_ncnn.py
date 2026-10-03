@@ -44,6 +44,7 @@ class ResourceMonitor:
         self.device = device or next(
             (path for path in candidates if (path / 'mem_info_gtt_used').is_file()), None)
         self.samples = []
+        self.tegra_load = Path('/sys/devices/gpu.0/load')
         self.stop = threading.Event()
         self.thread = threading.Thread(target=self._run, daemon=True)
 
@@ -65,6 +66,18 @@ class ResourceMonitor:
                     result[key] = int((self.device / filename).read_text()) / divisor
                 except (OSError, ValueError):
                     pass
+        elif self.tegra_load.is_file():
+            try:
+                # Tegra's nvgpu load counter is in per-mille units.
+                result['gpu_busy_percent'] = int(self.tegra_load.read_text()) / 10
+            except (OSError, ValueError):
+                pass
+        try:
+            memory = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
+            result['system_available_mib'] = int(memory['MemAvailable'].split()[0]) / 1024
+            result['system_swap_free_mib'] = int(memory['SwapFree'].split()[0]) / 1024
+        except (OSError, KeyError, ValueError):
+            pass
         return result
 
     def _run(self):
@@ -83,6 +96,7 @@ class ResourceMonitor:
 
     def summary(self, measured_start):
         result = {'drm_device': str(self.device) if self.device else None,
+                  'tegra_load_counter': str(self.tegra_load) if self.tegra_load.is_file() else None,
                   'sample_interval_seconds': 0.2,
                   'baseline': self.samples[0]}
         for key in ('rss_mib', 'vram_mib', 'gtt_mib'):
@@ -93,6 +107,9 @@ class ResourceMonitor:
         result['measured_gpu_busy_percent_mean'] = statistics.mean(busy) if busy else None
         result['measured_gpu_busy_percent_peak'] = max(busy) if busy else None
         result['gpu_counters_scope'] = 'whole device, including other processes'
+        for key in ('system_available_mib', 'system_swap_free_mib'):
+            values = [s[key] for s in self.samples if key in s]
+            result['minimum_' + key] = min(values) if values else None
         return result
 
 
