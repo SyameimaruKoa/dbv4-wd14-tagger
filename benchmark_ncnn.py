@@ -194,7 +194,7 @@ def run(args, monitor):
     result = {
         "provider": args.provider,
         "precision": args.ncnn_precision if args.provider == "ncnn" else None,
-        "ncnn_part_size_mib": args.ncnn_part_size_mib if args.provider == 'ncnn' else None,
+        "ncnn_part_size_mib": getattr(runtime, 'part_size_mib', args.ncnn_part_size_mib) if args.provider == 'ncnn' else None,
         "profile": args.profile,
         "gpu_index": args.gpu_index,
         "openvino_device": args.openvino_device,
@@ -249,7 +249,7 @@ def main():
                                                       "fp16-packed", "fp16-arithmetic"),
                         default="fp32")
     parser.add_argument("--model-file")
-    parser.add_argument("--ncnn-part-size-mib", type=int, default=0)
+    parser.add_argument("--ncnn-part-size-mib", type=int, default=None)
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--reference", type=Path)

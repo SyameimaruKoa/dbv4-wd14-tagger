@@ -74,7 +74,7 @@ show_help() {
     echo "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/webgpu/migraphx/rocm/ncnn"
     echo "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
     echo "    --ncnn-precision <形式>    fp32/fp16-storage/fp16-packed/fp16-arithmetic"
-    echo "    --ncnn-part-size-mib <MiB>  重み分割目安（0=なし、低メモリでは128）"
+    echo "    --ncnn-part-size-mib <MiB>  重み分割目安（省略時はメモリ量で自動、0=なし）"
     echo "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
     echo "    -wi <0以上の整数>         WebGPU番号"
     echo "    -tv <ベンダー名>          nvidia/intel/amd"

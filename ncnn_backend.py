@@ -72,12 +72,78 @@ def vulkan_device(ncnn, gpu_index: int) -> str:
     return name
 
 
-def resolve_part_size_mib(device_name: str, requested: int | None) -> int:
-    """Use the PS4-tested streaming size unless the caller overrides it."""
+def memory_budgets_mib(ncnn=None, gpu_index: int = 0) -> tuple[int | None, int | None]:
+    """Read available RAM and the selected Vulkan device's heap budget."""
+    ram = gpu = None
+    try:
+        if platform.system() == 'Linux':
+            fields = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
+            ram = int(fields['MemAvailable'].split()[0]) // 1024
+        elif platform.system() == 'Windows':
+            import ctypes
+
+            class MemoryStatus(ctypes.Structure):
+                _fields_ = [('length', ctypes.c_ulong), ('load', ctypes.c_ulong)] + [
+                    (name, ctypes.c_ulonglong) for name in (
+                        'total_phys', 'avail_phys', 'total_page', 'avail_page',
+                        'total_virtual', 'avail_virtual', 'avail_extended')]
+
+            status = MemoryStatus()
+            status.length = ctypes.sizeof(status)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                ram = status.avail_phys // 1048576
+        else:
+            ram = os.sysconf('SC_AVPHYS_PAGES') * os.sysconf('SC_PAGE_SIZE') // 1048576
+    except (OSError, ValueError, KeyError, AttributeError):
+        pass
+    if ncnn is not None:
+        try:
+            # Native ncnn reports this budget in MiB, for this device only.
+            value = int(ncnn.get_gpu_device(gpu_index).get_heap_budget())
+            gpu = value if value > 0 else None
+        except (AttributeError, RuntimeError, TypeError, ValueError):
+            pass
+    return ram, gpu
+
+
+def resolve_part_size_mib(device_name: str, requested: int | None,
+                          model_prefix: Path | None = None, ncnn=None,
+                          gpu_index: int = 0) -> int:
+    """Choose streaming from memory headroom and actual FP32 weight size."""
     if requested is not None:
         if requested < 0:
             raise ValueError('--ncnn-part-size-mib must be nonnegative')
         return requested
+    ram, gpu = memory_budgets_mib(ncnn, gpu_index)
+    try:
+        weights = model_prefix.with_suffix('.ncnn.bin').stat().st_size / 1048576 if model_prefix else None
+    except OSError:
+        weights = None
+    if weights is not None:
+        # Reserve room for activations, staging and CPU-side weight loading.
+        ram_needed, gpu_needed = weights * 1.5 + 1024, weights * 1.25 + 256
+        limited = [budget for budget, needed in ((ram, ram_needed), (gpu, gpu_needed))
+                   if budget is not None and budget < needed]
+        size = 0
+        if limited:
+            # Choose the largest power-of-two target that fits the measured
+            # budget, rather than splitting every small-memory device at 128.
+            targets = []
+            if ram is not None:
+                targets.append((ram - 1024) / 1.5)
+            if gpu is not None:
+                targets.append((gpu - 256) / 1.25)
+            target = max(64, min(targets))
+            size = 64
+            while size * 2 <= target:
+                size *= 2
+        elif gpu is None and platform.system() == 'Linux' and any(
+                part in device_name.lower() for part in ('liverpool', 'playstation 4', 'radv oberon')):
+            size = 128  # Keep the tested PS4 fallback when Vulkan cannot report memory.
+        print(f'[INFO] ncnn メモリ自動設定: 空きRAM={ram if ram is not None else "不明"} MiB, '
+              f'GPUメモリ予算={gpu if gpu is not None else "不明"} MiB, 重み={weights:.0f} MiB; '
+              f'分割目安={size} MiB (0=常駐)。', flush=True)
+        return size
     if platform.system() == 'Linux' and any(
             part in device_name.lower() for part in ('liverpool', 'playstation 4', 'radv oberon')):
         print('[INFO] ncnn PS4 RADV: 省メモリ分割推論を自動選択します (128 MiB)。', flush=True)
@@ -230,7 +296,7 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
     """Execute unchanged graph sections with one section resident at a time.
 
     This trades model reloads and CPU/GPU transfers for a lower memory peak.
-    It is opt-in; normal ncnn inference retains its resident model.
+    Memory-based selection or an explicit size enables this runtime.
     """
 
     def __init__(self, metadata, preprocessor, model_prefix, gpu_index=0,

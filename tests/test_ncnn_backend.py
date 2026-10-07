@@ -65,6 +65,39 @@ class VulkanEnvironmentTests(unittest.TestCase):
 
 
 class StreamingDefaultsTests(unittest.TestCase):
+    def test_memory_and_weight_size_choose_resident_or_largest_fitting_part(self):
+        prefix = SimpleNamespace(with_suffix=lambda suffix: SimpleNamespace(
+            stat=lambda: SimpleNamespace(st_size=2700 * 1048576)))
+        for ram, gpu, expected in ((16000, 8000, 0), (5000, 2048, 1024),
+                                   (2000, 8000, 512), (16000, 1024, 512),
+                                   (16000, 512, 128), (16000, None, 0),
+                                   (7400, 4152, 0)):
+            with self.subTest(ram=ram, gpu=gpu), \
+                    patch('ncnn_backend.memory_budgets_mib', return_value=(ram, gpu)), \
+                    patch('ncnn_backend.platform.system', return_value='Linux'):
+                self.assertEqual(resolve_part_size_mib('test GPU', None, prefix), expected)
+
+    def test_explicit_size_does_not_probe_memory(self):
+        with patch('ncnn_backend.memory_budgets_mib') as probe:
+            self.assertEqual(resolve_part_size_mib('test GPU', 0), 0)
+            self.assertEqual(resolve_part_size_mib('test GPU', 128), 128)
+            probe.assert_not_called()
+
+    def test_memory_probe_uses_selected_device_and_mib(self):
+        from ncnn_backend import memory_budgets_mib
+        from unittest.mock import Mock
+        get_device = Mock(return_value=SimpleNamespace(get_heap_budget=lambda: 2048))
+        with patch('ncnn_backend.platform.system', return_value='Linux'), \
+                patch('ncnn_backend.Path.read_text', return_value='MemTotal: 8192000 kB\nMemAvailable: 4096000 kB\n'):
+            self.assertEqual(memory_budgets_mib(SimpleNamespace(get_gpu_device=get_device), 2), (4000, 2048))
+        get_device.assert_called_once_with(2)
+
+    def test_unavailable_memory_probe_does_not_break_startup(self):
+        from ncnn_backend import memory_budgets_mib
+        with patch('ncnn_backend.platform.system', return_value='Linux'), \
+                patch('ncnn_backend.Path.read_text', side_effect=OSError):
+            self.assertEqual(memory_budgets_mib(SimpleNamespace()), (None, None))
+
     def test_runtime_selects_streaming_before_startup_probe(self):
         import embed_tags_universal as app
 

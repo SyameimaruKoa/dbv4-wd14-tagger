@@ -78,11 +78,13 @@ Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn
 
 精度は `fp32`（既定）、`fp16-storage`、`fp16-packed`、`fp16-arithmetic`。モデル変換は共通で、実行時のncnn設定だけを切り替える。ncnn形式はbatch 1のグラフで、複数枚は順に推論する。VulkanドライバーとVulkan対応のncnn Python bindingが必要。Python wheelにVulkanが含まれない環境ではVulkan有効でncnnをビルドするか、WebGPUを使用する。既存のタグ、rating、XMP、Server/Client処理は同じ確率配列を利用する。実機比較の状態は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
-Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-part-size-mib 128` で区間ごとに読み込み、実GPU推論とCPU参照の一致を確認した。例えば `./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 -p /path/to/images`。元のモデル・重みは変更せず、分岐をまたがない位置で切り、1区間ずつ読み込み・解放する。128MiBは重み量の目安で、今回の最大区間は約243MiB。初回は同じ容量の分割キャッシュを追加するため約2.58GiBの空き容量が必要。毎画像で重みを再読み込みするので、メモリに余裕のあるPCでは分割なし（0）を使う（PS4 Linux以外では省略時も0）。Switchの初回測定は約75秒/枚だったため、Server/Clientでは `client_timeout` と `client_batch_timeout` を600秒などに設定する。旧NVIDIA ICDを選ぶ必要がある環境では、実行前に `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` を `/etc/vulkan/icd.d/nvidia_icd.json` へ設定する。実測条件は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-part-size-mib 128` で区間ごとに読み込み、実GPU推論とCPU参照の一致を確認した。例えば `./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 -p /path/to/images`。元のモデル・重みは変更せず、分岐をまたがない位置で切り、1区間ずつ読み込み・解放する。128MiBは重み量の目安で、今回の最大区間は約243MiB。初回は同じ容量の分割キャッシュを追加するため約2.58GiBの空き容量が必要。毎画像で重みを再読み込みするので、メモリに余裕のあるPCでは分割なし（0）を使う（省略時は空きメモリから自動判定）。Switchの初回測定は約75秒/枚だったため、Server/Clientでは `client_timeout` と `client_batch_timeout` を600秒などに設定する。旧NVIDIA ICDを選ぶ必要がある環境では、実行前に `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` を `/etc/vulkan/icd.d/nvidia_icd.json` へ設定する。実測条件は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+
+自動判定ではRAM側に重み量の1.5倍＋1024MiB、GPU側に重み量の1.25倍＋256MiBを見込む。これは起動前の余裕を確保する推定で、実際のピーク使用量を保証するものではない。分割目安より大きい不可分の区間が残る場合がある。分割中は引き続き各画像で区間の読み込み・解放が必要だが、区間を大きくすると回数を減らせる。
 
 分割推論をServerで使う場合は、複数Clientの推論を順番に実行する。区間の読み込み・解放が他の接続と干渉しないようにし、同時実行によるメモリ増加も抑える。待ち時間には先行するClientの処理時間も含まれるため、接続数に合わせてタイムアウトを調整する。
 
-PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。ncnnでは選択したVulkanデバイス名からPS4 Linuxを検出し、`--ncnn-part-size-mib`の省略時は128MiBの分割推論を自動選択する。自動Provider検証・明示的なncnn指定・直接のPython起動に適用する。全重みを常駐させる経路では`syncshaders`適用後もGPUコンテキスト消失が報告されたため、実機検証済みの分割経路を既定にした。明示した値は優先し、`--ncnn-part-size-mib 0`で分割なしを指定できる。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。ncnnでは`--ncnn-part-size-mib`の省略時に空きRAM、選択したVulkan GPUのメモリ予算、実際のFP32重みファイル量から常駐・分割推論を自動選択する。メモリに余裕があれば常駐し、分割が必要ならメモリに収まる最大の2の累乗MiB（最小64MiB）を目安として区間を大きくし、読み込み・転送回数を減らす。GPU予算はncnnのVulkan APIから取得するため、共有メモリGPUもVRAM表示の小ささだけでは判定しない。空きRAMとGPU予算、重み量、選択サイズを起動ログに表示する。自動Provider検証・明示的なncnn指定・直接のPython起動に適用する。全重みを常駐させる経路では`syncshaders`適用後もGPUコンテキスト消失が報告されたため、メモリ不足時は分割経路を選ぶ。GPU予算を取得できないPS4 Linuxでは実機検証済みの128MiBを使用する。明示した値は優先し、`--ncnn-part-size-mib 0`で分割なしを指定できる。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
 ```bash
 export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"
@@ -96,7 +98,7 @@ AMD実機のultraはFP32で確率・rating・タグとXMPの一致を確認し�
 
 同じAMD PCのBazzite 44／Mesa 26.2.2でもFP32のbatch 1／4とXMP・Server/Clientを確認した。OS標準Python 3.14を変更せず、リポジトリ内のPython 3.13と`venv_ncnn`を使った。ExifToolを`.dbv4/runtime/exiftool`へ配置した場合は、実行前に `export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"` を設定する。`--login`／`-Login`は既存の`venv_ncnn`も探索し、ログイン用に再利用する。
 
-Windows 11のCore i7-1355U／Intel Iris Xeでは、OpenVINOの既定FP16実行でultraの全出力がNaNになるため、Intel providerはFP32を明示する。修正後は約1.6秒/枚で、全12,476確率・rating・タグとXMP・両Client転送の一致を確認した。`-Provider intel -Gpu -ModelProfile ultra -OpenVinoDevice GPU` で利用できる。同じGPUのncnn FP32も約33秒/枚で確認済み。省メモリの分割設定はPowerShellでは `-NcnnPartSizeMiB`（既定0）で指定する。[測定・失敗記録](BENCHMARKS.md)を参照。
+Windows 11のCore i7-1355U／Intel Iris Xeでは、OpenVINOの既定FP16実行でultraの全出力がNaNになるため、Intel providerはFP32を明示する。修正後は約1.6秒/枚で、全12,476確率・rating・タグとXMP・両Client転送の一致を確認した。`-Provider intel -Gpu -ModelProfile ultra -OpenVinoDevice GPU` で利用できる。同じGPUのncnn FP32も約33秒/枚で確認済み。省メモリの分割設定はPowerShellでは `-NcnnPartSizeMiB` で指定する（省略時は自動、明示した0は分割なし）。[測定・失敗記録](BENCHMARKS.md)を参照。
 
 初回変換は推論より多くのRAMを必要とする。保存するパラメーターの勾配を無効化し、pnnxが形状確認時に不要な勾配履歴を保持することを防ぐ。TorchScriptを作成するプロセスを終了してからpnnxを起動し、変換前半のメモリも解放する。pnnx自体がメモリ不足で終了する場合は、余裕のあるPCで変換してキャッシュ3ファイルを配置する。[CPUでの変換照合](validate_ncnn_conversion.py)、[ultra測定ランナー](benchmark_ncnn_matrix.sh)、[実GPUのXMP・Server/Client検証](tests/test_ncnn_integration.py)も用意している。
 
