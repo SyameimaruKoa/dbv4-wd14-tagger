@@ -26,7 +26,7 @@
 
 .PARAMETER WallgenUnsorted
     【wallgen未整理モード】 (スイッチ)
-    未整理内の対象フォルダ専用の整理を行う。末端フォルダ単位で全画像をスキャンし、移動下限（既定R-15_0）以上を含むフォルダは全画像を一括移動する。移動後に空になったフォルダは削除する。
+    wallgen未整理専用の整理を行う。末端フォルダ単位で全画像をスキャンし、移動下限（既定R-15_0）以上を含むフォルダは全画像を一括移動する。移動後に空になったフォルダは削除する。
 
 .PARAMETER NoReport
     【レポートなし】 (スイッチ)
@@ -147,174 +147,210 @@
     .\run_tagger.ps1 -Path "C:\Images" -Organize -ModelProfile balanced
 #>
 
-[CmdletBinding()]
-param (
-    [Alias('p')]
-    [string]$Path,
-    [Alias('um')]
-    [ValidateSet('original', 'preprocessed', 'o', 'p')]
-    [string]$ClientUploadMode,
-    [Alias('o')]
-    [switch]$Organize,
-    [Alias('t')]
-    [switch]$Tag,
-    [Alias('z')]
-    [switch]$NoReport,
-    [Alias('r')]
-    [switch]$Recursive,
-    [Alias('n')]
-    [switch]$NoRecursive,
-    [Alias('q')]
-    [Nullable[float]]$Thresh,
-    [Alias('g')]
-    [switch]$Gpu,
-    [Alias('b')]
-    [int]$BatchSize,
-    [Alias('w')]
-    [int]$IoWorkers,
-    [Alias('m')]
-    [string]$ModelProfile,
-    [Alias('e')]
-    [string]$ModelRepo,
-    [Alias('l')]
-    [string]$ModelFile,
-    [Alias('y')]
-    [string]$TagsFile,
-    [Alias('f')]
-    [switch]$Force,
-    [Alias('s')]
-    [switch]$Server,
-    [Alias('c')]
-    [switch]$Client,
-    [Alias('j')]
-    [string]$HostIP,
-    [Alias('u')]
-    [int]$Port,
-    [Alias('x', '-wallgen-unsorted')]
-    [switch]$WallgenUnsorted,
-    [Alias('-wallgen-move-min-rating')]
-    [string]$WallgenMoveMinRating,
-
-    [ValidateSet(2, 4, 6)]
-    [Alias('v')]
-    [int]$SensitiveSplitMode,
-    [Alias('a')]
-    [switch]$RecordRatio,
-    [Alias('k')]
-    [switch]$NoRecordRatio,
-    
-    # Old params
-    [Alias('d')]
-    [float]$RatingThresh,
-    [Alias('i')]
-    [switch]$IgnoreSensitive,
-    
-    [Alias('h')]
-    [switch]$Help,
-
-    [Alias('lo')]
-    [switch]$Login,
-
-    [Alias('ep')]
-    [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu','ncnn')]
-    [string]$Provider,
-    [ValidateSet('fp32','fp16-storage','fp16-packed','fp16-arithmetic')]
-    [string]$NcnnPrecision = 'fp32',
-    [ValidateRange(0,2147483647)][int]$NcnnPartSizeMiB = 0,
-    [Alias('wg')]
-    [switch]$WebGpu,
-    [Alias('gi')]
-    [ValidateRange(0,2147483647)][int]$GpuIndex = 0,
-    [Alias('di')]
-    [ValidateRange(0,2147483647)][int]$DirectMlDeviceIndex = 0,
-    [Alias('wi')]
-    [ValidateRange(0,2147483647)][int]$WebGpuDeviceIndex,
-    [Alias('tv')]
-    [ValidateSet('nvidia','intel','amd')][string]$TargetVendor,
-    [Alias('od')]
-    [string]$OpenVinoDevice,
-    [Alias('td')]
-    [string]$TensorRtLibDir,
-
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$RemainingArgs
+# Parse raw arguments case-sensitively: -m/-M, -r/-R and -c/-C are distinct.
+# Keep the former PowerShell parameter names as long-form aliases.
+$LauncherBoundParameters = @{}
+$RemainingArgs = @()
+$OptionSpecs = @(
+    @{ Name = 'Path'; Type = 'string'; Tokens = @('--path', '-p') }
+    @{ Name = 'ClientUploadMode'; Type = 'string'; Tokens = @('--client-upload-mode', '-U', '-um') }
+    @{ Name = 'Organize'; Type = 'switch'; Tokens = @('--organize', '-o') }
+    @{ Name = 'Tag'; Type = 'switch'; Tokens = @('--tag', '-t') }
+    @{ Name = 'NoReport'; Type = 'switch'; Tokens = @('--no-report', '-R', '-z') }
+    @{ Name = 'Recursive'; Type = 'switch'; Tokens = @('--recursive', '-r') }
+    @{ Name = 'NoRecursive'; Type = 'switch'; Tokens = @('--no-recursive', '-n') }
+    @{ Name = 'Thresh'; Type = 'Nullable[float]'; Tokens = @('--thresh', '-q') }
+    @{ Name = 'Gpu'; Type = 'switch'; Tokens = @('--gpu', '-g') }
+    @{ Name = 'BatchSize'; Type = 'int'; Tokens = @('--batch-size', '-b') }
+    @{ Name = 'IoWorkers'; Type = 'int'; Tokens = @('--io-workers', '-w') }
+    @{ Name = 'ModelProfile'; Type = 'string'; Tokens = @('--model-profile', '-m') }
+    @{ Name = 'ModelRepo'; Type = 'string'; Tokens = @('--model-repo', '-e') }
+    @{ Name = 'ModelFile'; Type = 'string'; Tokens = @('--model-file', '-M', '-l') }
+    @{ Name = 'TagsFile'; Type = 'string'; Tokens = @('--tags-file', '-T', '-y') }
+    @{ Name = 'Force'; Type = 'switch'; Tokens = @('--force', '-f') }
+    @{ Name = 'Server'; Type = 'switch'; Tokens = @('--server', '-S') }
+    @{ Name = 'Client'; Type = 'switch'; Tokens = @('--client', '-K') }
+    @{ Name = 'HostIP'; Type = 'string'; Tokens = @('--host', '-H', '-j') }
+    @{ Name = 'Port'; Type = 'int'; Tokens = @('--port', '-P', '-u') }
+    @{ Name = 'WallgenUnsorted'; Type = 'switch'; Tokens = @('--wallgen-unsorted', '-x', '-WallgenUnsorted') }
+    @{ Name = 'WallgenMoveMinRating'; Type = 'string'; Tokens = @('--wallgen-move-min-rating') }
+    @{ Name = 'SensitiveSplitMode'; Type = 'int'; Tokens = @('--sensitive-split-mode', '-s', '-v') }
+    @{ Name = 'RecordRatio'; Type = 'switch'; Tokens = @('--record-ratio', '-c', '-a') }
+    @{ Name = 'NoRecordRatio'; Type = 'switch'; Tokens = @('--no-record-ratio', '-C', '-k') }
+    @{ Name = 'RatingThresh'; Type = 'float'; Tokens = @('--rating-thresh') }
+    @{ Name = 'IgnoreSensitive'; Type = 'switch'; Tokens = @('--ignore-sensitive', '-i') }
+    @{ Name = 'Help'; Type = 'switch'; Tokens = @('--help', '-h') }
+    @{ Name = 'Login'; Type = 'switch'; Tokens = @('--login', '-L', '-lo') }
+    @{ Name = 'Provider'; Type = 'string'; Tokens = @('--provider', '-ep') }
+    @{ Name = 'NcnnPrecision'; Type = 'string'; Tokens = @('--ncnn-precision') }
+    @{ Name = 'NcnnPartSizeMiB'; Type = 'int'; Tokens = @('--ncnn-part-size-mib') }
+    @{ Name = 'WebGpu'; Type = 'switch'; Tokens = @('--webgpu', '-wg') }
+    @{ Name = 'GpuIndex'; Type = 'int'; Tokens = @('--gpu-index', '-gi') }
+    @{ Name = 'DirectMlDeviceIndex'; Type = 'int'; Tokens = @('--directml-device-index', '-di') }
+    @{ Name = 'WebGpuDeviceIndex'; Type = 'int'; Tokens = @('--webgpu-device-index', '-wi') }
+    @{ Name = 'TargetVendor'; Type = 'string'; Tokens = @('--target-vendor', '-tv') }
+    @{ Name = 'OpenVinoDevice'; Type = 'string'; Tokens = @('--openvino-device', '-od') }
+    @{ Name = 'TensorRtLibDir'; Type = 'string'; Tokens = @('--tensorrt-lib-dir', '-td') }
+    @{ Name = 'Debug'; Type = 'switch'; Tokens = @('--debug', '-d') }
+    @{ Name = 'ForceIntel'; Type = 'switch'; Tokens = @('--force-intel', '-I') }
+    @{ Name = 'ForceNvidia'; Type = 'switch'; Tokens = @('--force-nvidia', '-N') }
+    @{ Name = 'ForceAmd'; Type = 'switch'; Tokens = @('--force-amd', '-A') }
 )
+$Path = $null
+$ClientUploadMode = $null
+$Organize = $false
+$Tag = $false
+$NoReport = $false
+$Recursive = $false
+$NoRecursive = $false
+$Thresh = $null
+$Gpu = $false
+$BatchSize = 0
+$IoWorkers = 0
+$ModelProfile = $null
+$ModelRepo = $null
+$ModelFile = $null
+$TagsFile = $null
+$Force = $false
+$Server = $false
+$Client = $false
+$HostIP = $null
+$Port = 0
+$WallgenUnsorted = $false
+$WallgenMoveMinRating = $null
+$SensitiveSplitMode = 0
+$RecordRatio = $false
+$NoRecordRatio = $false
+$RatingThresh = 0
+$IgnoreSensitive = $false
+$Help = $false
+$Login = $false
+$Provider = $null
+$NcnnPrecision = 'fp32'
+$NcnnPartSizeMiB = 0
+$WebGpu = $false
+$GpuIndex = 0
+$DirectMlDeviceIndex = 0
+$WebGpuDeviceIndex = 0
+$TargetVendor = $null
+$OpenVinoDevice = $null
+$TensorRtLibDir = $null
+$Debug = $false
+$ForceIntel = $false
+$ForceNvidia = $false
+$ForceAmd = $false
+for ($ArgumentIndex = 0; $ArgumentIndex -lt $args.Count; $ArgumentIndex++) {
+    $Token = [string]$args[$ArgumentIndex]
+    if ($Token -ceq '--') {
+        $RemainingArgs += '--'
+        if ($ArgumentIndex + 1 -lt $args.Count) { $RemainingArgs += $args[($ArgumentIndex + 1)..($args.Count - 1)] }
+        break
+    }
+    $Spec = $OptionSpecs | Where-Object { $_.Tokens -ccontains $Token } | Select-Object -First 1
+    if (-not $Spec -and $Token -match '^-[A-Za-z][A-Za-z0-9]+$') {
+        $Spec = $OptionSpecs | Where-Object { ('-' + $_.Name) -ieq $Token } | Select-Object -First 1
+    }
+    if (-not $Spec) {
+        $RemainingArgs += $Token
+        continue
+    }
+    $Value = $true
+    if ($Spec.Type -ne 'switch') {
+        if ($ArgumentIndex + 1 -ge $args.Count -or
+            ([string]$args[$ArgumentIndex + 1] -match '^-' -and [string]$args[$ArgumentIndex + 1] -notmatch '^-\d')) {
+            throw "$Token には値が必要です。"
+        }
+        $Value = $args[++$ArgumentIndex]
+        if ($Spec.Type -eq 'int') { $Value = [int]$Value }
+        if ($Spec.Type -in @('float', 'Nullable[float]')) {
+            $Value = [float]::Parse([string]$Value, [Globalization.CultureInfo]::InvariantCulture)
+        }
+    }
+    Set-Variable -Name $Spec.Name -Value $Value
+    $LauncherBoundParameters[$Spec.Name] = $Value
+}
+foreach ($IndexName in @('GpuIndex', 'DirectMlDeviceIndex', 'WebGpuDeviceIndex', 'NcnnPartSizeMiB')) {
+    if ((Get-Variable $IndexName -ValueOnly) -lt 0) { throw "$IndexName は0以上で指定してください。" }
+}
+if ($ClientUploadMode -and $ClientUploadMode -notin @('original', 'preprocessed', 'o', 'p')) { throw '転送モード: p/o/preprocessed/original' }
+if ($NcnnPrecision -notin @('fp32','fp16-storage','fp16-packed','fp16-arithmetic')) { throw '不正なncnn精度です。' }
+if ($LauncherBoundParameters.ContainsKey('SensitiveSplitMode') -and $SensitiveSplitMode -notin @(2,4,6)) { throw '分割モード: 2/4/6' }
+if ($TargetVendor -and $TargetVendor -notin @('nvidia','intel','amd')) { throw 'ベンダー: nvidia/intel/amd' }
+if ($Provider -and $Provider -notin @('cpu','cuda','tensorrt','intel','directml','webgpu','ncnn')) { throw 'Windowsで未対応のproviderです。' }
+if ($ForceIntel) { $Gpu = $true; $Provider = 'intel' }
+if ($ForceNvidia) { $Gpu = $true; $Provider = 'cuda' }
+if ($ForceAmd) { $Gpu = $true; $Provider = 'directml' }
 
 #region Help Function
 function Show-Help {
-    Write-Host "DBV4 Tagger Universal (日本語ヘルプ)" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "使い方: .\run_tagger.ps1 [スイッチ] [値付きオプション] -Path <画像パス>" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "  引数なしで実行すると「環境構築モード」となり、セットアップのみを行います。" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "処理時に必要な入力:" -ForegroundColor Yellow
-    Write-Host "    -Path (-p) <画像パス>  処理対象ファイル/フォルダ"
-    Write-Host "    Client接続先は -HostIP で指定。省略時は設定済み候補から選択"
-    Write-Host ""
-    Write-Host "値を指定するオプション（<>内の値が必要）:" -ForegroundColor Yellow
-    Write-Host "  ★ -um <p|o>         p=前処理・可逆圧縮 / o=元画像送信（初期設定 p）"
-    Write-Host "  ★ -b <枚数>         バッチサイズ（既定 4、モデル上限で調整）"
-    Write-Host "  ★ -w <数>           読込ワーカー数（既定 -1=自動、Clientは0）"
-    Write-Host "    -j <ホスト名/IP>           Client接続先（例: google-colab）"
-    Write-Host "  ★ -u <ポート番号>            Server/Clientポート（既定 5000）"
-    Write-Host "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 balanced）"
-    Write-Host "    -e <所有者/リポジトリ名>  HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）"
-    Write-Host "    -l <ファイル名/パス>       ONNXモデル（例: model.onnx）"
-    Write-Host "    -y <ファイル名/パス>       タグCSV（例: selected_tags.csv）"
-    Write-Host "    -q <0～1の数値>           タグ採用閾値（例: 0.35、未指定時はモデルの推奨値）"
-    Write-Host "    -v <2|4|6>                旧センシティブ分割（DBV4では5段階固定）"
-    Write-Host "    -d <0～1の数値>           旧rating閾値（例: 0.5）"
-    Write-Host "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/directml/webgpu/ncnn"
-    Write-Host "    -NcnnPrecision <形式>     fp32/fp16-storage/fp16-packed/fp16-arithmetic"
-    Write-Host "    -NcnnPartSizeMiB <MiB>    重み分割目安（0=なし、低メモリでは128）"
-    Write-Host "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
-    Write-Host "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
-    Write-Host "    -wi <0以上の整数>         WebGPU番号"
-    Write-Host "    -tv <ベンダー名>          nvidia/intel/amd"
-    Write-Host "    -od <GPU.N>               OpenVINOデバイス（例: GPU.0）"
-    Write-Host "    -td <ディレクトリパス>    TensorRTライブラリの場所"
-    Write-Host ""
-    Write-Host "値を指定しないスイッチ:" -ForegroundColor Yellow
-    Write-Host "    -s / -c / -lo       Server / Client / Hugging Faceログイン"
-    Write-Host "    -g / -wg            GPU自動判別 / WebGPU"
-    Write-Host "    -o / -t / -x        整理 / タグ付け併用 / wallgen未整理"
-    Write-Host "    -r / -n            再帰検索ON / OFF"
-    Write-Host "    -z / -f            レポートなし / 強制再解析"
-    Write-Host "  ★ -a RAWスコア記録ON / -k OFF（既定 ON、config.jsonで変更可）"
-    Write-Host "    -i / -h            旧センシティブ判定 / ヘルプ"
-    Write-Host ""
-    Write-Host "★ は初期設定。-um未指定時は既存config.jsonの設定を使用。"
-    Write-Host "  ★ 通常解析ではタグ付けとレポート作成が有効（-oでタグ付けOFF、-zでレポートOFF）。"
-    Write-Host "  前処理済み転送に失敗した場合は元画像送信で続行。"
-    Write-Host ""
-    Write-Host "実行例:" -ForegroundColor Yellow
-    Write-Host "    # 初回セットアップ（何もしない）"
-    Write-Host "    .\run_tagger.ps1"
-    Write-Host ""
-    Write-Host "    # Hugging Faceへログイン"
-    Write-Host "    .\run_tagger.ps1 -Login"
-    Write-Host ""
-    Write-Host "    # 通常実行（タグ付け＋レポート＋GPU）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu"
-    Write-Host ""
-    Write-Host "    # フォルダ整理のみ（タグ付けなし）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize"
-    Write-Host "    .\run_tagger.ps1 -Client -HostIP google-colab -Path C:\Images -um p"
-    Write-Host ""
-    Write-Host "    # 全部入り（タグ付け＋整理＋レポート＋GPU）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -Tag -Gpu"
-    Write-Host ""
-    Write-Host "    # highプロファイル＋RAWスコア記録有効"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu -ModelProfile high -RecordRatio"
-    Write-Host ""
-    Write-Host "    # 推論スキップ高速再整理（DBV4 RAWスコアを利用）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -ModelProfile balanced"
-    Write-Host ""
+    @'
+DBV4 Tagger Universal (日本語ヘルプ)
+
+使い方: .\run_tagger.ps1 [スイッチ] [値付きオプション] <画像パス>
+
+  引数なしで実行すると「環境構築モード」となり、セットアップのみを行います。
+
+処理時に必要な入力:
+    <画像パス> または -p, --path <画像パス>  処理対象ファイル/フォルダ
+    Client接続先は -H で指定。省略時は設定済み候補から選択
+
+値を指定するオプション（<>内の値が必要）:
+  ★ -U, -um <p|o>       p=前処理・可逆圧縮 / o=元画像送信（初期設定 p）
+  ★ -b <枚数>           バッチサイズ（既定 4、モデル上限で調整）
+  ★ -w <数>             読込ワーカー数（既定 -1=自動、Clientは0）
+    -H <ホスト名/IP>           Client接続先（例: google-colab）
+  ★ -P <ポート番号>            Server/Clientポート（既定 5000）
+  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 balanced）
+    -e <所有者/リポジトリ名>  HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）
+    -M <ファイル名/パス>       ONNXモデル（例: model.onnx）
+    -T <ファイル名/パス>       タグCSV（例: selected_tags.csv）
+    -q <0～1の数値>           タグ採用閾値（例: 0.35、未指定時はモデルの推奨値）
+    -s <2|4|6>                旧センシティブ分割（DBV4では5段階固定）
+    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/directml/webgpu/ncnn
+  ★ -gi <0以上の整数>         GPU番号（既定 0）
+    --ncnn-precision <形式>    fp32/fp16-storage/fp16-packed/fp16-arithmetic
+    --ncnn-part-size-mib <MiB>  重み分割目安（0=なし、低メモリでは128）
+  ★ -di <0以上の整数>         DirectML番号（既定 0）
+    -wi <0以上の整数>         WebGPU番号
+    -tv <ベンダー名>          nvidia/intel/amd
+    -od <GPU.N>               OpenVINOデバイス（例: GPU.0）
+    -td <ディレクトリパス>    TensorRTライブラリの場所
+
+値を指定しないスイッチ:
+    -S / -K / -L        Server / Client / Hugging Faceログイン
+    -g / -wg            GPU自動判別 / WebGPU
+    -I / -N / -A        Intel / NVIDIA / AMDを強制
+    -o / -t / -x        整理 / タグ付け併用 / wallgen未整理
+    -r / -n            再帰検索ON / OFF
+    -R / -f            レポートなし / 強制再解析
+  ★ -c RAWスコア記録ON / -C OFF（既定 ON、config.jsonで変更可）
+    -d / -h            デバッグ / ヘルプ
+
+★ は初期設定。-U未指定時は既存config.jsonの設定を使用。
+  ★ 通常解析ではタグ付けとレポート作成が有効（-oでタグ付けOFF、-RでレポートOFF）。
+  前処理済み転送に失敗した場合は元画像送信で続行。
+
+Client転送モードの例:
+    .\run_tagger.ps1 -K -H google-colab -p /path/to/images -U p
+    .\run_tagger.ps1 -K -H google-colab -p /path/to/images -U o
+
+
+長い形式（例: --model-profile、--client-upload-mode）も共通です。
+従来の -ModelProfile、-Client 等も利用できます。
+短縮形は大文字・小文字を区別します。
+'@ | Write-Host
 }
 
 if ($Help -or ($RemainingArgs -contains '--help') -or ($RemainingArgs -contains '-h')) { Show-Help; exit }
 #endregion
+
+if ($Debug) {
+    $env:ORT_OPENVINO_ENABLE_CI_LOG = '1'
+    $env:ORT_OPENVINO_ENABLE_DEBUG = '1'
+    $env:OPENVINO_LOG_LEVEL = '5'
+} else {
+    Remove-Item Env:ORT_OPENVINO_ENABLE_CI_LOG, Env:ORT_OPENVINO_ENABLE_DEBUG, Env:OPENVINO_LOG_LEVEL -ErrorAction SilentlyContinue
+}
 
 #region Environment Setup
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -567,7 +603,7 @@ if ($Login -or ($RemainingArgs -contains '--login')) {
 }
 
 # 引数が一つもない場合はセットアップモード
-if ($PSBoundParameters.Count -eq 0 -and (-not $RemainingArgs)) {
+if ($LauncherBoundParameters.Count -eq 0 -and (-not $RemainingArgs)) {
     Write-Host "==========================================" -ForegroundColor Cyan
     Write-Host "   DBV4 Tagger Universal - Setup Mode" -ForegroundColor Cyan
     Write-Host "==========================================" -ForegroundColor Cyan
@@ -607,7 +643,7 @@ if ($AutoProviderSelection) {
                 $ProbeArgs = @($PythonScript, '--probe-provider', '--provider', $Candidate,
                     '--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex",
                     '--ncnn-precision', $NcnnPrecision, '--ncnn-part-size-mib', "$NcnnPartSizeMiB")
-                if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $ProbeArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
+                if ($LauncherBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $ProbeArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
                 if ($ModelProfile) { $ProbeArgs += @('--model-profile', $ModelProfile) }
                 if ($ModelRepo) { $ProbeArgs += @('--model-repo', $ModelRepo) }
                 if ($ModelFile) { $ProbeArgs += @('--model-file', $ModelFile) }
@@ -689,24 +725,24 @@ if ($Recursive) { $PyArgs += "--recursive" }
 if ($NoRecursive) { $PyArgs += "--no-recursive" }
 
 # その他パラメータ
-if ($PSBoundParameters.ContainsKey("Thresh")) { $PyArgs += ("--thresh", $Thresh) }
+if ($LauncherBoundParameters.ContainsKey("Thresh")) { $PyArgs += ("--thresh", $Thresh) }
 if ($Gpu) { $PyArgs += "--gpu" }
 if ($Provider) { $PyArgs += @('--provider', $Provider) }
 $PyArgs += @('--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex")
 $PyArgs += @('--ncnn-precision', $NcnnPrecision)
 $PyArgs += @('--ncnn-part-size-mib', "$NcnnPartSizeMiB")
-if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $PyArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
+if ($LauncherBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $PyArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
 if ($TargetVendor) { $PyArgs += @('--target-vendor', $TargetVendor) }
 if ($OpenVinoDevice) { $PyArgs += @('--openvino-device', $OpenVinoDevice) }
 if ($TensorRtLibDir) { $PyArgs += @('--tensorrt-lib-dir', $TensorRtLibDir) }
-if ($PSBoundParameters.ContainsKey('BatchSize')) { $PyArgs += ("--batch-size", $BatchSize) }
-if ($PSBoundParameters.ContainsKey('IoWorkers')) { $PyArgs += ("--io-workers", $IoWorkers) }
-if ($PSBoundParameters.ContainsKey('ModelProfile')) { $PyArgs += ("--model-profile", $ModelProfile) }
-if ($PSBoundParameters.ContainsKey('ModelRepo')) { $PyArgs += ("--model-repo", $ModelRepo) }
-if ($PSBoundParameters.ContainsKey('ModelFile')) { $PyArgs += ("--model-file", $ModelFile) }
-if ($PSBoundParameters.ContainsKey('TagsFile')) { $PyArgs += ("--tags-file", $TagsFile) }
+if ($LauncherBoundParameters.ContainsKey('BatchSize')) { $PyArgs += ("--batch-size", $BatchSize) }
+if ($LauncherBoundParameters.ContainsKey('IoWorkers')) { $PyArgs += ("--io-workers", $IoWorkers) }
+if ($LauncherBoundParameters.ContainsKey('ModelProfile')) { $PyArgs += ("--model-profile", $ModelProfile) }
+if ($LauncherBoundParameters.ContainsKey('ModelRepo')) { $PyArgs += ("--model-repo", $ModelRepo) }
+if ($LauncherBoundParameters.ContainsKey('ModelFile')) { $PyArgs += ("--model-file", $ModelFile) }
+if ($LauncherBoundParameters.ContainsKey('TagsFile')) { $PyArgs += ("--tags-file", $TagsFile) }
 if ($Force) { $PyArgs += "--force" }
-if ($PSBoundParameters.ContainsKey('SensitiveSplitMode')) { $PyArgs += ("--sensitive-split-mode", $SensitiveSplitMode) }
+if ($LauncherBoundParameters.ContainsKey('SensitiveSplitMode')) { $PyArgs += ("--sensitive-split-mode", $SensitiveSplitMode) }
 if ($RecordRatio) { $PyArgs += "--record-ratio" }
 if ($NoRecordRatio) { $PyArgs += "--no-record-ratio" }
 
@@ -715,7 +751,7 @@ if ($ClientUploadMode) { $PyArgs += @('--client-upload-mode', $ClientUploadMode)
 if ($Port) { $PyArgs += ("--port", $Port) }
 
 # Old Params
-if ($PSBoundParameters.ContainsKey('RatingThresh')) { $PyArgs += ("--rating-thresh", $RatingThresh) }
+if ($LauncherBoundParameters.ContainsKey('RatingThresh')) { $PyArgs += ("--rating-thresh", $RatingThresh) }
 if ($IgnoreSensitive) { $PyArgs += "--ignore-sensitive" }
 
 # 最後にパス
