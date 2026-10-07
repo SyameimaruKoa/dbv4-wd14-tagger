@@ -72,6 +72,19 @@ def vulkan_device(ncnn, gpu_index: int) -> str:
     return name
 
 
+def resolve_part_size_mib(device_name: str, requested: int | None) -> int:
+    """Use the PS4-tested streaming size unless the caller overrides it."""
+    if requested is not None:
+        if requested < 0:
+            raise ValueError('--ncnn-part-size-mib must be nonnegative')
+        return requested
+    if platform.system() == 'Linux' and any(
+            part in device_name.lower() for part in ('liverpool', 'playstation 4', 'radv oberon')):
+        print('[INFO] ncnn PS4 RADV: 省メモリ分割推論を自動選択します (128 MiB)。', flush=True)
+        return 128
+    return 0
+
+
 def ensure_ncnn_model(model_prefix: Path, source_repo: str,
                       input_size: int, label_count: int) -> None:
     param = model_prefix.with_suffix(".ncnn.param")

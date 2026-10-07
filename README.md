@@ -78,11 +78,11 @@ Windowsで`-Gpu`だけを指定した場合は、NVIDIAはTensorRT→CUDA→ncnn
 
 精度は `fp32`（既定）、`fp16-storage`、`fp16-packed`、`fp16-arithmetic`。モデル変換は共通で、実行時のncnn設定だけを切り替える。ncnn形式はbatch 1のグラフで、複数枚は順に推論する。VulkanドライバーとVulkan対応のncnn Python bindingが必要。Python wheelにVulkanが含まれない環境ではVulkan有効でncnnをビルドするか、WebGPUを使用する。既存のタグ、rating、XMP、Server/Client処理は同じ確率配列を利用する。実機比較の状態は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
-Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-part-size-mib 128` で区間ごとに読み込み、実GPU推論とCPU参照の一致を確認した。例えば `./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 -p /path/to/images`。元のモデル・重みは変更せず、分岐をまたがない位置で切り、1区間ずつ読み込み・解放する。128MiBは重み量の目安で、今回の最大区間は約243MiB。初回は同じ容量の分割キャッシュを追加するため約2.58GiBの空き容量が必要。毎画像で重みを再読み込みするので、メモリに余裕のあるPCでは既定の分割なし（0）を使う。Switchの初回測定は約75秒/枚だったため、Server/Clientでは `client_timeout` と `client_batch_timeout` を600秒などに設定する。旧NVIDIA ICDを選ぶ必要がある環境では、実行前に `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` を `/etc/vulkan/icd.d/nvidia_icd.json` へ設定する。実測条件は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-part-size-mib 128` で区間ごとに読み込み、実GPU推論とCPU参照の一致を確認した。例えば `./run_tagger.sh --provider ncnn --gpu -m ultra --ncnn-part-size-mib 128 -p /path/to/images`。元のモデル・重みは変更せず、分岐をまたがない位置で切り、1区間ずつ読み込み・解放する。128MiBは重み量の目安で、今回の最大区間は約243MiB。初回は同じ容量の分割キャッシュを追加するため約2.58GiBの空き容量が必要。毎画像で重みを再読み込みするので、メモリに余裕のあるPCでは分割なし（0）を使う（PS4 Linux以外では省略時も0）。Switchの初回測定は約75秒/枚だったため、Server/Clientでは `client_timeout` と `client_batch_timeout` を600秒などに設定する。旧NVIDIA ICDを選ぶ必要がある環境では、実行前に `VK_DRIVER_FILES` と `VK_ICD_FILENAMES` を `/etc/vulkan/icd.d/nvidia_icd.json` へ設定する。実測条件は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
 分割推論をServerで使う場合は、複数Clientの推論を順番に実行する。区間の読み込み・解放が他の接続と干渉しないようにし、同時実行によるメモリ増加も抑える。待ち時間には先行するClientの処理時間も含まれるため、接続数に合わせてタイムアウトを調整する。
 
-PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。ncnnでは選択したVulkanデバイス名からPS4 Linuxを検出し、`--ncnn-part-size-mib`の省略時は128MiBの分割推論を自動選択する。自動Provider検証・明示的なncnn指定・直接のPython起動に適用する。全重みを常駐させる経路では`syncshaders`適用後もGPUコンテキスト消失が報告されたため、実機検証済みの分割経路を既定にした。明示した値は優先し、`--ncnn-part-size-mib 0`で分割なしを指定できる。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
 ```bash
 export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"
