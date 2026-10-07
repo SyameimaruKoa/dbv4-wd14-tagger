@@ -24,9 +24,9 @@
     【タグ付け有効化】 (スイッチ)
     -Organize と併用する際に、「整理もしつつタグ付けもしたい」場合に指定する。
 
-.PARAMETER Pixiv
-    【Pixiv整理モード】 (スイッチ)
-    Pixiv専用の整理を行う。末端フォルダ単位で全画像をスキャンし、R17以上を含むフォルダは全画像を一括移動する。移動後に空になったフォルダは削除する。
+.PARAMETER WallgenUnsorted
+    【wallgen未整理モード】 (スイッチ)
+    未整理内の対象フォルダ専用の整理を行う。末端フォルダ単位で全画像をスキャンし、移動下限（既定R-15_0）以上を含むフォルダは全画像を一括移動する。移動後に空になったフォルダは削除する。
 
 .PARAMETER NoReport
     【レポートなし】 (スイッチ)
@@ -190,8 +190,10 @@ param (
     [string]$HostIP,
     [Alias('u')]
     [int]$Port,
-    [Alias('x')]
-    [switch]$Pixiv,
+    [Alias('x', '-wallgen-unsorted')]
+    [switch]$WallgenUnsorted,
+    [Alias('-wallgen-move-min-rating')]
+    [string]$WallgenMoveMinRating,
 
     [ValidateSet(2, 4, 6)]
     [Alias('v')]
@@ -276,7 +278,7 @@ function Show-Help {
     Write-Host "値を指定しないスイッチ:" -ForegroundColor Yellow
     Write-Host "    -s / -c / -lo       Server / Client / Hugging Faceログイン"
     Write-Host "    -g / -wg            GPU自動判別 / WebGPU"
-    Write-Host "    -o / -t / -x        整理 / タグ付け併用 / Pixiv整理"
+    Write-Host "    -o / -t / -x        整理 / タグ付け併用 / wallgen未整理"
     Write-Host "    -r / -n            再帰検索ON / OFF"
     Write-Host "    -z / -f            レポートなし / 強制再解析"
     Write-Host "  ★ -a RAWスコア記録ON / -k OFF（既定 ON、config.jsonで変更可）"
@@ -663,14 +665,16 @@ if ($Server) { $PyArgs += ("--mode", "server") }
 elseif ($Client) { $PyArgs += ("--mode", "client") }
 else { $PyArgs += ("--mode", "standalone") }
 
+if ($WallgenMoveMinRating) { $PyArgs += ("--wallgen-move-min-rating", $WallgenMoveMinRating) }
+
 # アクション設定
 # Organize指定時 -> デフォルトでNo-Tag扱いになる。Tag指定があればタグも有効。
 if ($Organize) {
     $PyArgs += "--organize"
-    if (-not $Tag -and -not $Pixiv) { $PyArgs += "--no-tag" }
+    if (-not $Tag -and -not $WallgenUnsorted) { $PyArgs += "--no-tag" }
 }
-if ($Pixiv) {
-    $PyArgs += "--pixiv"
+if ($WallgenUnsorted) {
+    $PyArgs += "--wallgen-unsorted"
 }
 else {
     # 通常モード -> Tag指定は不要(デフォルトON)。No-Tag指定があれば...無いので実装不要
