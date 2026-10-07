@@ -6,6 +6,11 @@ from embed_tags_universal import create_parser, runtime_cli_options
 
 
 class CliShortOptionTests(unittest.TestCase):
+    def test_ncnn_streaming_default_is_distinct_from_explicit_zero(self):
+        self.assertIsNone(runtime_cli_options(create_parser().parse_args([]))['ncnn_part_size_mib'])
+        args = create_parser().parse_args(['--ncnn-part-size-mib', '0'])
+        self.assertEqual(runtime_cli_options(args)['ncnn_part_size_mib'], 0)
+
     def test_help_separates_inputs_values_and_switches(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as stopped:
