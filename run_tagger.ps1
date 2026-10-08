@@ -192,7 +192,7 @@ param (
     [int]$Port,
     [Alias('x', '-wallgen-unsorted')]
     [switch]$WallgenUnsorted,
-    [Alias('-wallgen-move-min-rating')]
+    [Alias('wmm', '-wallgen-move-min-rating')]
     [string]$WallgenMoveMinRating,
 
     [ValidateSet(2, 4, 6)]
@@ -218,8 +218,10 @@ param (
     [Alias('ep')]
     [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu','ncnn')]
     [string]$Provider,
+    [Alias('np')]
     [ValidateSet('fp32','fp16-storage','fp16-packed','fp16-arithmetic')]
     [string]$NcnnPrecision = 'fp32',
+    [Alias('ns')]
     [ValidateRange(0,2147483647)][int]$NcnnPartSizeMiB = 0,
     [Alias('wg')]
     [switch]$WebGpu,
@@ -237,6 +239,7 @@ param (
     [string]$TensorRtLibDir,
 
     [Parameter(ValueFromRemainingArguments = $true)]
+    [Alias('ra')]
     [string[]]$RemainingArgs
 )
 
@@ -266,14 +269,16 @@ function Show-Help {
     Write-Host "    -v <2|4|6>                旧センシティブ分割（DBV4では5段階固定）"
     Write-Host "    -d <0～1の数値>           旧rating閾値（例: 0.5）"
     Write-Host "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/directml/webgpu/ncnn"
-    Write-Host "    -NcnnPrecision <形式>     fp32/fp16-storage/fp16-packed/fp16-arithmetic"
-    Write-Host "    -NcnnPartSizeMiB <MiB>    重み分割目安（省略時はメモリ量で自動、0=なし）"
+    Write-Host "    -NcnnPrecision (-np) <形式>     fp32/fp16-storage/fp16-packed/fp16-arithmetic"
+    Write-Host "    -NcnnPartSizeMiB (-ns) <MiB>    重み分割目安（省略時はメモリ量で自動、0=なし）"
     Write-Host "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
     Write-Host "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
     Write-Host "    -wi <0以上の整数>         WebGPU番号"
     Write-Host "    -tv <ベンダー名>          nvidia/intel/amd"
     Write-Host "    -od <GPU.N>               OpenVINOデバイス（例: GPU.0）"
     Write-Host "    -td <ディレクトリパス>    TensorRTライブラリの場所"
+    Write-Host "    -wmm <rating>             wallgen未整理の移動下限（既定 R-15_0）"
+    Write-Host "    -ra <追加引数の配列>       Pythonへ渡す追加引数"
     Write-Host ""
     Write-Host "値を指定しないスイッチ:" -ForegroundColor Yellow
     Write-Host "    -s / -c / -lo       Server / Client / Hugging Faceログイン"

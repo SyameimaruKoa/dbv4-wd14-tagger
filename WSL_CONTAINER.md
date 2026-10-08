@@ -19,6 +19,42 @@ WSLの更新が必要な場合は`wsl --update`を実行する。Docker Desktop�
 
 ## 起動
 
+共通オプションと短縮引数は既存の`run_tagger.ps1`に揃えている。
+`-p`（Path）、`-j`（HostIP/HostName）、`-u`（Port）、`-m`（ModelProfile）、
+`-ep`（Provider）、`-gi`（GpuIndex）、`-b`（BatchSize）、`-w`（IoWorkers）、
+`-um`（ClientUploadMode）、`-o`（Organize）、`-t`（Tag）、`-z`（NoReport）、
+`-r`（Recursive）、`-n`（NoRecursive）、`-f`（Force）などを直接指定できる。
+`-s` / `-c` / `-lo`はServer / Client / Loginを選択する。モード未指定で
+`-p`を指定した場合は、既存版と同じStandaloneで画像を処理する。
+`-g`はWindowsのGPUからProviderを選び、`-wg`はWebGPUを選ぶ。
+DirectMLの`-di`はLinux非対応のため理由を表示して停止する。
+
+```powershell
+.\run_tagger_wsl.ps1 -p 'C:\Images' -ep intel -m ultra -b 1 -z
+.\run_tagger_wsl.ps1 -s -ep intel -m ultra -u 5000 -pa 0.0.0.0
+.\run_tagger_wsl.ps1 -c -j 192.168.1.100 -p 'C:\Images' -um p
+```
+
+WSL専用オプションにも短縮引数を用意している。
+
+| オプション | 短縮引数 |
+| --- | --- |
+| Action | `-ac` |
+| Mode | `-md` |
+| Image | `-im` |
+| BaseImage | `-bi` |
+| DataPath | `-dp` |
+| GpuRuntimePath | `-gr` |
+| WorkspaceVolume | `-vol` |
+| ContainerName | `-cn` |
+| PublishAddress | `-pa` |
+| TaggerArgs | `-ta` |
+| Interactive | `-it` |
+
+全オプションの短縮引数は`-h`に表示する。`-np`（NcnnPrecision）、
+`-ns`（NcnnPartSizeMiB）、`-wmm`（WallgenMoveMinRating）、
+`-ra`（RemainingArgs）は既存PowerShell版にも追加した。長いオプション名は引き続き使用できる。
+
 Intel GPUでultraの初期化を確認する例:
 
 ```powershell
@@ -109,7 +145,7 @@ AMDなどで追加ランタイムが必要な場合、対応するUbuntu 24.04�
 - 実GPUのultra全12,476確率を保存済みCPU参照と比較し、許容誤差内の一致、採用タグの差分なし、4 ratingの誤差基準を確認。
 - 実GPU統合テスト2件が成功。Standaloneと元画像・前処理済みClientの3経路で同じXMPタグを保存。
 - 専用ランチャーでTCP 15025へ公開したServerへWindowsのClientから接続し、元画像と前処理済みの両転送でCPU参照との確率一致を確認。
-- Windowsの単体テスト144件を実行し、失敗なし（環境条件による12件はスキップ）。追加ランチャーのテストは10件すべて成功。
+- Windowsの単体テスト151件を実行し、失敗なし（環境条件による12件はスキップ）。追加ランチャーのテストは17件すべて成功。
 - Vulkan診断はllvmpipeのみ。ncnn/WebGPUの実GPU動作としては扱わない。
 
 起動引数・全GPU公開・ポート・日本語パス・ファイルパス変換・追加引数・終了コード・ヘルプ・共有データ・追加ランタイムは`tests/test_wsl_launcher.py`で検証する。
