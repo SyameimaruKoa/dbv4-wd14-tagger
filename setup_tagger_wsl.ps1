@@ -156,6 +156,59 @@ if ($Server -or $Client) {
 if ($LinuxArgs.Count -eq 0) { $LinuxArgs = @('--gen-config') }
 $ContainerArgs += $LinuxArgs
 #endregion
+#region Existing container lifecycle
+$ExistingOutput = & wslc container inspect $ContainerName 2>$null
+if ($LASTEXITCODE -eq 0) {
+    $Existing = @(($ExistingOutput -join "`n") | ConvertFrom-Json)[0]
+    $WorkspaceMount = @($Existing.Mounts | Where-Object {
+        $_.Destination -eq '/workspace' -and $_.Type -eq 'volume' -and $_.Name -eq $WorkspaceVolume
+    })
+    $Managed = $Existing.Config.Image -eq $Image -and $WorkspaceMount.Count -eq 1 -and
+        @($Existing.Config.Entrypoint)[0] -eq '/usr/local/bin/dbv4-container'
+    if (-not $Managed) {
+        throw "同名の別コンテナが存在します。-WslContainerNameで別名を指定してください: $ContainerName"
+    }
+    if ($Existing.State.Running) {
+        $SameArgs = (ConvertTo-Json -InputObject @($Existing.Config.Cmd) -Compress) -ceq
+            (ConvertTo-Json -InputObject @($LinuxArgs) -Compress)
+        $ExpectedMounts = @($ContainerArgs | Where-Object { $_ -like 'type=*,source=*,target=*' })
+        $SameMounts = @($Existing.Mounts).Count -eq $ExpectedMounts.Count
+        foreach ($MountSpec in $ExpectedMounts) {
+            $Parts = @{}
+            foreach ($Part in $MountSpec.Split(',')) {
+                $Pair = $Part.Split('=', 2)
+                $Parts[$Pair[0]] = if ($Pair.Count -eq 2) { $Pair[1] } else { '' }
+            }
+            $Match = @($Existing.Mounts | Where-Object {
+                $_.Destination -eq $Parts.target -and $_.Type -eq $Parts.type -and
+                $_.ReadWrite -eq (-not $Parts.ContainsKey('readonly')) -and
+                $(if ($Parts.type -eq 'volume') { $_.Name -eq $Parts.source }
+                  else { $_.Source.Replace('\', '/').TrimEnd('/') -eq $Parts.source.Replace('\', '/').TrimEnd('/') })
+            })
+            if ($Match.Count -ne 1) { $SameMounts = $false }
+        }
+        $PortKey = "${Port}/tcp"
+        $SamePort = -not $Server
+        if ($Server) {
+            $SamePort = @($Existing.Ports.$PortKey | Where-Object {
+                $_.HostIp -eq $PublishAddress -and $_.HostPort -eq "$Port"
+            }).Count -eq 1
+        }
+        if ($Server -and $SameArgs -and $SameMounts -and $SamePort) {
+            Write-Host "[INFO] WSLサーバープロセスは既に稼働中です: $ContainerName" -ForegroundColor Cyan
+            Write-Host '[INFO] 同じ設定の既存サーバーを使用します。再作成は行いません。'
+            Write-Host "[INFO] サーバー公開設定: http://${PublishAddress}:${Port}"
+            Write-Host '[INFO] 初期化状況を含む直近のコンテナログ:'
+            & wslc logs --tail 20 $Existing.Id
+            exit $LASTEXITCODE
+        }
+        throw "WSLコンテナは別の設定または処理で稼働中です。停止してから再実行してください: wslc stop $ContainerName"
+    }
+    Write-Host "[INFO] 停止済みのWSLコンテナを再作成します。保存データは保持します: $ContainerName"
+    & wslc container remove $Existing.Id
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+#endregion
 #region Run
 Write-Host "[INFO] WSLコンテナ名: $ContainerName"
 Write-Host "[INFO] Linux環境・設定の保存先: $WorkspaceVolume (/workspace)"
