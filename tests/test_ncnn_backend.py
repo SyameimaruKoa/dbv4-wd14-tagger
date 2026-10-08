@@ -232,6 +232,53 @@ class NcnnBackendTests(unittest.TestCase):
             self.assertTrue(net.opt.use_fp16_packed)
             self.assertFalse(net.opt.use_fp16_arithmetic)
 
+    def test_streaming_batch_reuses_sections_and_preserves_order(self):
+        nets = []
+
+        class Mat:
+            def __init__(self, value):
+                self.value = value
+
+            def clone(self):
+                return self.value.copy()
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                nets.append(self)
+
+            def clear(self):
+                self.cleared = True
+
+            def create_extractor(self):
+                class Extractor(FakeExtractor):
+                    def extract(self, name):
+                        return 0, self.input_tensor[1] + 0.01
+                result = Extractor(None)
+                self.extractors.append(result)
+                return result
+
+        runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
+        runtime._inference_lock = threading.Lock()
+        runtime.part_directory = Path('.')
+        runtime.parts = [{'param': 'p.param', 'bin': 'p.bin',
+                          'input': 'in', 'output': 'out'}] * 2
+        runtime.options = {}
+        runtime.gpu_index = 0
+        runtime.metadata = SimpleNamespace(label_count=12)
+        runtime.net = None
+        batch = np.stack([np.full((3, 2, 2), i / 10, np.float32) for i in range(5)])
+        with patch.dict(sys.modules, {'ncnn': SimpleNamespace(Net=Net, Mat=Mat)}):
+            outputs = runtime.predict_preprocessed(batch)
+            self.assertEqual(runtime.predict_preprocessed([]), [])
+        self.assertEqual(len(outputs), 5)
+        for i, output in enumerate(outputs):
+            np.testing.assert_allclose(output, [i / 10 + 0.02] * 12, atol=1e-7)
+        self.assertEqual([len(net.extractors) for net in nets], [4, 4, 1, 1])
+        self.assertTrue(all(net.cleared for net in nets))
+        np.testing.assert_array_equal(batch[0], np.zeros((3, 2, 2)))
+
     def test_streaming_requests_do_not_clear_another_requests_net(self):
         entered = threading.Event()
         release = threading.Event()

@@ -1,0 +1,7 @@
+{
+  "allclose_atol_1e_4_rtol_1e_3": true,
+  "finite": true,
+  "new_kernel_errors": [],
+  "comparison_scope": "first image of repeated identical four-image batch",
+  "exit_code": 0
+}
