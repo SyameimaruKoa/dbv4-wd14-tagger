@@ -156,7 +156,7 @@ class WslLauncherTests(unittest.TestCase):
         result, calls = self.launch('-h')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(calls, [])
-        self.assertIn('-WslAction (-ac)', result.stdout.decode('utf-8'))
+        self.assertIn('-ac <Run|Build>', result.stdout.decode('utf-8'))
 
     def test_invalid_modes_and_directml(self):
         for options in ['-s -c', '-md Probe -s', '-ep directml', '-di 0', '-c']:
