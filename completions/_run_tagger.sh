@@ -31,7 +31,7 @@ _dbv4_wd14_tagger() {
         '(-A --force-amd)'{-A,--force-amd}'[AMD GPUを強制使用]' \
         '(-o --organize)'{-o,--organize}'[フォルダ整理を行う]' \
         '(-t --tag)'{-t,--tag}'[タグ付けも行う]' \
-        '(-x --pixiv)'{-x,--pixiv}'[Pixiv整理モード]' \
+        '(-x --wallgen-unsorted)'{-x,--wallgen-unsorted}'[wallgen未整理モード]' \
         '(-R --no-report)'{-R,--no-report}'[レポートを作成しない]' \
         '(-r --recursive)'{-r,--recursive}'[再帰検索を有効化]' \
         '(-n --no-recursive)'{-n,--no-recursive}'[再帰検索を無効化]' \
@@ -43,6 +43,7 @@ _dbv4_wd14_tagger() {
         '(-T --tags-file)'{-T,--tags-file}'[タグCSVファイル名またはパス]:tags file:_files' \
         '(-q --thresh)'{-q,--thresh}'[タグ閾値]:threshold:' \
         '(-f --force)'{-f,--force}'[既存タグを強制的に再解析・上書き]' \
+        '--wallgen-move-min-rating[wallgen移動下限]:rating:(R-00 R-15_0 R-15_1 R-15_2 R-15_3 R-15_4 R-17_0 R-17_1 R-17_2 R-17_3 R-17_4 R-18)' \
         '(-s --sensitive-split-mode)'{-s,--sensitive-split-mode}'[旧CLI互換の分割モード]:mode:(2 4 6)' \
         '(-c --record-ratio)'{-c,--record-ratio}'[RAW・割合スコアタグを記録]' \
         '(-C --no-record-ratio)'{-C,--no-record-ratio}'[RAW・割合スコアタグを記録しない]' \

@@ -250,7 +250,7 @@ compinit
 | GPU | `-g` / `--gpu` | `-g` / `-Gpu` |
 | 整理 | `-o` / `--organize` | `-o` / `-Organize` |
 | タグ付け | `-t` / `--tag` | `-t` / `-Tag` |
-| Pixiv | `-x` / `--pixiv` | `-x` / `-Pixiv` |
+| wallgen未整理 | `-x` / `--wallgen-unsorted` | `-x` / `-WallgenUnsorted` |
 | 強制再推論 | `-f` / `--force` | `-f` / `-Force` |
 | 再帰検索 | `-r` / `--recursive` | `-r` / `-Recursive` |
 | 再帰検索OFF | `-n` / `--no-recursive` | `-n` / `-NoRecursive` |
@@ -500,3 +500,19 @@ DBV4モデル自体のライセンスはモデルごとに異なるため、使�
 - HTML report
 
 Nintendo Switchの実機調査: [Issue #18](https://github.com/SyameimaruKoa/dbv4-wd14-tagger/issues/18)
+
+## wallgen未整理モード (`-x`)
+
+[wallgen-env](https://github.com/SyameimaruKoa/wallgen-env) の「未整理」内にある対象フォルダを指定して使う整理モードです。「未整理」フォルダ自体は指定しません。
+`-x` / `--wallgen-unsorted` で末端フォルダを判定し、移動下限以上の画像があれば、そのフォルダの全画像を最大レーティングの移動先へ移します。
+例えば `未整理/作者` を指定すると、`未整理/作者/作品.jpg` を `未整理/作者_R-15_0/作品.jpg` へ移し、空になった末端フォルダを削除します。
+`条件未満` フォルダは従来どおり画像ごとに判定します。振り分け済みの `元フォルダ名_R-〜` は再スキャンから除外します。
+
+移動下限は既定で `R-15_0`。`config.json` の `wallgen_move_min_rating`、または CLI の `--wallgen-move-min-rating` で変更できます（CLI優先）。
+指定できる値は `R-00`、`R-15_0`〜`R-15_4`、`R-17_0`〜`R-17_4`、`R-18` です。
+
+```sh
+./run_tagger.sh -x --wallgen-move-min-rating R-17_0 -p /path/to/未整理/作者
+```
+
+PowerShellでも `-x` / `--wallgen-unsorted` と `--wallgen-move-min-rating` を使用できます。
