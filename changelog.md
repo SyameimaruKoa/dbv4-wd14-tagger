@@ -2,6 +2,10 @@
 
 ## 2026-10-08
 
+- Issue #29: Intel/OpenVINOのultraを動的バッチ1枚・推論直列化に変更し、ServerからClientへバッチ上限を通知。OpenVINO向けORTグラフ最適化・CPUアリーナ・メモリパターンの無効化とLATENCY・1ストリーム設定を追加。HD Graphics 530で4枚時のスワップ増加と1枚時の出力一致を記録し、再測定スクリプトを追加。
+
+## 2026-10-08
+
 - ネイティブとWSLの入り口を`run_tagger.ps1`へ統一。`-Wsl`でセットアップ・起動用の`setup_tagger_wsl.ps1`を呼び出し、処理引数の生成は共通化。独立したWSLランチャーと重複した推論オプション定義を廃止した。初回はイメージを自動構築し、`-Wsl`のみではLinux環境のセットアップを行う。
 
 - Issue #25向けにWSL LinuxコンテナのイメージとPowerShellランチャーを追加。全GPU公開、Provider固定、Standalone / Server / Client / Login / Probe、Windows画像パスの変換、Linux仮想環境の永続化、既存モデル・認証の共有、ベンダー別ランタイムの拡張を用意。Intel Iris XeでultraのOpenVINO起動とCPU参照との確率・タグ一致を確認。GPUごとの対応条件は`WSL_CONTAINER.md`へ記録。

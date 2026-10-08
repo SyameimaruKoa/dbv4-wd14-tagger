@@ -431,7 +431,8 @@ def build_providers(use_gpu: bool, provider=None, gpu_index=0,
                 # The GPU's default FP16 produced non-finite DBV4 outputs.
                 # Keep the ONNX model's FP32 precision on the selected GPU.
                 options = {"device_type": device, "load_config": json.dumps({
-                    "GPU": {"INFERENCE_PRECISION_HINT": "f32"}})}
+                    "GPU": {"INFERENCE_PRECISION_HINT": "f32",
+                            "PERFORMANCE_HINT": "LATENCY", "NUM_STREAMS": "1"}})}
             elif name == names["directml"]:
                 gpu_runtime.validate_directml(directml_device_index, target_vendor)
                 options = {"device_id": str(directml_device_index)}
@@ -468,13 +469,20 @@ class RuntimeModel:
         self.input_name = input_meta.name
         self.input_shape = input_meta.shape
         self.output_name = select_output_name(session.get_outputs(), metadata.label_count)
+        self._serial_inference = (
+            getattr(metadata, "profile_name", None) == "ultra"
+            and "OpenVINOExecutionProvider" in session.get_providers()
+        )
+        self._inference_lock = threading.Lock()
 
     @property
     def batch_limit(self) -> Optional[int]:
         if not self.input_shape:
             return None
         value = self.input_shape[0]
-        return int(value) if isinstance(value, (int, np.integer)) else None
+        fixed = int(value) if isinstance(value, (int, np.integer)) else None
+        # Dynamic batches amplify activation memory on shared-memory Intel GPUs.
+        return fixed if fixed is not None else (1 if self._serial_inference else None)
 
     def preprocess_batch(self, images: Sequence[Image.Image]) -> np.ndarray:
         batch = np.stack([self.preprocessor(image) for image in images], axis=0).astype(np.float32)
@@ -493,6 +501,15 @@ class RuntimeModel:
         return self._predict_input(batch, len(batch_nchw))
 
     def _predict_input(self, batch: np.ndarray, count: int) -> List[np.ndarray]:
+        if self._serial_inference:
+            # Enforce the limit here too, for callers outside the CLI/Server.
+            if self.batch_limit == 1 and count != 1:
+                raise ValueError("OpenVINO ultraは省メモリのため1枚ずつ推論してください。")
+            with self._inference_lock:
+                return self._run_input(batch, count)
+        return self._run_input(batch, count)
+
+    def _run_input(self, batch: np.ndarray, count: int) -> List[np.ndarray]:
         raw = self.session.run(
             [self.output_name],
             {self.input_name: batch},
@@ -701,6 +718,8 @@ def load_runtime_model(
     provider_names = {item[0] if isinstance(item, tuple) else item for item in providers}
     if "DmlExecutionProvider" in provider_names:
         gpu_runtime.configure_directml(session_options)
+    if "OpenVINOExecutionProvider" in provider_names:
+        gpu_runtime.configure_openvino(session_options)
     # A short startup probe verifies actual node execution, then profiling stops.
     profile_dir = tempfile.TemporaryDirectory(prefix="dbv4-gpu-") if use_gpu else None
     if profile_dir:
@@ -736,6 +755,8 @@ def load_runtime_model(
     print(f"[INFO] 入力 shape: {session.get_inputs()[0].shape}")
     print(f"[INFO] アクティブプロバイダ: {active}")
     runtime = RuntimeModel(metadata, preprocessor, session)
+    if getattr(runtime, "_serial_inference", False) is True:
+        print("[INFO] OpenVINO ultra省メモリ設定: 推論を直列化し、動的バッチを1枚に制限します。")
     if use_gpu:
         expected = {"WebGpuExecutionProvider"} if use_webgpu else {
             item[0] if isinstance(item, tuple) else item for item in providers
@@ -1985,7 +2006,7 @@ def process_images(args: argparse.Namespace) -> None:
         batch_limit = max(1, batch_limit)
         if batch_size > batch_limit:
             if batch_limit == 1:
-                print("[WARN] このモデルはバッチ推論に非対応のため、batch-size=1に変更します。")
+                print("[WARN] モデルまたは実行環境のバッチ上限により、batch-size=1に変更します。")
             else:
                 print(
                     f"[WARN] batch-sizeがモデル上限({batch_limit})を超えているため、"
