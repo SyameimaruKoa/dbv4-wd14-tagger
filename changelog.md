@@ -1,5 +1,9 @@
 # 実装履歴
 
+## 2026-10-08
+
+- Issue #25向けにWSL LinuxコンテナのイメージとPowerShellランチャーを追加。全GPU公開、Provider固定、Standalone / Server / Client / Login / Probe、Windows画像パスの変換、Linux仮想環境の永続化、既存モデル・認証の共有、ベンダー別ランタイムの拡張を用意。Intel Iris XeでultraのOpenVINO起動とCPU参照との確率・タグ一致を確認。GPUごとの対応条件は`WSL_CONTAINER.md`へ記録。
+
 ## 2026-09-23
 
 - ベンチマークで追加したCUDA/cuDNN・TensorRT・OpenVINOの初期化、WebGPUのデバイス選択、DirectMLの設定を`gpu_runtime.py`へ共通化し、通常推論とServerへ適用。明示したEPが利用不可の場合や起動検証でノードを実行しない場合は停止する。
