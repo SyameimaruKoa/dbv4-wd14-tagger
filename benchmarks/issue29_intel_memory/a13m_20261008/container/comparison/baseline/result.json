@@ -1,0 +1,1 @@
+{"load_seconds": 21.797759034999995, "inference_seconds": [38.887273072, 11.137113837000001, 10.604159157999987, 10.109021974000001, 9.68984804099999], "executed_providers": ["OpenVINOExecutionProvider"], "output_shape": [4, 12476], "ort_version": "1.24.1", "batch_size": 4, "device_name": "Intel(R) Graphics [0xa7a1] (iGPU)"}

@@ -1,5 +1,7 @@
 # Issue #29: ultraとIntel共有メモリ
 
+追加の[a13m・Windowsネイティブ／WSLCコンテナ実験](a13m_20261008/README.md)でも4枚時のメモリ圧迫とWindowsページファイル増加を再現した。両環境で1枚への制限後の余裕と数値一致を確認。WSLC内のswapが0でもWindows側でページングが発生するため、Linux指標だけで判定しない。
+
 2026-10-08、OptiPlex-3040-MFF、Intel HD Graphics 530 (iGPU)、RAM 15,377MiB、Linux 7.0.0-38-generic、Python 3.13、onnxruntime-openvino 1.24.1／OpenVINO 2025.4.1。既存の約2.58GiBのultra ONNX外部重みを使用。GPU.0の実ノード実行をORTプロファイルで確認した。
 
 ## 調査と対策
