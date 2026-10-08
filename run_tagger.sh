@@ -18,7 +18,7 @@ WEBGPU_MODE=0
 PY_ARGS=()
 DO_ORGANIZE=0
 DO_TAG=0
-DO_PIXIV=0
+DO_WALLGEN_UNSORTED=0
 IS_CLIENT=0
 DEBUG_MODE=0
 LOGIN_MODE=0
@@ -85,7 +85,7 @@ show_help() {
     echo "    -S / -K / -L        Server / Client / Hugging Faceログイン"
     echo "    -g / -wg            GPU自動判別 / WebGPU"
     echo "    -I / -N / -A        Intel / NVIDIA / AMDを強制"
-    echo "    -o / -t / -x        整理 / タグ付け併用 / Pixiv整理"
+    echo "    -o / -t / -x        整理 / タグ付け併用 / wallgen未整理"
     echo "    -r / -n            再帰検索ON / OFF"
     echo "    -R / -f            レポートなし / 強制再解析"
     echo "  ★ -c RAWスコア記録ON / -C OFF（既定 ON、config.jsonで変更可）"
@@ -418,7 +418,7 @@ fi
 # 引数解析
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -U|-um|--client-upload-mode|-ep|--provider|-gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|-td|--tensorrt-lib-dir|--ncnn-precision|--ncnn-part-size-mib)
+        --wallgen-move-min-rating|-U|-um|--client-upload-mode|-ep|--provider|-gi|--gpu-index|-di|--directml-device-index|-wi|--webgpu-device-index|-tv|--target-vendor|-od|--openvino-device|-td|--tensorrt-lib-dir|--ncnn-precision|--ncnn-part-size-mib)
             if [ "$#" -lt 2 ] || [[ "$2" == -* ]]; then
                 echo "[ERROR] $1には値が必要です。"; exit 1
             fi ;;
@@ -427,10 +427,11 @@ while [[ $# -gt 0 ]]; do
         -S|--server) PY_ARGS+=("--mode" "server"); shift ;;
         -K|--client) PY_ARGS+=("--mode" "client"); IS_CLIENT=1; shift ;;
         -U|-um|--client-upload-mode) PY_ARGS+=("--client-upload-mode" "$2"); shift 2 ;;
+        --wallgen-move-min-rating) PY_ARGS+=("--wallgen-move-min-rating" "$2"); shift 2 ;;
         -L|--login) LOGIN_MODE=1; shift ;;
         -o|--organize) DO_ORGANIZE=1; shift ;;
         -t|--tag) DO_TAG=1; shift ;; 
-        -x|--pixiv) PY_ARGS+=("--pixiv"); DO_PIXIV=1; shift ;;
+        -x|--wallgen-unsorted) PY_ARGS+=("--wallgen-unsorted"); DO_WALLGEN_UNSORTED=1; shift ;;
         -R|--no-report) PY_ARGS+=("--no-report"); shift ;;
         -r|--recursive) PY_ARGS+=("--recursive"); shift ;;
         -n|--no-recursive) PY_ARGS+=("--no-recursive"); shift ;;
@@ -536,11 +537,11 @@ else
 fi
 
 # アクションロジック構築
-if [ $DO_ORGANIZE -eq 1 ] || [ $DO_PIXIV -eq 1 ]; then
+if [ $DO_ORGANIZE -eq 1 ] || [ $DO_WALLGEN_UNSORTED -eq 1 ]; then
     if [[ ! " ${PY_ARGS[*]} " =~ " --organize " ]]; then
         PY_ARGS+=("--organize")
     fi
-    if [ $DO_TAG -eq 0 ] && [ $DO_PIXIV -eq 0 ]; then
+    if [ $DO_TAG -eq 0 ] && [ $DO_WALLGEN_UNSORTED -eq 0 ]; then
         PY_ARGS+=("--no-tag")
     fi
 fi

@@ -126,6 +126,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "record_raw_score": True,
     "raw_score_format": "{rating}_score:{raw_score:.4f}",
     "percentage_format": "{rating}:{percentage}%",
+    "wallgen_move_min_rating": "R-15_0",
     "folder_names": {
         "general": "R-00",
         "sensitive_0": "R-15_0",
@@ -1017,26 +1018,25 @@ def folder_name_for_rating(rating: str) -> str:
 def organize_file(
     file_path: str,
     rating: str,
-    is_pixiv: bool = False,
+    is_wallgen_unsorted: bool = False,
     base_dirs: Optional[Sequence[str]] = None,
 ) -> Tuple[bool, str]:
     folder_name = folder_name_for_rating(rating)
-    if is_pixiv and (rating == "general" or rating.startswith("sensitive_")):
-        return False, file_path
     try:
         source = os.path.abspath(file_path)
         source_dir = os.path.dirname(source)
         filename = os.path.basename(source)
         target_dir = os.path.join(source_dir, folder_name)
         target_path = os.path.join(target_dir, filename)
-        if is_pixiv and base_dirs:
-            matches = [base for base in base_dirs if source.startswith(base)]
+        if is_wallgen_unsorted and base_dirs:
+            matches = [os.path.abspath(base) for base in base_dirs
+                       if os.path.commonpath([source, os.path.abspath(base)]) == os.path.abspath(base)]
             if matches:
                 base = max(matches, key=len)
                 relative = os.path.relpath(source, base)
                 target_path = os.path.join(
                     os.path.dirname(base),
-                    folder_name,
+                    os.path.basename(os.path.normpath(base)) + "_" + folder_name,
                     relative,
                 )
                 target_dir = os.path.dirname(target_path)
@@ -1082,7 +1082,7 @@ def collect_images(paths: Sequence[str], recursive: bool = True) -> List[str]:
     return sorted(set(collected))
 
 
-def collect_pixiv_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
+def collect_wallgen_unsorted_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
     groups: Dict[str, set] = {}
     excluded_dirs = {
         str(folder_name)
@@ -1103,16 +1103,17 @@ def collect_pixiv_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
         candidates = glob.glob(raw_path, recursive=True) if "*" in raw_path or "?" in raw_path else [raw_path]
         for candidate in candidates:
             if os.path.isdir(candidate):
-                print(f"[INFO] Pixiv用の画像フォルダをスキャン中: {candidate}")
+                print(f"[INFO] wallgen未整理用の画像フォルダをスキャン中: {candidate}")
                 for root, dirnames, files in os.walk(candidate):
                     current_name = os.path.basename(os.path.normpath(root))
-                    if current_name in excluded_dirs:
+                    if current_name in excluded_dirs or any(current_name.endswith("_" + name) for name in excluded_dirs):
                         dirnames[:] = []
                         continue
                     dirnames[:] = [
                         directory
                         for directory in dirnames
                         if directory not in excluded_dirs
+                        and not any(directory.endswith("_" + name) for name in excluded_dirs)
                     ]
                     if dirnames:
                         continue
@@ -1123,26 +1124,40 @@ def collect_pixiv_image_groups(paths: Sequence[str]) -> Dict[str, List[str]]:
     return {directory: sorted(file_paths) for directory, file_paths in groups.items()}
 
 
-def get_pixiv_move_rating(ratings: Sequence[str]) -> Optional[str]:
-    best_rating = None
-    best_priority = -1
-    for rating in ratings:
-        if rating == "explicit":
-            priority = 100
-        elif rating == "questionable":
-            priority = 10
-        else:
-            match = re.fullmatch(r"questionable_(\d+)", str(rating))
-            if not match:
-                continue
-            priority = 10 + int(match.group(1))
-        if priority > best_priority:
-            best_priority = priority
-            best_rating = rating
-    return best_rating
+WALLGEN_RATING_LEVELS = {
+    "R-00": 0,
+    **{f"R-15_{level}": 1 + level for level in range(5)},
+    **{f"R-17_{level}": 6 + level for level in range(5)},
+    "R-18": 11,
+}
 
 
-def organize_pixiv_folder(
+def wallgen_rating_priority(rating: str) -> int:
+    if rating == "general":
+        return 0
+    if rating == "explicit":
+        return 11
+    if rating in ("sensitive", "questionable"):
+        return 1 if rating == "sensitive" else 6
+    match = re.fullmatch(r"(sensitive|questionable)_([0-4])", str(rating))
+    if match:
+        return (1 if match.group(1) == "sensitive" else 6) + int(match.group(2))
+    return -1
+
+
+def get_wallgen_unsorted_move_rating(
+    ratings: Sequence[str], min_rating: Optional[str] = None,
+) -> Optional[str]:
+    minimum = min_rating or APP_CONFIG.get("wallgen_move_min_rating", "R-15_0")
+    if minimum not in WALLGEN_RATING_LEVELS:
+        raise ValueError(f"wallgen移動下限が不正です: {minimum}")
+    best = max(ratings, key=wallgen_rating_priority, default=None)
+    if best is not None and wallgen_rating_priority(best) >= WALLGEN_RATING_LEVELS[minimum]:
+        return best
+    return None
+
+
+def organize_wallgen_unsorted_folder(
     file_paths: Sequence[str],
     rating: str,
     base_dirs: Optional[Sequence[str]] = None,
@@ -1151,12 +1166,12 @@ def organize_pixiv_folder(
         return {}, 0
     source_dirs = {os.path.dirname(os.path.abspath(path)) for path in file_paths}
     if len(source_dirs) != 1:
-        raise ValueError("Pixivフォルダ整理では1つの画像フォルダのみ指定してください。")
+        raise ValueError("wallgen未整理フォルダ整理では1つの画像フォルダのみ指定してください。")
     source_dir = next(iter(source_dirs))
     moved_paths: Dict[str, str] = {}
     moved_count = 0
     for file_path in file_paths:
-        moved, new_path = organize_file(file_path, rating, is_pixiv=True, base_dirs=base_dirs)
+        moved, new_path = organize_file(file_path, rating, is_wallgen_unsorted=True, base_dirs=base_dirs)
         if moved:
             moved_count += 1
             moved_paths[os.path.abspath(file_path)] = os.path.abspath(new_path)
@@ -1164,7 +1179,7 @@ def organize_pixiv_folder(
         try:
             if not os.listdir(source_dir):
                 os.rmdir(source_dir)
-                safe_write(f"[INFO] Pixiv画像フォルダを削除: {source_dir}")
+                safe_write(f"[INFO] wallgen未整理画像フォルダを削除: {source_dir}")
         except OSError as exc:
             safe_write(f"[WARN] 空フォルダの削除に失敗しました ({source_dir}): {exc}")
     return moved_paths, moved_count
@@ -1930,21 +1945,21 @@ def process_images(args: argparse.Namespace) -> None:
         APP_CONFIG["record_raw_score"] = args.record_ratio
         APP_CONFIG["record_rating_percentages"] = args.record_ratio
 
-    is_pixiv = bool(args.pixiv)
+    is_wallgen_unsorted = bool(args.wallgen_unsorted)
     recursive = args.recursive if args.recursive is not None else not args.organize
-    if is_pixiv:
-        pixiv_groups = collect_pixiv_image_groups(args.images)
+    if is_wallgen_unsorted:
+        wallgen_unsorted_groups = collect_wallgen_unsorted_image_groups(args.images)
         target_files = sorted(
             file_path
-            for group_files in pixiv_groups.values()
+            for group_files in wallgen_unsorted_groups.values()
             for file_path in group_files
         )
         print(
-            f"[INFO] Pixiv画像グループ: {len(pixiv_groups)}フォルダ / "
+            f"[INFO] wallgen未整理画像グループ: {len(wallgen_unsorted_groups)}フォルダ / "
             f"{len(target_files)}枚"
         )
     else:
-        pixiv_groups = {}
+        wallgen_unsorted_groups = {}
         target_files = collect_images(args.images, recursive)
     if not target_files:
         print("[WARN] 対象ファイルが見つかりません。")
@@ -1997,10 +2012,10 @@ def process_images(args: argparse.Namespace) -> None:
             print(f"[WARN] ウォームアップ推論をスキップしました: {exc}")
 
     processed = organized = 0
-    pixiv_rating_by_path: Dict[str, str] = {}
-    pixiv_moved_paths: Dict[str, str] = {}
-    pixiv_target_groups = 0
-    pixiv_moved_groups = 0
+    wallgen_unsorted_rating_by_path: Dict[str, str] = {}
+    wallgen_unsorted_moved_paths: Dict[str, str] = {}
+    wallgen_unsorted_target_groups = 0
+    wallgen_unsorted_moved_groups = 0
     inferred = skipped = 0
     inferred_time = skipped_time = 0.0
     batch_history: List[Dict[str, Any]] = []
@@ -2036,9 +2051,9 @@ def process_images(args: argparse.Namespace) -> None:
         if detected_tags and (not args.no_tag or args.organize):
             if et_wrapper.write_tags(path, detected_tags):
                 processed += 1
-        if is_pixiv:
+        if is_wallgen_unsorted:
             if rating:
-                pixiv_rating_by_path[os.path.abspath(path)] = rating
+                wallgen_unsorted_rating_by_path[os.path.abspath(path)] = rating
         elif args.organize:
             moved, new_path = organize_file(path, rating, False, base_dirs)
             if moved:
@@ -2374,50 +2389,51 @@ def process_images(args: argparse.Namespace) -> None:
     if fatal_client_error is not None:
         raise SystemExit(1)
 
-    if is_pixiv and aborted:
-        safe_write("[WARN] 処理が中断されたため、Pixivフォルダの移動をスキップします。")
-    elif is_pixiv:
-        for source_dir, group_files in pixiv_groups.items():
+    if is_wallgen_unsorted and aborted:
+        safe_write("[WARN] 処理が中断されたため、wallgen未整理フォルダの移動をスキップします。")
+    elif is_wallgen_unsorted:
+        for source_dir, group_files in wallgen_unsorted_groups.items():
             absolute_files = [os.path.abspath(path) for path in group_files]
-            if not all(path in pixiv_rating_by_path for path in absolute_files):
+            if not all(path in wallgen_unsorted_rating_by_path for path in absolute_files):
                 safe_write(
-                    f"[WARN] Pixiv画像フォルダは全画像のスキャンが完了していないため移動をスキップ: {source_dir}"
+                    f"[WARN] wallgen未整理画像フォルダは全画像のスキャンが完了していないため移動をスキップ: {source_dir}"
                 )
                 continue
-            pixiv_target_groups += 1
+            wallgen_unsorted_target_groups += 1
             if os.path.basename(os.path.normpath(source_dir)) == "条件未満":
                 moved_paths = {}
                 moved_count = 0
                 for path in absolute_files:
-                    target_rating = get_pixiv_move_rating([pixiv_rating_by_path[path]])
+                    target_rating = get_wallgen_unsorted_move_rating([wallgen_unsorted_rating_by_path[path]], getattr(args, "wallgen_move_min_rating", None))
                     if target_rating is None:
                         continue
-                    file_moved_paths, file_moved_count = organize_pixiv_folder(
+                    file_moved_paths, file_moved_count = organize_wallgen_unsorted_folder(
                         [path], target_rating, base_dirs
                     )
                     moved_paths.update(file_moved_paths)
                     moved_count += file_moved_count
             else:
-                target_rating = get_pixiv_move_rating(
-                    [pixiv_rating_by_path[path] for path in absolute_files]
+                target_rating = get_wallgen_unsorted_move_rating(
+                    [wallgen_unsorted_rating_by_path[path] for path in absolute_files],
+                    getattr(args, "wallgen_move_min_rating", None),
                 )
                 if target_rating is None:
                     continue
-                moved_paths, moved_count = organize_pixiv_folder(
+                moved_paths, moved_count = organize_wallgen_unsorted_folder(
                     absolute_files,
                     target_rating,
                     base_dirs,
                 )
             if moved_count:
-                pixiv_moved_groups += 1
+                wallgen_unsorted_moved_groups += 1
             organized += moved_count
-            pixiv_moved_paths.update(moved_paths)
+            wallgen_unsorted_moved_paths.update(moved_paths)
 
-        if pixiv_moved_paths and report_data:
+        if wallgen_unsorted_moved_paths and report_data:
             for report in report_data:
                 original_path = os.path.abspath(report["path"])
-                if original_path in pixiv_moved_paths:
-                    report["path"] = pixiv_moved_paths[original_path]
+                if original_path in wallgen_unsorted_moved_paths:
+                    report["path"] = wallgen_unsorted_moved_paths[original_path]
 
     print("\n[完了] 処理結果サマリー:")
     if warmup_time > 0:
@@ -2458,10 +2474,10 @@ def process_images(args: argparse.Namespace) -> None:
         )
     else:
         print("  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし")
-    if is_pixiv:
+    if is_wallgen_unsorted:
         print(
-            f"  ・Pixiv移動対象: {pixiv_target_groups}フォルダ / "
-            f"移動完了 {pixiv_moved_groups}フォルダ"
+            f"  ・wallgen未整理移動対象: {wallgen_unsorted_target_groups}フォルダ / "
+            f"移動完了 {wallgen_unsorted_moved_groups}フォルダ"
         )
     print(f"  ・詳細: タグ書き込み {processed} 枚, 整理移動 {organized} 枚")
 
@@ -2493,10 +2509,13 @@ def create_parser() -> argparse.ArgumentParser:
     switches.add_argument("-o", "--organize", action="store_true", help="レーティングに基づきフォルダ整理を行う")
     switches.add_argument(
         "-x",
-        "--pixiv",
+        "--wallgen-unsorted",
+        dest="wallgen_unsorted",
         action="store_true",
-        help="Pixiv整理モード（画像を含むフォルダ単位で判定し、R17以上を含むフォルダの全画像を一括移動。空フォルダは削除）",
+        help="wallgen未整理モード（未整理内の対象フォルダを指定。既定R-15_0以上を含む末端フォルダの全画像を元フォルダ名_R-〜へ移動）",
     )
+    values.add_argument("--wallgen-move-min-rating", choices=list(WALLGEN_RATING_LEVELS),
+                        help="wallgen未整理モードの移動下限（★R-15_0、config.jsonで変更可能）")
     switches.add_argument("-z", "--no-report", action="store_true", help="HTMLレポートを作成しない")
     values.add_argument(
         "-q",
@@ -2609,7 +2628,7 @@ def main() -> None:
     if args.port is None:
         args.port = int(APP_CONFIG.get("server_port", 5000))
 
-    if args.pixiv:
+    if args.wallgen_unsorted:
         args.organize = True
         args.recursive = True
 

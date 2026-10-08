@@ -6,6 +6,8 @@ Windows (PowerShell) と Linux (Bash) に対応しており、DBV4のモデル�
 
 ## 特徴
 
+WindowsでLinux版と同じ実行環境を利用するための[WSL Linuxコンテナ起動手順](WSL_CONTAINER.md)を用意している。`run_tagger.ps1 -Wsl`でStandalone / Server / Clientを起動でき、GPUは全デバイスを公開したうえでProviderとGPU番号を選択する。Intel Iris XeのOpenVINO経路を実機確認済み。GPUごとの追加ドライバー要件と未検証の経路はリンク先を参照。
+
 - DBV4 fullの大規模マルチラベル出力をmetadataベースで復号
 - selected_tags.csv の best_threshold をタグ単位で適用
 - preprocess.json に従ったモデル固有前処理
@@ -84,7 +86,7 @@ Switch Linuxの4GB共有メモリでは、同じultraのFP32重みを `--ncnn-pa
 
 分割推論をServerで使う場合は、複数Clientの推論を順番に実行する。区間の読み込み・解放が他の接続と干渉しないようにし、同時実行によるメモリ増加も抑える。待ち時間には先行するClientの処理時間も含まれるため、接続数に合わせてタイムアウトを調整する。
 
-PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。ncnnでは`--ncnn-part-size-mib`の省略時に空きRAM、選択したVulkan GPUのメモリ予算、実際のFP32重みファイル量から常駐・分割推論を自動選択する。メモリに余裕があれば常駐し、分割が必要ならメモリに収まる最大の2の累乗MiB（最小64MiB）を目安として区間を大きくし、読み込み・転送回数を減らす。GPU予算はncnnのVulkan APIから取得するため、共有メモリGPUもVRAM表示の小ささだけでは判定しない。空きRAMとGPU予算、重み量、選択サイズを起動ログに表示する。自動Provider検証・明示的なncnn指定・直接のPython起動に適用する。全重みを常駐させる経路では`syncshaders`適用後もGPUコンテキスト消失が報告されたため、メモリ不足時は分割経路を選ぶ。PS4 Linuxでは128MiBを超えるモデルの自動分割を最大128MiBに制限する。空きメモリが多くても常駐・大区間を選ばず、予算が少なければ64MiBを選ぶ。これは大区間で報告されたGPUリセットへの互換性対策であり、ドライバー自体の修復や速度改善ではない。GPU予算を取得できない場合も128MiBを使用する。明示した値は優先し、`--ncnn-part-size-mib 0`で分割なしを指定できる。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
+PS4 Linux（AMD Liverpool、VRAM 2GiB）でも、ultra FP32を同じ128MiB指定・14区間で検証した。ncnnでは`--ncnn-part-size-mib`の省略時に空きRAM、選択したVulkan GPUのメモリ予算、実際のFP32重みファイル量から常駐・分割推論を自動選択する。メモリに余裕があれば常駐し、分割が必要ならメモリに収まる最大の2の累乗MiB（最小64MiB）を目安として区間を大きくし、読み込み・転送回数を減らす。GPU予算はncnnのVulkan APIから取得するため、共有メモリGPUもVRAM表示の小ささだけでは判定しない。空きRAMとGPU予算、重み量、選択サイズを起動ログに表示する。自動Provider検証・明示的なncnn指定・直接のPython起動に適用する。全重みを常駐させる経路では`syncshaders`適用後もGPUコンテキスト消失が報告されたため、メモリ不足時は分割経路を選ぶ。PS4 RADVでは空きRAM 3181MiB・GPU予算3929MiBから選ばれた1024MiB目安（最大区間1215MiB）でもGPUリセットが報告されたため、128MiBを超えるモデルの自動選択は実機検証済みの128MiB以下に制限する。これはメモリ容量とは別の互換性制限で、空きRAMが少ない場合は64MiBを選ぶ。区間ごとの読み込みによる待ち時間は残り、大きな区間での高速化は未達成。明示した値は優先し、`--ncnn-part-size-mib 0`で分割なしを指定できる。約80〜88秒/枚で、CPU参照の確率・タグとServer/ClientのXMPが一致した。通信の `client_timeout` と `client_batch_timeout` は600秒を設定する。検証環境のExifToolはローカル配置のため、Bashでは以下のようにPATHへ追加して実行する。初回はキャッシュ生成と起動検証にも数分かかる。詳細は[BENCHMARKS.md](BENCHMARKS.md)を参照。
 
 ```bash
 export PATH="$PWD/.dbv4/runtime/exiftool:$PATH"
@@ -250,7 +252,7 @@ compinit
 | GPU | `-g` / `--gpu` | `-g` / `-Gpu` |
 | 整理 | `-o` / `--organize` | `-o` / `-Organize` |
 | タグ付け | `-t` / `--tag` | `-t` / `-Tag` |
-| Pixiv | `-x` / `--pixiv` | `-x` / `-Pixiv` |
+| wallgen未整理 | `-x` / `--wallgen-unsorted` | `-x` / `-WallgenUnsorted` |
 | 強制再推論 | `-f` / `--force` | `-f` / `-Force` |
 | 再帰検索 | `-r` / `--recursive` | `-r` / `-Recursive` |
 | 再帰検索OFF | `-n` / `--no-recursive` | `-n` / `-NoRecursive` |
@@ -500,3 +502,19 @@ DBV4モデル自体のライセンスはモデルごとに異なるため、使�
 - HTML report
 
 Nintendo Switchの実機調査: [Issue #18](https://github.com/SyameimaruKoa/dbv4-wd14-tagger/issues/18)
+
+## wallgen未整理モード (`-x`)
+
+[wallgen-env](https://github.com/SyameimaruKoa/wallgen-env) の「未整理」内にある対象フォルダを指定して使う整理モードです。「未整理」フォルダ自体は指定しません。
+`-x` / `--wallgen-unsorted` で末端フォルダを判定し、移動下限以上の画像があれば、そのフォルダの全画像を最大レーティングの移動先へ移します。
+例えば `未整理/作者` を指定すると、`未整理/作者/作品.jpg` を `未整理/作者_R-15_0/作品.jpg` へ移し、空になった末端フォルダを削除します。
+`条件未満` フォルダは従来どおり画像ごとに判定します。振り分け済みの `元フォルダ名_R-〜` は再スキャンから除外します。
+
+移動下限は既定で `R-15_0`。`config.json` の `wallgen_move_min_rating`、または CLI の `--wallgen-move-min-rating` で変更できます（CLI優先）。
+指定できる値は `R-00`、`R-15_0`〜`R-15_4`、`R-17_0`〜`R-17_4`、`R-18` です。
+
+```sh
+./run_tagger.sh -x --wallgen-move-min-rating R-17_0 -p /path/to/未整理/作者
+```
+
+PowerShellでも `-x` / `--wallgen-unsorted` と `--wallgen-move-min-rating` を使用できます。

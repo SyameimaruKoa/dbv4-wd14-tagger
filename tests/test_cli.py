@@ -58,7 +58,7 @@ class CliShortOptionTests(unittest.TestCase):
         self.assertEqual(args.mode, "client")
         self.assertTrue(args.no_tag)
         self.assertTrue(args.organize)
-        self.assertTrue(args.pixiv)
+        self.assertTrue(args.wallgen_unsorted)
         self.assertTrue(args.no_report)
         self.assertEqual(args.thresh, 0.42)
         self.assertTrue(args.gpu)
@@ -85,6 +85,11 @@ class CliShortOptionTests(unittest.TestCase):
         self.assertEqual(args.rating_thresh, 0.5)
         self.assertTrue(args.ignore_sensitive)
         self.assertEqual(args.images, ["images"])
+
+    def test_wallgen_options(self):
+        args = create_parser().parse_args(["--wallgen-unsorted", "--wallgen-move-min-rating", "R-17_2"])
+        self.assertTrue(args.wallgen_unsorted)
+        self.assertEqual(args.wallgen_move_min_rating, "R-17_2")
 
     def test_negative_short_switches(self):
         args = create_parser().parse_args(["-n", "-k", "-G", "-wg"])
