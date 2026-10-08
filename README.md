@@ -6,6 +6,8 @@ Windows (PowerShell) と Linux (Bash) に対応しており、DBV4のモデル�
 
 ## 特徴
 
+WindowsでLinux版と同じ実行環境を利用するための[WSL Linuxコンテナ起動手順](WSL_CONTAINER.md)を用意している。`run_tagger.ps1 -Wsl`でStandalone / Server / Clientを起動でき、GPUは全デバイスを公開したうえでProviderとGPU番号を選択する。Intel Iris XeのOpenVINO経路を実機確認済み。GPUごとの追加ドライバー要件と未検証の経路はリンク先を参照。
+
 - DBV4 fullの大規模マルチラベル出力をmetadataベースで復号
 - selected_tags.csv の best_threshold をタグ単位で適用
 - preprocess.json に従ったモデル固有前処理

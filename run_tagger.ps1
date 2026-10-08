@@ -124,6 +124,31 @@
 .PARAMETER RemainingArgs
     未定義の引数（--helpなど）を捕捉するための内部パラメータ。
 
+.PARAMETER Wsl
+    WSL Linuxコンテナで同じ処理引数を実行する。setup_tagger_wsl.ps1で初回セットアップと起動を行う。
+.PARAMETER WslAction
+    Run（既定）またはBuild（コンテナイメージの再構築）。
+.PARAMETER Mode
+    Standalone / Server / Client / Login / Probe。既存のモードスイッチも使用できる。
+.PARAMETER Probe
+    選択したモデル・Providerの起動検証のみを行う。
+.PARAMETER WslImage
+    WSLコンテナのイメージ名（既定dbv4-tagger-wsl:local）。
+.PARAMETER WslBaseImage
+    構築時のベースイメージ（既定ubuntu:24.04）。
+.PARAMETER WslWorkspaceVolume
+    リポジトリ内のWSLディスクでLinux仮想環境と設定を保持するボリューム名。
+.PARAMETER WslContainerName
+    起動するコンテナ名。
+.PARAMETER WslPublishAddress
+    サーバーをWindowsへ公開するアドレス（既定127.0.0.1）。
+.PARAMETER WslDataPath
+    モデル・認証をWindowsと共有するリポジトリ内ディレクトリ（既定 .dbv4）。
+.PARAMETER WslGpuRuntimePath
+    追加GPUライブラリを読み取り専用で公開するWindowsディレクトリ。
+.PARAMETER WslInteractive
+    コンテナへ標準入力を接続する。Loginでは自動接続。
+
 .EXAMPLE
     # 初回セットアップ (何もしない)
     .\run_tagger.ps1
@@ -186,13 +211,13 @@ param (
     [switch]$Server,
     [Alias('c')]
     [switch]$Client,
-    [Alias('j')]
+    [Alias('j', 'HostName')]
     [string]$HostIP,
     [Alias('u')]
     [int]$Port,
     [Alias('x', '-wallgen-unsorted')]
     [switch]$WallgenUnsorted,
-    [Alias('-wallgen-move-min-rating')]
+    [Alias('wmm', '-wallgen-move-min-rating')]
     [string]$WallgenMoveMinRating,
 
     [ValidateSet(2, 4, 6)]
@@ -202,13 +227,13 @@ param (
     [switch]$RecordRatio,
     [Alias('k')]
     [switch]$NoRecordRatio,
-    
+
     # Old params
     [Alias('d')]
     [float]$RatingThresh,
     [Alias('i')]
     [switch]$IgnoreSensitive,
-    
+
     [Alias('h')]
     [switch]$Help,
 
@@ -216,10 +241,12 @@ param (
     [switch]$Login,
 
     [Alias('ep')]
-    [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu','ncnn')]
+    [ValidateSet('cpu','cuda','tensorrt','intel','directml','webgpu','ncnn','rocm','migraphx')]
     [string]$Provider,
+    [Alias('np')]
     [ValidateSet('fp32','fp16-storage','fp16-packed','fp16-arithmetic')]
     [string]$NcnnPrecision = 'fp32',
+    [Alias('ns')]
     [ValidateRange(0,2147483647)][int]$NcnnPartSizeMiB = 0,
     [Alias('wg')]
     [switch]$WebGpu,
@@ -236,7 +263,36 @@ param (
     [Alias('td')]
     [string]$TensorRtLibDir,
 
+    [Alias('ws')]
+    [switch]$Wsl,
+    [Alias('ac', 'Action')]
+    [ValidateSet('Build', 'Run', 'Help')]
+    [string]$WslAction = 'Run',
+    [Alias('md')]
+    [ValidateSet('Standalone', 'Server', 'Client', 'Login', 'Probe')]
+    [string]$Mode,
+    [Alias('pr')]
+    [switch]$Probe,
+    [Alias('im', 'Image')]
+    [string]$WslImage = 'dbv4-tagger-wsl:local',
+    [Alias('bi', 'BaseImage')]
+    [string]$WslBaseImage = 'ubuntu:24.04',
+    [Alias('vol', 'WorkspaceVolume')]
+    [string]$WslWorkspaceVolume = 'dbv4-tagger-wsl-workspace',
+    [Alias('cn', 'ContainerName')]
+    [string]$WslContainerName = 'dbv4-tagger-wsl',
+    [Alias('pa', 'PublishAddress')]
+    [ValidateSet('127.0.0.1', '0.0.0.0')]
+    [string]$WslPublishAddress = '127.0.0.1',
+    [Alias('dp', 'DataPath')]
+    [string]$WslDataPath,
+    [Alias('gr', 'GpuRuntimePath')]
+    [string]$WslGpuRuntimePath,
+    [Alias('it', 'Interactive')]
+    [switch]$WslInteractive,
+
     [Parameter(ValueFromRemainingArguments = $true)]
+    [Alias('ra', 'ta', 'TaggerArgs')]
     [string[]]$RemainingArgs
 )
 
@@ -244,13 +300,13 @@ param (
 function Show-Help {
     Write-Host "DBV4 Tagger Universal (日本語ヘルプ)" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "使い方: .\run_tagger.ps1 [スイッチ] [値付きオプション] -Path <画像パス>" -ForegroundColor Yellow
+    Write-Host "使い方: .\run_tagger.ps1 [スイッチ] [値付きオプション] -p <画像パス>" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "  引数なしで実行すると「環境構築モード」となり、セットアップのみを行います。" -ForegroundColor Gray
     Write-Host ""
     Write-Host "処理時に必要な入力:" -ForegroundColor Yellow
-    Write-Host "    -Path (-p) <画像パス>  処理対象ファイル/フォルダ"
-    Write-Host "    Client接続先は -HostIP で指定。省略時は設定済み候補から選択"
+    Write-Host "    -p <画像パス>  処理対象ファイル/フォルダ"
+    Write-Host "    Client接続先は -j で指定。省略時は設定済み候補から選択"
     Write-Host ""
     Write-Host "値を指定するオプション（<>内の値が必要）:" -ForegroundColor Yellow
     Write-Host "  ★ -um <p|o>         p=前処理・可逆圧縮 / o=元画像送信（初期設定 p）"
@@ -266,16 +322,21 @@ function Show-Help {
     Write-Host "    -v <2|4|6>                旧センシティブ分割（DBV4では5段階固定）"
     Write-Host "    -d <0～1の数値>           旧rating閾値（例: 0.5）"
     Write-Host "    -ep <プロバイダ名>        cpu/cuda/tensorrt/intel/directml/webgpu/ncnn"
-    Write-Host "    -NcnnPrecision <形式>     fp32/fp16-storage/fp16-packed/fp16-arithmetic"
-    Write-Host "    -NcnnPartSizeMiB <MiB>    重み分割目安（省略時はメモリ量で自動、0=なし）"
+    Write-Host "    -np <形式>                fp32/fp16-storage/fp16-packed/fp16-arithmetic"
+    Write-Host "    -ns <MiB>                 重み分割目安（省略時はメモリ量で自動、0=なし）"
     Write-Host "  ★ -gi <0以上の整数>         GPU番号（既定 0）"
     Write-Host "  ★ -di <0以上の整数>         DirectML番号（既定 0）"
     Write-Host "    -wi <0以上の整数>         WebGPU番号"
     Write-Host "    -tv <ベンダー名>          nvidia/intel/amd"
     Write-Host "    -od <GPU.N>               OpenVINOデバイス（例: GPU.0）"
     Write-Host "    -td <ディレクトリパス>    TensorRTライブラリの場所"
+    Write-Host "    -wmm <rating>             wallgen未整理の移動下限（既定 R-15_0）"
+    Write-Host "    -ra <追加引数の配列>       Pythonへ渡す追加引数"
+    Write-Host "    -md <モード>              Standalone/Server/Client/Login/Probe"
     Write-Host ""
     Write-Host "値を指定しないスイッチ:" -ForegroundColor Yellow
+    Write-Host "    -ws                 WSL Linuxコンテナで実行（初回は自動セットアップ）"
+    Write-Host "    -pr                 モデル・Providerの起動検証のみ"
     Write-Host "    -s / -c / -lo       Server / Client / Hugging Faceログイン"
     Write-Host "    -g / -wg            GPU自動判別 / WebGPU"
     Write-Host "    -o / -t / -x        整理 / タグ付け併用 / wallgen未整理"
@@ -289,31 +350,175 @@ function Show-Help {
     Write-Host "  前処理済み転送に失敗した場合は元画像送信で続行。"
     Write-Host ""
     Write-Host "実行例:" -ForegroundColor Yellow
+    Write-Host "    .\run_tagger.ps1 -ws -p C:\Images -g"
+    Write-Host "    .\run_tagger.ps1 -ws -s -ep intel -m ultra"
+    Write-Host "    .\run_tagger.ps1 -ws -ac Build"
+    if ($Wsl) {
+        Write-Host ""
+        Write-Host "WSLコンテナの設定（共通の処理引数は上記と同じ）:" -ForegroundColor Yellow
+        Write-Host "    -ac <Run|Build>       起動／イメージ再構築（既定 Run）"
+        Write-Host "    -im <名前>              イメージ名"
+        Write-Host "    -bi <名前>              ベースイメージ（既定 ubuntu:24.04）"
+        Write-Host "    -vol <名前>             Linux環境・設定の保存先"
+        Write-Host "    -cn <名前>              コンテナ名"
+        Write-Host "    -pa <IP>              Windows側待受（既定 127.0.0.1）"
+        Write-Host "    -dp <パス>              モデル・認証の共有先（既定 .dbv4、リポジトリ内のみ）"
+        Write-Host "    -gr <パス>              追加GPUライブラリ"
+        Write-Host "    -it                   標準入力を接続"
+        Write-Host "    引数なしの-wsはLinux環境のセットアップのみを行います。"
+    }
     Write-Host "    # 初回セットアップ（何もしない）"
     Write-Host "    .\run_tagger.ps1"
     Write-Host ""
     Write-Host "    # Hugging Faceへログイン"
-    Write-Host "    .\run_tagger.ps1 -Login"
+    Write-Host "    .\run_tagger.ps1 -lo"
     Write-Host ""
     Write-Host "    # 通常実行（タグ付け＋レポート＋GPU）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu"
+    Write-Host "    .\run_tagger.ps1 -p C:\Images -g"
     Write-Host ""
     Write-Host "    # フォルダ整理のみ（タグ付けなし）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize"
-    Write-Host "    .\run_tagger.ps1 -Client -HostIP google-colab -Path C:\Images -um p"
+    Write-Host "    .\run_tagger.ps1 -p C:\Images -o"
+    Write-Host "    .\run_tagger.ps1 -c -j google-colab -p C:\Images -um p"
     Write-Host ""
     Write-Host "    # 全部入り（タグ付け＋整理＋レポート＋GPU）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -Tag -Gpu"
+    Write-Host "    .\run_tagger.ps1 -p C:\Images -o -t -g"
     Write-Host ""
     Write-Host "    # highプロファイル＋RAWスコア記録有効"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Gpu -ModelProfile high -RecordRatio"
+    Write-Host "    .\run_tagger.ps1 -p C:\Images -g -m high -a"
     Write-Host ""
     Write-Host "    # 推論スキップ高速再整理（DBV4 RAWスコアを利用）"
-    Write-Host "    .\run_tagger.ps1 -Path C:\Images -Organize -ModelProfile balanced"
+    Write-Host "    .\run_tagger.ps1 -p C:\Images -o -m balanced"
     Write-Host ""
 }
 
-if ($Help -or ($RemainingArgs -contains '--help') -or ($RemainingArgs -contains '-h')) { Show-Help; exit }
+if ($Help -or ($Wsl -and $WslAction -eq 'Help') -or ($RemainingArgs -contains '--help') -or ($RemainingArgs -contains '-h')) { Show-Help; exit }
+#endregion
+
+#region Shared application arguments
+$TaggerParameters = $PSBoundParameters
+function Get-TaggerArguments {
+    # Python引数構築
+    $PyArgs = @()
+
+    # モード設定
+    if ($Server) { $PyArgs += ("--mode", "server") }
+    elseif ($Client) { $PyArgs += ("--mode", "client") }
+    else { $PyArgs += ("--mode", "standalone") }
+
+    if ($WallgenMoveMinRating) { $PyArgs += ("--wallgen-move-min-rating", $WallgenMoveMinRating) }
+
+    # アクション設定
+    # Organize指定時 -> デフォルトでNo-Tag扱いになる。Tag指定があればタグも有効。
+    if ($Organize) {
+        $PyArgs += "--organize"
+        if (-not $Tag -and -not $WallgenUnsorted) { $PyArgs += "--no-tag" }
+    }
+    if ($WallgenUnsorted) {
+        $PyArgs += "--wallgen-unsorted"
+    }
+    else {
+        # 通常モード -> Tag指定は不要(デフォルトON)。No-Tag指定があれば...無いので実装不要
+        # もし将来的に「タグなし・整理なし・レポートのみ」をするなら --no-tag 引数が必要だが
+        # 今回のPSラッパーでは Organize がスイッチになっているため自動制御する
+    }
+
+    if ($NoReport) { $PyArgs += "--no-report" }
+
+    # 再帰設定
+    if ($Recursive) { $PyArgs += "--recursive" }
+    if ($NoRecursive) { $PyArgs += "--no-recursive" }
+
+    # その他パラメータ
+    if ($TaggerParameters.ContainsKey("Thresh")) { $PyArgs += ("--thresh", $Thresh) }
+    if ($Gpu) { $PyArgs += "--gpu" }
+    if ($Provider) { $PyArgs += @('--provider', $Provider) }
+    $PyArgs += @('--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex")
+    $PyArgs += @('--ncnn-precision', $NcnnPrecision)
+    if ($TaggerParameters.ContainsKey('NcnnPartSizeMiB')) { $PyArgs += @('--ncnn-part-size-mib', "$NcnnPartSizeMiB") }
+    if ($TaggerParameters.ContainsKey('WebGpuDeviceIndex')) { $PyArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
+    if ($TargetVendor) { $PyArgs += @('--target-vendor', $TargetVendor) }
+    if ($OpenVinoDevice) { $PyArgs += @('--openvino-device', $OpenVinoDevice) }
+    if ($TensorRtLibDir) { $PyArgs += @('--tensorrt-lib-dir', $TensorRtLibDir) }
+    if ($TaggerParameters.ContainsKey('BatchSize')) { $PyArgs += ("--batch-size", $BatchSize) }
+    if ($TaggerParameters.ContainsKey('IoWorkers')) { $PyArgs += ("--io-workers", $IoWorkers) }
+    if ($TaggerParameters.ContainsKey('ModelProfile')) { $PyArgs += ("--model-profile", $ModelProfile) }
+    if ($TaggerParameters.ContainsKey('ModelRepo')) { $PyArgs += ("--model-repo", $ModelRepo) }
+    if ($TaggerParameters.ContainsKey('ModelFile')) { $PyArgs += ("--model-file", $ModelFile) }
+    if ($TaggerParameters.ContainsKey('TagsFile')) { $PyArgs += ("--tags-file", $TagsFile) }
+    if ($Force) { $PyArgs += "--force" }
+    if ($TaggerParameters.ContainsKey('SensitiveSplitMode')) { $PyArgs += ("--sensitive-split-mode", $SensitiveSplitMode) }
+    if ($RecordRatio) { $PyArgs += "--record-ratio" }
+    if ($NoRecordRatio) { $PyArgs += "--no-record-ratio" }
+
+    if ($HostIP) { $PyArgs += ("--host", $HostIP) }
+    if ($ClientUploadMode) { $PyArgs += @('--client-upload-mode', $ClientUploadMode) }
+    if ($Port) { $PyArgs += ("--port", $Port) }
+
+    # Old Params
+    if ($TaggerParameters.ContainsKey('RatingThresh')) { $PyArgs += ("--rating-thresh", $RatingThresh) }
+    if ($IgnoreSensitive) { $PyArgs += "--ignore-sensitive" }
+
+    # 最後にパス
+    if ($RemainingArgs) { $PyArgs += $RemainingArgs }
+    if ($Probe) { $PyArgs += "--probe-provider" }
+    if ($Path) { $PyArgs += $Path }
+
+    return $PyArgs
+}
+#endregion
+
+#region Execution mode
+if ($Mode) {
+    $SelectedModes = @()
+    if ($Server) { $SelectedModes += 'Server' }
+    if ($Client) { $SelectedModes += 'Client' }
+    if ($Login) { $SelectedModes += 'Login' }
+    if ($SelectedModes.Count -gt 1 -or ($SelectedModes.Count -eq 1 -and $Mode -ne $SelectedModes[0])) {
+        throw '-Modeとモードスイッチの指定が矛盾しています。'
+    }
+    $Server = $Mode -eq 'Server'
+    $Client = $Mode -eq 'Client'
+    $Login = $Mode -eq 'Login'
+    $Probe = $Mode -eq 'Probe'
+}
+    if (@($Server, $Client, $Login | Where-Object { $_ }).Count -gt 1) {
+    throw '-Server / -Client / -Loginは同時に指定できません。'
+}
+if ($Wsl) {
+    if ($WebGpu) {
+        if ($Provider -and $Provider -ne 'webgpu') { throw '-WebGpu conflicts with -Provider' }
+        $Provider = 'webgpu'
+    }
+    if ($Provider -eq 'directml' -or $PSBoundParameters.ContainsKey('DirectMlDeviceIndex')) {
+        throw 'DirectMLはLinuxコンテナ非対応です。-Wslを付けずに実行してください。'
+    }
+    $SetupArgs = @{
+        Action = $WslAction; Image = $WslImage; BaseImage = $WslBaseImage
+        WorkspaceVolume = $WslWorkspaceVolume; ContainerName = $WslContainerName
+        PublishAddress = $WslPublishAddress; DataPath = $WslDataPath
+        GpuRuntimePath = $WslGpuRuntimePath; Interactive = $WslInteractive
+    }
+    $ApplicationArgs = @(Get-TaggerArguments)
+    # DirectML index is a Windows-only default, not an application choice in WSL.
+    $Index = [Array]::IndexOf($ApplicationArgs, '--directml-device-index')
+    if ($Index -ge 0) {
+        $ApplicationArgs = @($ApplicationArgs[0..($Index - 1)]) + @($ApplicationArgs[($Index + 2)..($ApplicationArgs.Count - 1)])
+    }
+    if (($Login) -or ($RemainingArgs -contains '--login')) { $ApplicationArgs = @('--login') }
+    elseif (-not $Path -and -not $Server -and -not $Client -and -not $Probe) { $ApplicationArgs = @('--gen-config') }
+    if ($Mode -eq 'Server' -or $Server -or $Client) {
+        if (-not $Port) { $Port = 5000 }
+    }
+    $SetupArgs.ApplicationArgs = $ApplicationArgs
+    $SetupArgs.Path = $Path
+    $SetupArgs.Port = $Port
+    $SetupArgs.Server = $Server
+    $SetupArgs.Client = $Client
+    $SetupArgs.HostIP = $HostIP
+    & (Join-Path $PSScriptRoot 'setup_tagger_wsl.ps1') @SetupArgs
+    exit $LASTEXITCODE
+}
+if ($Provider -in @('rocm', 'migraphx')) { throw 'ROCm/MIGraphXは-WslまたはLinux版で使用してください。' }
 #endregion
 
 #region Environment Setup
@@ -346,7 +551,7 @@ if ($PSVersionTable.PSVersion.Major -ge 6) {
 function Prepare-Environment {
     param ([bool]$UseGpu, [bool]$IsClient, [string]$SelectedProvider)
     $ExtraPackages = @()
-    
+
     if ($IsClient) {
         $EnvName = "Client (軽量)"
         $TargetVenv = Join-Path $ScriptDir "venv_client"
@@ -380,7 +585,7 @@ function Prepare-Environment {
             $OnnxPackage = "onnxruntime"
         }
     }
-    
+
     Write-Host "[INFO] 環境確認: $EnvName" -ForegroundColor Cyan
     if (Test-Path $TargetVenv) {
         $VenvPy = if ($IsWindowsOS) { Join-Path $TargetVenv "Scripts/python.exe" } else { Join-Path $TargetVenv "bin/python" }
@@ -411,7 +616,7 @@ function Prepare-Environment {
         & $PyCmd -m venv $TargetVenv
         if ($LASTEXITCODE -ne 0) { throw "仮想環境の作成に失敗しました。" }
     }
-    
+
     if ($IsWindowsOS) {
         $Bin = Join-Path $TargetVenv "Scripts"
         $PyEx = Join-Path $Bin "python.exe"
@@ -431,7 +636,7 @@ function Prepare-Environment {
     else {
         & $PipEx install -r $ReqFile -q | Out-Null
     }
-    
+
     if ($LASTEXITCODE -ne 0) { throw "依存パッケージのインストールに失敗しました。" }
     return $PyEx
 }
@@ -574,7 +779,7 @@ if ($PSBoundParameters.Count -eq 0 -and (-not $RemainingArgs)) {
     Write-Host "引数が指定されなかったため、環境構築のみを行いました。"
     Write-Host "画像処理を行うには -Path オプションなどを指定してください。"
     Write-Host "使い方がわからない場合は -Help を参照するのじゃ。"
-    
+
     # Config生成のために一度CPU環境で実行
     $Py = Prepare-Environment -UseGpu $false -IsClient $false
     & $Py $PythonScript --gen-config
@@ -658,70 +863,7 @@ else {
     $VenvPython = Prepare-Environment -UseGpu $Gpu -IsClient $Client -SelectedProvider $Provider
 }
 
-# Python引数構築
-$PyArgs = @($PythonScript)
-
-# モード設定
-if ($Server) { $PyArgs += ("--mode", "server") }
-elseif ($Client) { $PyArgs += ("--mode", "client") }
-else { $PyArgs += ("--mode", "standalone") }
-
-if ($WallgenMoveMinRating) { $PyArgs += ("--wallgen-move-min-rating", $WallgenMoveMinRating) }
-
-# アクション設定
-# Organize指定時 -> デフォルトでNo-Tag扱いになる。Tag指定があればタグも有効。
-if ($Organize) {
-    $PyArgs += "--organize"
-    if (-not $Tag -and -not $WallgenUnsorted) { $PyArgs += "--no-tag" }
-}
-if ($WallgenUnsorted) {
-    $PyArgs += "--wallgen-unsorted"
-}
-else {
-    # 通常モード -> Tag指定は不要(デフォルトON)。No-Tag指定があれば...無いので実装不要
-    # もし将来的に「タグなし・整理なし・レポートのみ」をするなら --no-tag 引数が必要だが
-    # 今回のPSラッパーでは Organize がスイッチになっているため自動制御する
-}
-
-if ($NoReport) { $PyArgs += "--no-report" }
-
-# 再帰設定
-if ($Recursive) { $PyArgs += "--recursive" }
-if ($NoRecursive) { $PyArgs += "--no-recursive" }
-
-# その他パラメータ
-if ($PSBoundParameters.ContainsKey("Thresh")) { $PyArgs += ("--thresh", $Thresh) }
-if ($Gpu) { $PyArgs += "--gpu" }
-if ($Provider) { $PyArgs += @('--provider', $Provider) }
-$PyArgs += @('--gpu-index', "$GpuIndex", '--directml-device-index', "$DirectMlDeviceIndex")
-$PyArgs += @('--ncnn-precision', $NcnnPrecision)
-if ($PSBoundParameters.ContainsKey('NcnnPartSizeMiB')) { $PyArgs += @('--ncnn-part-size-mib', "$NcnnPartSizeMiB") }
-if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $PyArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
-if ($TargetVendor) { $PyArgs += @('--target-vendor', $TargetVendor) }
-if ($OpenVinoDevice) { $PyArgs += @('--openvino-device', $OpenVinoDevice) }
-if ($TensorRtLibDir) { $PyArgs += @('--tensorrt-lib-dir', $TensorRtLibDir) }
-if ($PSBoundParameters.ContainsKey('BatchSize')) { $PyArgs += ("--batch-size", $BatchSize) }
-if ($PSBoundParameters.ContainsKey('IoWorkers')) { $PyArgs += ("--io-workers", $IoWorkers) }
-if ($PSBoundParameters.ContainsKey('ModelProfile')) { $PyArgs += ("--model-profile", $ModelProfile) }
-if ($PSBoundParameters.ContainsKey('ModelRepo')) { $PyArgs += ("--model-repo", $ModelRepo) }
-if ($PSBoundParameters.ContainsKey('ModelFile')) { $PyArgs += ("--model-file", $ModelFile) }
-if ($PSBoundParameters.ContainsKey('TagsFile')) { $PyArgs += ("--tags-file", $TagsFile) }
-if ($Force) { $PyArgs += "--force" }
-if ($PSBoundParameters.ContainsKey('SensitiveSplitMode')) { $PyArgs += ("--sensitive-split-mode", $SensitiveSplitMode) }
-if ($RecordRatio) { $PyArgs += "--record-ratio" }
-if ($NoRecordRatio) { $PyArgs += "--no-record-ratio" }
-
-if ($HostIP) { $PyArgs += ("--host", $HostIP) }
-if ($ClientUploadMode) { $PyArgs += @('--client-upload-mode', $ClientUploadMode) }
-if ($Port) { $PyArgs += ("--port", $Port) }
-
-# Old Params
-if ($PSBoundParameters.ContainsKey('RatingThresh')) { $PyArgs += ("--rating-thresh", $RatingThresh) }
-if ($IgnoreSensitive) { $PyArgs += "--ignore-sensitive" }
-
-# 最後にパス
-if ($RemainingArgs) { $PyArgs += $RemainingArgs }
-if ($Path) { $PyArgs += $Path }
+$PyArgs = @($PythonScript) + @(Get-TaggerArguments)
 
 # 実行
 Write-Host "[INFO] Pythonスクリプトを実行..." -ForegroundColor Green

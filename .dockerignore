@@ -1,0 +1,9 @@
+**/venv*/
+**/.venv/
+**/__pycache__/
+.git/
+.dbv4/
+.dbv4_models/
+models/
+benchmarks/
+config.json
