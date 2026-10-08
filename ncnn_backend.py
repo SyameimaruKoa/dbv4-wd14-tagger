@@ -140,6 +140,14 @@ def resolve_part_size_mib(device_name: str, requested: int | None,
         elif gpu is None and platform.system() == 'Linux' and any(
                 part in device_name.lower() for part in ('liverpool', 'playstation 4', 'radv oberon')):
             size = 128  # Keep the tested PS4 fallback when Vulkan cannot report memory.
+        # Liverpool can reset with large sections even when reported budgets fit.
+        # Keep explicit requests above as overrides; retain 64 MiB for low budgets.
+        if (weights > 128 and platform.system() == 'Linux' and any(
+                part in device_name.lower() for part in
+                ('liverpool', 'playstation 4', 'radv oberon'))):
+            size = min(size or 128, 128)
+            print('[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。',
+                  flush=True)
         print(f'[INFO] ncnn メモリ自動設定: 空きRAM={ram if ram is not None else "不明"} MiB, '
               f'GPUメモリ予算={gpu if gpu is not None else "不明"} MiB, 重み={weights:.0f} MiB; '
               f'分割目安={size} MiB (0=常駐)。', flush=True)

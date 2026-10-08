@@ -65,6 +65,24 @@ class VulkanEnvironmentTests(unittest.TestCase):
 
 
 class StreamingDefaultsTests(unittest.TestCase):
+    def test_ps4_large_weights_cap_even_when_resident_fits(self):
+        for name in ('RADV LIVERPOOL', 'PlayStation 4', 'RADV OBERON'):
+            for ram, gpu, expected in ((16000, 8000, 128), (3181, 3929, 128),
+                                       (16000, 350, 64), (16000, None, 128)):
+                prefix = SimpleNamespace(with_suffix=lambda suffix: SimpleNamespace(
+                    stat=lambda: SimpleNamespace(st_size=2642 * 1048576)))
+                with self.subTest(name=name, ram=ram, gpu=gpu), \
+                        patch('ncnn_backend.platform.system', return_value='Linux'), \
+                        patch('ncnn_backend.memory_budgets_mib', return_value=(ram, gpu)):
+                    self.assertEqual(resolve_part_size_mib(name, None, prefix), expected)
+
+    def test_ps4_small_model_can_remain_resident(self):
+        prefix = SimpleNamespace(with_suffix=lambda suffix: SimpleNamespace(
+            stat=lambda: SimpleNamespace(st_size=128 * 1048576)))
+        with patch('ncnn_backend.platform.system', return_value='Linux'), \
+                patch('ncnn_backend.memory_budgets_mib', return_value=(16000, 8000)):
+            self.assertEqual(resolve_part_size_mib('RADV LIVERPOOL', None, prefix), 0)
+
     def test_memory_and_weight_size_choose_resident_or_largest_fitting_part(self):
         prefix = SimpleNamespace(with_suffix=lambda suffix: SimpleNamespace(
             stat=lambda: SimpleNamespace(st_size=2700 * 1048576)))

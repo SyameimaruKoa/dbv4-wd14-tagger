@@ -1,0 +1,6 @@
+{
+  "finite": true,
+  "allclose_atol_1e_4_rtol_1e_3": true,
+  "new_kernel_errors": [],
+  "exit_code": 0
+}

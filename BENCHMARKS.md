@@ -506,3 +506,11 @@ AMD Linuxの今回と同条件のCPU/MIGraphX/WebGPUマトリクスは収録さ�
 - [全100条件の数値・失敗理由と個別JSONへのリンク](benchmarks/matrix_details_20260923.md)
 
 2026-09-23マトリクスの分析では再推論を行っていない。保存済みの生データを維持し、同一条件の照合・計算・文書化のみ実施した。
+
+### Issue #27: PS4自動分割の実機検証（2026-10-08 JST）
+
+PR #23の説明にあったPS4の128MiB上限がコードに存在せず、容量推定だけで大区間・常駐を選ぶ状態だった。報告された1024MiBでのGPUリセットは再実行せず、LinuxのLiverpool／PlayStation 4／RADV Oberonについて、128MiBを超えるモデルの自動選択を最大128MiBに制限した。低予算では64MiBを維持し、明示指定は優先する。
+
+実機Liverpool、kernel `7.1.7-Strawberry-General-FullLTO+`、ultra FP32で分割サイズを省略し、空きRAM 2723MiB、選択GPU予算3932MiB、重み2642MiBから128MiB／14区間（最大242.7MiB）を選択した。[測定JSON](benchmarks/ncnn_ps4_issue27_20261008/auto-b1.json)と[起動ログ](benchmarks/ncnn_ps4_issue27_20261008/auto-b1.log)。起動検証114.32秒、warmup 1回・測定1回で98.92秒/枚、終了コード0。全12,476確率が有限かつCPU参照の `atol=1e-4, rtol=1e-3` 内、最大差2.742e-6、採用タグ差0。RSS最大218.45MiB、VRAM最大715.11MiB、GTT最大32.61MiB。新規のring timeout／GPU reset／GPU Recovery Failed／OOMログなし。[検証結果](benchmarks/ncnn_ps4_issue27_20261008/validation.json)。
+
+通常テスト132件（skip 5）、ネイティブ分割テスト2件、Bash構文検証とdiff検査が成功。今回の測定は既存キャッシュを使用し、XMP／Server／Clientの再検証は含まない。単回測定から速度改善は主張しない。毎画像の再読み込みは残り、この対策はドライバー自体の修復や明示的な大区間の安全性を保証しない。
