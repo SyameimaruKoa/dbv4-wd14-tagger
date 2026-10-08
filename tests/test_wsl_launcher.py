@@ -42,6 +42,11 @@ class WslLauncherTests(unittest.TestCase):
         self.assertEqual(args[args.index('--gpu-index') + 1], '2')
         self.assertNotIn('--directml-device-index', args)
         self.assertIn('--server', args)
+        output = result.stdout.decode('utf-8')
+        self.assertIn('実行モード: WSL / Linuxコンテナ (-Wsl)', output)
+        self.assertIn('コンテナイメージ: dbv4-tagger-wsl:local', output)
+        self.assertIn('サーバー公開設定: http://0.0.0.0:5100', output)
+        self.assertIn('以降はコンテナ内のログです。', output)
 
     def test_standalone_arguments_and_unicode_mount(self):
         result, calls = self.launch('-p $env:IMAGES -b 2 -w 0 -q 0 -o -z -r -np fp32 -ns 0 -ra @("--force")')

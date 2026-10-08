@@ -71,12 +71,15 @@ if ($Help -or $Action -eq 'Help' -or $PSBoundParameters.Count -eq 0) {
 }
 if (-not (Get-Command wslc -ErrorAction SilentlyContinue)) { throw 'WSL 2.9.3以降とwslcが必要です。wsl --updateで更新してください。' }
 if ($Client -and (-not $HostIP -or -not $Path)) { throw 'Clientでは-HostIPと-Pathが必要です。' }
+Write-Host '[INFO] 実行モード: WSL / Linuxコンテナ (-Wsl)' -ForegroundColor Cyan
+Write-Host "[INFO] コンテナイメージ: $Image"
 $NeedsBuild = $Action -eq 'Build'
 if (-not $NeedsBuild) {
     & wslc image inspect $Image *> $null
     $NeedsBuild = $LASTEXITCODE -ne 0
 }
 if ($NeedsBuild) {
+    Write-Host '[INFO] WSLコンテナイメージを構築します。' -ForegroundColor Cyan
     & wslc build --file (Join-Path $PSScriptRoot 'containers/wsl/Containerfile') --build-arg "BASE_IMAGE=$BaseImage" --tag $Image $PSScriptRoot
     if ($LASTEXITCODE -ne 0 -or $Action -eq 'Build') { exit $LASTEXITCODE }
 }
@@ -154,6 +157,17 @@ if ($LinuxArgs.Count -eq 0) { $LinuxArgs = @('--gen-config') }
 $ContainerArgs += $LinuxArgs
 #endregion
 #region Run
+Write-Host "[INFO] WSLコンテナ名: $ContainerName"
+Write-Host "[INFO] Linux環境・設定の保存先: $WorkspaceVolume (/workspace)"
+if ($DataPath) {
+    Write-Host "[INFO] Windows共有データ: $($DataItem.FullName) -> /workspace/.dbv4"
+} else {
+    Write-Host "[INFO] モデル・認証の保存先: コンテナ用ボリューム内の /workspace/.dbv4"
+}
+if ($Server) {
+    Write-Host "[INFO] サーバー公開設定: http://${PublishAddress}:${Port} (モデル初期化後に接続可能)"
+}
+Write-Host '[INFO] WSL Linuxコンテナを起動します。以降はコンテナ内のログです。' -ForegroundColor Cyan
 & wslc @ContainerArgs
 exit $LASTEXITCODE
 #endregion
