@@ -157,6 +157,12 @@ if ($LinuxArgs.Count -eq 0) { $LinuxArgs = @('--gen-config') }
 $ContainerArgs += $LinuxArgs
 #endregion
 #region Existing container lifecycle
+function Show-WslServerControls {
+    Write-Host '[INFO] WSLサーバーの終了操作:' -ForegroundColor Cyan
+    Write-Host '[INFO]   Ctrl+C: ログ表示だけを終了します。アプリケーションは稼働を続けます。'
+    Write-Host "[INFO]   アプリケーションを停止: Ctrl+Cの後、または別のPowerShellで wslc stop $ContainerName を実行してください。"
+}
+
 $ExistingOutput = & wslc container inspect $ContainerName 2>$null
 if ($LASTEXITCODE -eq 0) {
     $Existing = @(($ExistingOutput -join "`n") | ConvertFrom-Json)[0]
@@ -199,7 +205,7 @@ if ($LASTEXITCODE -eq 0) {
             Write-Host '[INFO] 同じ設定の既存サーバーを使用します。再作成は行いません。'
             Write-Host "[INFO] サーバー公開設定: http://${PublishAddress}:${Port}"
             Write-Host '[INFO] 以降のサーバーログを継続表示します。過去のログは再表示しません。'
-            Write-Host "[INFO] Ctrl+Cでログ表示を終了します。サーバーを停止する場合: wslc stop $ContainerName"
+            Show-WslServerControls
             & wslc logs --follow --tail 0 $Existing.Id
             exit $LASTEXITCODE
         }
@@ -220,6 +226,7 @@ if ($DataPath) {
 }
 if ($Server) {
     Write-Host "[INFO] サーバー公開設定: http://${PublishAddress}:${Port} (モデル初期化後に接続可能)"
+    Show-WslServerControls
 }
 Write-Host '[INFO] WSL Linuxコンテナを起動します。以降はコンテナ内のログです。' -ForegroundColor Cyan
 & wslc @ContainerArgs
