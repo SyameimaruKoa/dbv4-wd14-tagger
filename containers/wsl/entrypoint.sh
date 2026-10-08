@@ -1,5 +1,5 @@
 #!/bin/bash
-# Internal container entry point; callers use run_tagger_wsl.ps1.
+# Internal container entry point; callers use run_tagger.ps1 -Wsl.
 set -euo pipefail
 
 # WSL host libraries plus optional vendor-specific WSL runtime overrides.
