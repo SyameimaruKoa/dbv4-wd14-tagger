@@ -17,13 +17,13 @@
 .PARAMETER BaseImage
     コンテナ構築時のベースイメージ。既定ubuntu:24.04。
 .PARAMETER WorkspaceVolume
-    Linux仮想環境・設定・キャッシュを保持する名前付きボリューム。
+    リポジトリ内のWSLディスクでLinux仮想環境・設定を保持するボリューム名。
 .PARAMETER ContainerName
     コンテナ名。停止後はコンテナ本体だけ削除する。
 .PARAMETER PublishAddress
     ServerのWindows側待受アドレス。既定127.0.0.1。
 .PARAMETER DataPath
-    既存.dbv4のWindowsディレクトリ。未指定時はボリューム内へ保存する。
+    モデル・認証をWindowsと共有するリポジトリ内ディレクトリ。既定は.dbv4。
 .PARAMETER GpuRuntimePath
     追加WSL GPUライブラリのWindowsディレクトリ。読み取り専用で公開する。
 .PARAMETER Interactive
@@ -71,8 +71,55 @@ if ($Help -or $Action -eq 'Help' -or $PSBoundParameters.Count -eq 0) {
 }
 if (-not (Get-Command wslc -ErrorAction SilentlyContinue)) { throw 'WSL 2.9.3以降とwslcが必要です。wsl --updateで更新してください。' }
 if ($Client -and (-not $HostIP -or -not $Path)) { throw 'Clientでは-HostIPと-Pathが必要です。' }
+$RepositoryPath = [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\', '/')
+if (-not $DataPath) { $DataPath = Join-Path $RepositoryPath '.dbv4' }
+$DataPath = [IO.Path]::GetFullPath($DataPath)
+if (-not $DataPath.StartsWith($RepositoryPath + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    throw '-dpの保存先はリポジトリ内のディレクトリに限定します。'
+}
+$StoragePath = Join-Path $RepositoryPath '.dbv4/wsl'
+foreach ($SavedPath in @($DataPath, $StoragePath)) {
+    $CheckPath = $SavedPath
+    while ($CheckPath -and $CheckPath -ne $RepositoryPath) {
+        if ((Test-Path -LiteralPath $CheckPath) -and
+            ((Get-Item -LiteralPath $CheckPath -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw '保存先にはリポジトリ外へリンクする可能性があるジャンクション・シンボリックリンクを指定できません。'
+        }
+        $CheckPath = Split-Path $CheckPath
+    }
+}
+$SettingsPath = Join-Path $env:LOCALAPPDATA 'wslc/settings.yaml'
+$SettingsText = if (Test-Path -LiteralPath $SettingsPath) { [IO.File]::ReadAllText($SettingsPath) } else { '' }
+$StorageSetting = [regex]::Match($SettingsText, '(?m)^(?<Indent>[ \t]+)storagePath:[ \t]*(?<Path>.+?)[ \t]*(?:#.*)?\r?$')
+$ConfiguredStorage = $StorageSetting.Groups['Path'].Value.Trim().Trim('"', "'").Replace("''", "'")
+if ($ConfiguredStorage -ne $StoragePath) {
+    $Sessions = & wslc system session list
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    if (@($Sessions | Where-Object { $_ -match '^\s*\d+\s+' }).Count -gt 0) {
+        throw 'リポジトリ内の保存先へ切り替えるには既存WSLコンテナを停止し、wslc system session terminate を実行してから再実行してください。既存データの移行は行いません。'
+    }
+    $SettingIndent = '    '
+    if ($StorageSetting.Success) {
+        $SettingIndent = $StorageSetting.Groups['Indent'].Value
+    } else {
+        $SessionIndent = [regex]::Match($SettingsText, '(?m)^session:[ \t]*\r?\n(?:[ \t]*#.*\r?\n|[ \t]*\r?\n)*(?<Indent>[ \t]+)\S')
+        if ($SessionIndent.Success) { $SettingIndent = $SessionIndent.Groups['Indent'].Value }
+    }
+    $StorageLine = "${SettingIndent}storagePath: '$($StoragePath.Replace("'", "''"))'"
+    if ($StorageSetting.Success) {
+        $SettingsText = $SettingsText.Remove($StorageSetting.Index, $StorageSetting.Length).Insert($StorageSetting.Index, $StorageLine)
+    } elseif ($SettingsText -match '(?m)^session:[ \t]*\r?$') {
+        $SettingsText = [regex]::Replace($SettingsText, '(?m)^session:[ \t]*\r?$', "session:`n$StorageLine")
+    } else {
+        $SettingsText += "`nsession:`n$StorageLine`n"
+    }
+    New-Item -ItemType Directory -Path (Split-Path $SettingsPath), $StoragePath -Force | Out-Null
+    [IO.File]::WriteAllText($SettingsPath, $SettingsText, [Text.UTF8Encoding]::new($false))
+}
+New-Item -ItemType Directory -Path $DataPath -Force | Out-Null
 Write-Host '[INFO] 実行モード: WSL / Linuxコンテナ (-Wsl)' -ForegroundColor Cyan
 Write-Host "[INFO] コンテナイメージ: $Image"
+Write-Host "[INFO] WSLディスクの保存先: $StoragePath"
 $NeedsBuild = $Action -eq 'Build'
 if (-not $NeedsBuild) {
     & wslc image inspect $Image *> $null
@@ -218,9 +265,9 @@ if ($LASTEXITCODE -eq 0) {
 #endregion
 #region Run
 Write-Host "[INFO] WSLコンテナ名: $ContainerName"
-Write-Host "[INFO] Linux環境・設定の保存先: $WorkspaceVolume (/workspace)"
+Write-Host "[INFO] Linux環境・設定の保存先: $StoragePath 内の $WorkspaceVolume (/workspace)"
 if ($DataPath) {
-    Write-Host "[INFO] Windows共有データ: $($DataItem.FullName) -> /workspace/.dbv4"
+    Write-Host "[INFO] Windows / Linux共通のモデル・認証: $($DataItem.FullName) -> /workspace/.dbv4"
 } else {
     Write-Host "[INFO] モデル・認証の保存先: コンテナ用ボリューム内の /workspace/.dbv4"
 }

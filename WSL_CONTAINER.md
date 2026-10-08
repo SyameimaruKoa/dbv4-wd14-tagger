@@ -96,17 +96,19 @@ Windowsの画像へ直接タグを保存する例:
 
 ## 保存先・認証・更新
 
-既定では名前付きボリューム`dbv4-tagger-wsl-workspace`にLinuxの`venv_*`、`config.json`、`.dbv4`を保持する。起動ごとにイメージ内のコードを更新コピーし、保存済みの設定・モデル・仮想環境は保持する。ソース変更後は`-WslAction Build`で再構築する。
+WSLCが指定位置のディスクを使うため、`%LOCALAPPDATA%/wslc/settings.yaml`の`session.storagePath`を`.dbv4/wsl`の絶対パスへ設定する。これはWSLC共通の設定ファイルであり、コンテナデータの保存先ではない。既存のCPU・メモリ設定などは保持する。既存セッションが稼働中の場合は自動停止せず、`wslc system session terminate`を案内して停止する。外部保存先からの自動移行・コピーは行わない。
 
-Windows版の既存モデルとHugging Face認証を共有する場合:
+モデル・Hugging Face認証は、既定でリポジトリの`.dbv4`をWindows版とLinuxコンテナで共有する。モデルをOSごとに取得・複製しない。Linuxの`venv_*`と`config.json`は名前付きボリューム`dbv4-tagger-wsl-workspace`に保持し、イメージ・ボリュームを収めるWSLディスク自体もリポジトリの`.dbv4/wsl`に保存する。起動ごとにイメージ内のコードを更新コピーし、保存済みの設定・モデル・仮想環境は保持する。ソース変更後は`-WslAction Build`で再構築する。
+
+既定の共有モデルで起動検証する場合（`-dp`は不要）:
 
 ```powershell
-.\run_tagger.ps1 -Wsl -Probe -Provider intel -ModelProfile ultra -DataPath .\.dbv4
+.\run_tagger.ps1 -ws -pr -ep intel -m ultra
 ```
 
-`-DataPath`は既存の`.dbv4`ディレクトリを`/workspace/.dbv4`へ公開する。Windows版の仮想環境や`config.json`は共有しない。同じデータをWindows版とコンテナ版で同時に更新しない。
+`-dp`は共有データの保存先を変更する場合のみ使用でき、リポジトリ内のディレクトリに限定する。未指定でも`.dbv4`を`/workspace/.dbv4`へ公開する。Windows版の仮想環境や`config.json`は共有しない。同じデータをWindows版とコンテナ版で同時に更新しない。
 
-独立した保存先へログインする場合:
+Windowsと共通の認証へログインする場合:
 
 ```powershell
 .\run_tagger.ps1 -Wsl -Login
@@ -120,7 +122,7 @@ Loginは端末の標準入力を接続する。通常の起動では標準入力
 wslc stop dbv4-tagger-wsl
 ```
 
-停止後にコンテナ本体は削除されるが、ボリュームとWindowsの画像・共有データは残る。
+停止後にコンテナ本体は削除されるが、リポジトリ内のWSLディスク・ボリュームとWindowsの画像・共有データは残る。
 
 同じコマンドを再実行したときに同名のServerが稼働していれば、イメージ・処理引数・マウント・公開ポートを確認し、一致する場合は既存Serverを使用して新しいログを継続表示する。過去の認証待ちログなどは再表示しない。Ctrl+Cでログ表示を終了し、Serverの停止には`wslc stop dbv4-tagger-wsl`を使う。停止済みの本ツールのコンテナは、保存ボリュームを削除せず再作成する。設定が異なる稼働中コンテナは自動停止せず、停止コマンドを案内する。同名の別アプリのコンテナは変更しない。
 

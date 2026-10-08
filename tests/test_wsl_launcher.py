@@ -13,18 +13,25 @@ POWERSHELL = shutil.which('powershell') or shutil.which('pwsh')
 
 @unittest.skipUnless(POWERSHELL, 'PowerShell required')
 class WslLauncherTests(unittest.TestCase):
-    def launch(self, arguments='', missing=0, status=0, existing=None):
+    def launch(self, arguments='', missing=0, status=0, existing=None, settings='', active=False):
         with tempfile.TemporaryDirectory(prefix='WSL 日本語 ') as folder:
             trace = Path(folder) / 'trace.json'
             script = Path(folder) / 'invoke.ps1'
             state = Path(folder) / 'existing.json'
             if existing is not None:
                 state.write_text(json.dumps([existing]), encoding='utf-8-sig')
+            if settings:
+                settings_path = Path(folder) / 'wslc/settings.yaml'
+                settings_path.parent.mkdir()
+                settings_path.write_text(settings, encoding='utf-8')
             script.write_text(
                 "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)\n"
                 "function global:wslc {\n"
                 "    ConvertTo-Json -InputObject @($args) -Compress | Add-Content $env:TRACE -Encoding UTF8\n"
                 "    if ($args[0] -eq 'image') { $global:LASTEXITCODE = [int]$env:MISSING }\n"
+                "    elseif ($args[0] -eq 'system') {\n"
+                "        if ($env:ACTIVE -eq '1') { '1 10580 existing' }; $global:LASTEXITCODE = 0\n"
+                "    }\n"
                 "    elseif ($args[0] -eq 'container' -and $args[1] -eq 'inspect') {\n"
                 "        if (Test-Path $env:EXISTING) { Get-Content $env:EXISTING -Raw; $global:LASTEXITCODE = 0 }\n"
                 "        else { $global:LASTEXITCODE = 1 }\n"
@@ -36,9 +43,15 @@ class WslLauncherTests(unittest.TestCase):
             result = subprocess.run([POWERSHELL, '-NoProfile', '-File', str(script)],
                 capture_output=True, env={**os.environ, 'TRACE': str(trace),
                     'MISSING': str(missing), 'STATUS': str(status),
-                    'LAUNCHER': str(ROOT / 'run_tagger.ps1'), 'IMAGES': folder, 'EXISTING': str(state)})
+                    'LAUNCHER': str(ROOT / 'run_tagger.ps1'), 'IMAGES': folder, 'EXISTING': str(state),
+                    'LOCALAPPDATA': folder, 'DATA': str(ROOT / '.dbv4'), 'ACTIVE': str(int(active))})
             calls = [json.loads(line) for line in trace.read_text(encoding='utf-8-sig').splitlines()] if trace.exists() else []
-            return result, calls
+            if result.returncode == 0 and calls:
+                saved_settings = (Path(folder) / 'wslc/settings.yaml').read_text(encoding='utf-8')
+                self.assertIn(str(ROOT / '.dbv4' / 'wsl'), saved_settings)
+                if 'cpuCount: 4' in settings:
+                    self.assertIn('cpuCount: 4', saved_settings)
+            return result, [call for call in calls if call[0] != 'system']
 
     def test_server_and_gpu_options(self):
         result, calls = self.launch('-s -ep intel -m ultra -gi 2 -u 5100 -pa 0.0.0.0')
@@ -49,6 +62,7 @@ class WslLauncherTests(unittest.TestCase):
         self.assertEqual(args[args.index('--gpu-index') + 1], '2')
         self.assertNotIn('--directml-device-index', args)
         self.assertIn('--server', args)
+        self.assertIn(f'type=bind,source={ROOT / ".dbv4"},target=/workspace/.dbv4', args)
         output = result.stdout.decode('utf-8')
         self.assertIn('実行モード: WSL / Linuxコンテナ (-Wsl)', output)
         self.assertIn('コンテナイメージ: dbv4-tagger-wsl:local', output)
@@ -98,7 +112,9 @@ class WslLauncherTests(unittest.TestCase):
                 'Cmd': ['--server', '--provider', 'intel', '--gpu-index', '0',
                     '--ncnn-precision', 'fp32', '--model-profile', 'ultra', '--port', '5000']},
             'Mounts': [{'Destination': '/workspace', 'Type': 'volume',
-                'Name': 'dbv4-tagger-wsl-workspace', 'ReadWrite': True}],
+                'Name': 'dbv4-tagger-wsl-workspace', 'ReadWrite': True},
+                {'Destination': '/workspace/.dbv4', 'Type': 'bind',
+                    'Source': str(ROOT / '.dbv4'), 'ReadWrite': True}],
             'Ports': {'5000/tcp': [{'HostIp': '127.0.0.1', 'HostPort': '5000'}]},
         }
 
@@ -146,11 +162,26 @@ class WslLauncherTests(unittest.TestCase):
         result, calls = self.launch()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('--gen-config', calls[-1])
-        result, calls = self.launch('-lo -vol custom-volume -dp $env:IMAGES -gr $env:IMAGES')
+        result, calls = self.launch('-lo -vol custom-volume -dp $env:DATA -gr $env:IMAGES')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('--login', calls[-1])
         self.assertIn('--interactive', calls[-1])
         self.assertIn('type=volume,source=custom-volume,target=/workspace', calls[-1])
+
+    def test_external_data_path_is_rejected(self):
+        result, calls = self.launch('-lo -dp $env:IMAGES')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(any(call[0] == 'run' for call in calls))
+
+    def test_storage_settings_and_active_session(self):
+        result, calls = self.launch('-ac Build', settings='session:\n    cpuCount: 4\n    storagePath: default\n')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result, calls = self.launch('-ac Build', settings='session:\n  cpuCount: 4\n')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result, calls = self.launch('-ac Build', active=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(calls, [])
+        self.assertIn('wslc system session terminate', result.stderr.decode('utf-8').replace('\r\n', ''))
 
     def test_help_does_not_start_container(self):
         result, calls = self.launch('-h')

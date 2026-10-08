@@ -137,13 +137,13 @@
 .PARAMETER WslBaseImage
     構築時のベースイメージ（既定ubuntu:24.04）。
 .PARAMETER WslWorkspaceVolume
-    Linux仮想環境と設定の保存先ボリューム名。
+    リポジトリ内のWSLディスクでLinux仮想環境と設定を保持するボリューム名。
 .PARAMETER WslContainerName
     起動するコンテナ名。
 .PARAMETER WslPublishAddress
     サーバーをWindowsへ公開するアドレス（既定127.0.0.1）。
 .PARAMETER WslDataPath
-    既存の.dbv4を共有するWindowsディレクトリ。
+    モデル・認証をWindowsと共有するリポジトリ内ディレクトリ（既定 .dbv4）。
 .PARAMETER WslGpuRuntimePath
     追加GPUライブラリを読み取り専用で公開するWindowsディレクトリ。
 .PARAMETER WslInteractive
@@ -362,7 +362,7 @@ function Show-Help {
         Write-Host "    -vol <名前>             Linux環境・設定の保存先"
         Write-Host "    -cn <名前>              コンテナ名"
         Write-Host "    -pa <IP>              Windows側待受（既定 127.0.0.1）"
-        Write-Host "    -dp <パス>              既存.dbv4のモデル・認証を共有"
+        Write-Host "    -dp <パス>              モデル・認証の共有先（既定 .dbv4、リポジトリ内のみ）"
         Write-Host "    -gr <パス>              追加GPUライブラリ"
         Write-Host "    -it                   標準入力を接続"
         Write-Host "    引数なしの-wsはLinux環境のセットアップのみを行います。"
