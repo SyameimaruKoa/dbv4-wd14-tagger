@@ -98,8 +98,76 @@ param(
 
 #region Help and prerequisites
 $ErrorActionPreference = 'Stop'
+function Show-Help {
+    $Details = Get-Help $PSCommandPath -Full
+    Write-Host 'DBV4 Tagger Universal (日本語ヘルプ)' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host '使い方: .\run_tagger_wsl.ps1 [スイッチ] [値付きオプション] -Path <画像パス>' -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host '  WSL Linuxコンテナ版。引数なしではヘルプを表示します。' -ForegroundColor Gray
+    Write-Host '  初回は -Action Build でイメージを構築します。'
+    Write-Host ''
+    Write-Host '処理時に必要な入力:' -ForegroundColor Yellow
+    Write-Host '    -Path <画像パス>          Standalone/Clientで処理するWindowsのファイル/フォルダ'
+    Write-Host '    -HostName <ホスト名/IP>  Client接続先（Clientでは必須）'
+    Write-Host ''
+    Write-Host '値を指定するオプション（<>内の値が必要）:' -ForegroundColor Yellow
+    $ValueOptions = [ordered]@{
+        Action = 'Build|Run|Help'
+        Mode = 'Server|Standalone|Client|Login|Probe'
+        Provider = 'プロバイダ名'
+        Path = '画像パス'
+        HostName = 'ホスト名/IP'
+        Port = 'ポート番号'
+        PublishAddress = '127.0.0.1|0.0.0.0'
+        ModelProfile = 'プロファイル名'
+        GpuIndex = '0以上の整数'
+        Image = 'イメージ名'
+        BaseImage = 'ベースイメージ名'
+        WorkspaceVolume = 'ボリューム名'
+        ContainerName = 'コンテナ名'
+        DataPath = 'ディレクトリパス'
+        GpuRuntimePath = 'ディレクトリパス'
+        TaggerArgs = '追加引数の配列'
+    }
+    $Defaults = @{
+        Action = 'Run'; Mode = 'Server'; Provider = 'cpu'; Port = '5000'
+        PublishAddress = '127.0.0.1'; ModelProfile = 'balanced'; GpuIndex = '0'
+        Image = 'dbv4-tagger-wsl:local'; BaseImage = 'ubuntu:24.04'
+        WorkspaceVolume = 'dbv4-tagger-wsl-workspace'; ContainerName = 'dbv4-tagger-wsl'
+    }
+    foreach ($Name in $ValueOptions.Keys) {
+        $ParameterHelp = $Details.parameters.parameter | Where-Object { $_.name -eq $Name }
+        $Description = ($ParameterHelp.description | ForEach-Object { $_.Text.Trim() }) -join ' '
+        $Description = $Description -replace '\s*\r?\n\s*', ' '
+        $Marker = ' '
+        if ($Defaults.ContainsKey($Name)) {
+            $Marker = '★'
+            if ($Description -notmatch '既定') {
+                $Description += "（既定 $($Defaults[$Name])）"
+            }
+        }
+        Write-Host ('  {0} {1,-48} {2}' -f $Marker, "-$Name <$($ValueOptions[$Name])>", $Description)
+    }
+    Write-Host ''
+    Write-Host '値を指定しないスイッチ:' -ForegroundColor Yellow
+    foreach ($Name in @('Interactive', 'Help')) {
+        $ParameterHelp = $Details.parameters.parameter | Where-Object { $_.name -eq $Name }
+        $Description = ($ParameterHelp.description | ForEach-Object { $_.Text.Trim() }) -join ' '
+        Write-Host "    -$Name  $Description"
+    }
+    Write-Host ''
+    Write-Host '★ は初期設定。GPU指定時は全GPUを公開し、-GpuIndexで使用デバイスを選びます。'
+    Write-Host '  追加引数のパスはコンテナ内のパスを指定してください。'
+    Write-Host ''
+    Write-Host '実行例:' -ForegroundColor Yellow
+    foreach ($Example in $Details.examples.example) {
+        Write-Host "    $($Example.code.Trim())"
+    }
+    Write-Host ''
+}
 if ($Help -or $Action -eq 'Help' -or $PSBoundParameters.Count -eq 0) {
-    Get-Help $PSCommandPath -Full
+    Show-Help
     exit 0
 }
 if (-not (Get-Command wslc -ErrorAction SilentlyContinue)) {

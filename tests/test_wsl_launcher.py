@@ -19,6 +19,7 @@ class WslLauncherTests(unittest.TestCase):
             script = Path(folder) / 'invoke.ps1'
             # Function mocking keeps argument boundaries and propagates exit codes.
             script.write_text(
+                "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)\n"
                 "function global:wslc {\n"
                 "    ConvertTo-Json -InputObject @($args) -Compress | "
                 "Set-Content -LiteralPath $env:WSL_TEST_TRACE -Encoding UTF8\n"
@@ -103,6 +104,15 @@ class WslLauncherTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIsNone(args)
                 self.assertIn(b'WorkspaceVolume', result.stdout)
+                output = result.stdout.decode('utf-8')
+                for heading in ['DBV4 Tagger Universal (日本語ヘルプ)', '使い方:',
+                                '処理時に必要な入力:', '値を指定するオプション（<>内の値が必要）:',
+                                '値を指定しないスイッチ:', '実行例:']:
+                    self.assertIn(heading, output)
+                self.assertNotIn('SYNTAX', output)
+                provider_line = next(line for line in output.splitlines() if '-Provider <' in line)
+                self.assertIn('cpu / cuda / tensorrt', provider_line)
+                self.assertIn('（既定 cpu）', provider_line)
 
     def test_powershell_source_has_utf8_bom(self):
         self.assertTrue((ROOT / 'run_tagger_wsl.ps1').read_bytes().startswith(b'\xef\xbb\xbf'))
