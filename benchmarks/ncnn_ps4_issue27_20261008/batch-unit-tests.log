@@ -1,0 +1,190 @@
+.....[02:53:11] 127.0.0.1       | File: 画像 | Size: 0.2 KB | Processing...
+[02:53:11] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 45.65 MiB/s
+...[02:53:12] 127.0.0.1       | File: 画像 | Size: 20.4 KB | Processing...
+[02:53:12] 127.0.0.1       | File: 画像 | HTTP受信: 0.02 MiB / 0.000s = 463.57 MiB/s
+[02:53:12] 127.0.0.1       | File: 画像 | Size: 7.1 KB | Processing...
+[02:53:12] 127.0.0.1       | File: 画像 | HTTP受信: 0.01 MiB / 0.000s = 1220.08 MiB/s | 原本: 0.01 MiB
+[INFO] 127.0.0.1 | 推論開始: 2枚
+[INFO] 127.0.0.1 | 推論完了: 2枚 / 0.00s
+[INFO] 127.0.0.1 | 結果送信完了: 2枚
+.....[02:53:14] 127.0.0.1       | File: 画像 | Size: 0.3 KB | Processing...
+[02:53:14] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 14.63 MiB/s
+[WARN] 127.0.0.1 | Batch image 2: cannot identify image file <_io.BytesIO object at 0x7f28a00e8d10>
+[02:53:14] 127.0.0.1       | File: 画像 | Size: 0.2 KB | Processing...
+[02:53:14] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 39.01 MiB/s
+[WARN] 127.0.0.1 | Batch image 1: cannot identify image file <_io.BytesIO object at 0x7f289ec53ab0>
+...[02:53:14] 127.0.0.1       | File: 画像 | Size: 0.1 KB | Processing...
+[02:53:14] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 20.93 MiB/s
+[02:53:14] 127.0.0.1       | File: 画像 | Processed OK (0.00s)
+....[02:53:15] 127.0.0.1       | File: 画像 | Size: 0.2 KB | Processing...
+[02:53:15] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 87.17 MiB/s
+....[02:53:15] 127.0.0.1       | File: 画像 | Size: 0.1 KB | Processing...
+[02:53:15] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 2.50 MiB/s
+[02:53:15] 127.0.0.1       | File: 画像 | Size: 0.1 KB | Processing...
+[02:53:15] 127.0.0.1       | File: 画像 | HTTP受信: 0.00 MiB / 0.000s = 25.16 MiB/s
+[02:53:15] 127.0.0.1       | File: 画像 | Processed OK (0.00s)
+[02:53:15] 127.0.0.1       | File: 画像 | Processed OK (0.00s)
+.[02:53:15] 127.0.0.1       | File: 画像 | Size: 129.00 MB | Processing...
+................................................s......[INFO] Hugging Faceへ未ログインのため、ログインを開始します。
+[INFO] ONNX外部データを同一ディレクトリに配置: /tmp/tmpc3mj_vwj/models/ea9b99018386563d
+[WARN] balanced: Hugging Faceで利用条件への同意が必要です。
+[INFO] DBV4モデル: test/model (balanced)
+[INFO] ラベル数: 5
+[INFO] metadata version: test
+[INFO] 入力 shape: ['batch', 3, 384, 384]
+[INFO] アクティブプロバイダ: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[INFO] 起動検証で実行されたEP: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[WARN] balanced: Hugging Faceで利用条件への同意が必要です。
+[INFO] DBV4モデル: test/model (balanced)
+[INFO] ラベル数: 5
+[INFO] metadata version: test
+[INFO] 入力 shape: ['batch', 3, 384, 384]
+[INFO] アクティブプロバイダ: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+[WARN] balanced: Hugging Faceで利用条件への同意が必要です。
+[INFO] DBV4モデル: test/model (balanced)
+[INFO] ラベル数: 5
+[INFO] metadata version: test
+[INFO] 入力 shape: ['batch', 3, 384, 384]
+[INFO] アクティブプロバイダ: ['CPUExecutionProvider']
+[INFO] OpenVINO GPU.2: Intel Iris Xe
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[INFO] ncnn Vulkan GPU 0 (test GPU): ultra, fp32, ラベル数 4
+[INFO] ncnn Vulkan GPU 0 (test GPU): ultra, fp16-packed, ラベル数 4
+[ncnn streaming] section 1/2 (4 images)
+[ncnn streaming] section 2/2 (4 images)
+[ncnn streaming] section 1/2 (1 images)
+[ncnn streaming] section 2/2 (1 images)
+.[ncnn streaming] section 1/1 (1 images)
+[ncnn streaming] section 1/1 (1 images)
+...[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=8000 MiB, 重み=2700 MiB; 分割目安=0 MiB (0=常駐)。
+[INFO] ncnn メモリ自動設定: 空きRAM=5000 MiB, GPUメモリ予算=2048 MiB, 重み=2700 MiB; 分割目安=1024 MiB (0=常駐)。
+[INFO] ncnn メモリ自動設定: 空きRAM=2000 MiB, GPUメモリ予算=8000 MiB, 重み=2700 MiB; 分割目安=512 MiB (0=常駐)。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=1024 MiB, 重み=2700 MiB; 分割目安=512 MiB (0=常駐)。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=512 MiB, 重み=2700 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=不明 MiB, 重み=2700 MiB; 分割目安=0 MiB (0=常駐)。
+[INFO] ncnn メモリ自動設定: 空きRAM=7400 MiB, GPUメモリ予算=4152 MiB, 重み=2700 MiB; 分割目安=0 MiB (0=常駐)。
+...[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=8000 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=3181 MiB, GPUメモリ予算=3929 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=350 MiB, 重み=2642 MiB; 分割目安=64 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=不明 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=8000 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=3181 MiB, GPUメモリ予算=3929 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=350 MiB, 重み=2642 MiB; 分割目安=64 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=不明 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=8000 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=3181 MiB, GPUメモリ予算=3929 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=350 MiB, 重み=2642 MiB; 分割目安=64 MiB (0=常駐)。
+[INFO] ncnn PS4 RADV: GPUリセット回避のため自動分割を128 MiB以下に制限します。
+[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=不明 MiB, 重み=2642 MiB; 分割目安=128 MiB (0=常駐)。
+.[INFO] ncnn PS4 RADV: 省メモリ分割推論を自動選択します (128 MiB)。
+[INFO] ncnn PS4 RADV: 省メモリ分割推論を自動選択します (128 MiB)。
+.[INFO] ncnn メモリ自動設定: 空きRAM=16000 MiB, GPUメモリ予算=8000 MiB, 重み=128 MiB; 分割目安=0 MiB (0=常駐)。
+.[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ncnn PS4 RADV: 省メモリ分割推論を自動選択します (128 MiB)。
+......ssss..........[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[WARN] ultraはRTX 2070 Max-Q・DirectML・batch-size=4でピーク6,583MiB、測定前を除く増分5,743MiBを確認済みです。8GB以上のGPUを推奨し、空き容量不足時はbatch-sizeを下げてください。
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+[INFO] Pixiv用の画像フォルダをスキャン中: /tmp/tmpvzr6bmpq
+[INFO] Pixiv画像フォルダを削除: /tmp/tmp2kbcromf/source/artist
+[INFO] レポート作成: report_R-00.html
+[WARN] TensorrtExecutionProviderを使用できません: missing
+[INFO] Serverのモデルに自動整合: lightweight (animetimm/mobilenetv4_conv_aa_large.dbv4-full)
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[INFO] DBV4 Client batch-size=2
+  0%|          | 0/3 [00:00<?, ?img/s]                                        0%|          | 0/3 [00:00<?, ?img/s]  0%|          | 0/3 [00:00<?, ?img/s, 推論:1枚(9258.9/s) Skip:0枚(0.0/s)]                                                                            0%|          | 0/3 [00:00<?, ?img/s, 推論:1枚(9258.9/s) Skip:0枚(0.0/s)] 33%|███▎      | 1/3 [00:00<00:00, 333.54img/s, 推論:2枚(11320.7/s) Skip:0枚(0.0/s)]                                                                                     33%|███▎      | 1/3 [00:00<00:00, 287.66img/s, 推論:2枚(11320.7/s) Skip:0枚(0.0/s)]                                                                                     67%|██████▋   | 2/3 [00:00<00:00, 467.83img/s, 推論:2枚(11320.7/s) Skip:0枚(0.0/s)] 67%|██████▋   | 2/3 [00:00<00:00, 432.58img/s, 推論:3枚(11661.6/s) Skip:0枚(0.0/s)]                                                                                     67%|██████▋   | 2/3 [00:00<00:00, 397.45img/s, 推論:3枚(11661.6/s) Skip:0枚(0.0/s)]100%|██████████| 3/3 [00:00<00:00, 529.70img/s, 推論:3枚(11661.6/s) Skip:0枚(0.0/s)]
+.[WARN] 2枚のバッチ応答が120秒でタイムアウトしました。以降は1枚ずつ処理します。
+[0.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+[1.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+[WARN] 1枚のバッチ応答が120秒でタイムアウトしました。以降は1枚ずつ処理します。
+[2.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 3 枚 | 速度: 11661.64 img/s (0.1 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[WARN] 接続先Serverはバッチ通信に未対応です。Serverを更新・再起動するまで1枚ずつ処理します。
+  0%|          | 0/2 [00:00<?, ?img/s]                                        0%|          | 0/2 [00:00<?, ?img/s]                                        0%|          | 0/2 [00:00<?, ?img/s]  0%|          | 0/2 [00:00<?, ?img/s]
+.互換性エラー: model_id mismatch
+[ERROR] Server/Clientの構成が一致しないため処理を停止します。
+[INFO] Client転送モード: 元画像をそのまま送信します。
+[WARN] 接続先Serverはバッチ通信に未対応です。Serverを更新・再起動するまで1枚ずつ処理します。
+  0%|          | 0/2 [00:00<?, ?img/s]                                        0%|          | 0/2 [00:00<?, ?img/s] 50%|█████     | 1/2 [00:00<00:00, 1339.61img/s, 推論:1枚(12446.0/s) Skip:0枚(0.0/s)]                                                                                      50%|█████     | 1/2 [00:00<00:00, 831.38img/s, 推論:1枚(12446.0/s) Skip:0枚(0.0/s)]100%|██████████| 2/2 [00:00<00:00, 1204.91img/s, 推論:1枚(12446.0/s) Skip:0枚(0.0/s)]
+..サーバー処理エラー one.jpg: HTTP 500
+[two.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 12446.01 img/s (0.1 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] Client仮想環境の前処理ライブラリをServerに合わせます: Pillow==11.3.0, numpy==2.1.3
+[INFO] 更新したライブラリを読み込むためClientを再起動します。
+.[INFO] Server準備中: TensorRT engine build。接続したまま待機します。
+[INFO] Serverのモデル準備が完了しました。
+.[WARN] 画像コーデックの版が異なる形式は結果保持のため元画像で送信します: .jpg, .jpeg
+[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。
+[INFO] DBV4 Client batch-size=2
+  0%|          | 0/2 [00:00<?, ?img/s]  0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(3080.6/s) Skip:0枚(0.0/s)]                                                                            0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(3080.6/s) Skip:0枚(0.0/s)]                                                                           50%|█████     | 1/2 [00:00<00:00, 418.43img/s, 推論:2枚(3080.6/s) Skip:0枚(0.0/s)]100%|██████████| 2/2 [00:00<00:00, 665.13img/s, 推論:2枚(3080.6/s) Skip:0枚(0.0/s)]
+....[one.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+[two.webp] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 2 枚 | 速度: 3080.65 img/s (0.3 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] アクセス申請・同意ページをブラウザで開きました: https://huggingface.co/animetimm/convnextv2_huge.dbv4-full
+[INFO] 利用条件への同意後、Hugging Faceへ再ログインしてください。
+[WARN] ClientとServerの前処理結果が一致しません。ライブラリ差分: 。自動版合わせ: sync failed。元画像送信で続行します。
+[INFO] Client転送モード: 元画像をそのまま送信します。
+  0%|          | 0/1 [00:00<?, ?img/s]  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(11125.5/s) Skip:0枚(0.0/s)]                                                                             0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(11125.5/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00, 924.06img/s, 推論:1枚(11125.5/s) Skip:0枚(0.0/s)]
+.......[one.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 11125.47 img/s (0.1 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+[INFO] アクセス申請・同意ページをブラウザで開きました: https://huggingface.co/animetimm/convformer_s36.dbv4-full
+[INFO] 利用条件への同意後、Hugging Faceへ再ログインしてください。
+[INFO] Hugging Faceへ未ログインのため、ログインを開始します。
+[INFO] DBV4 batch-size=2, io-workers=0
+  0%|          | 0/2 [00:00<?, ?img/s]  0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(1498.0/s) Skip:0枚(0.0/s)]                                                                            0%|          | 0/2 [00:00<?, ?img/s, 推論:2枚(1498.0/s) Skip:0枚(0.0/s)]                                                                           50%|█████     | 1/2 [00:00<00:00, 424.10img/s, 推論:2枚(1498.0/s) Skip:0枚(0.0/s)]100%|██████████| 2/2 [00:00<00:00, 740.06img/s, 推論:2枚(1498.0/s) Skip:0枚(0.0/s)]
+.エラー one.jpg: decode failed
+エラー two.jpg: decode failed
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 2 枚 | 速度: 1497.97 img/s (0.7 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚
+
+[INFO] Port: 42863 で待受開始。モデル読み込み中はClientを待機させます。
+
+[INFO] DBV4推論サーバー稼働中 Port: 42863
+[INFO] 同時処理数: 2
+[INFO] model_id=test/model
+[INFO] output_size=5
+[INFO] metadata_version=test-version
+...[INFO] Client前処理モード: モデル入力テンソルを可逆圧縮して送信します。
+  0%|          | 0/1 [00:00<?, ?img/s]                                        0%|          | 0/1 [00:00<?, ?img/s]  0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(1991.6/s) Skip:0枚(0.0/s)]                                                                            0%|          | 0/1 [00:00<?, ?img/s, 推論:1枚(1991.6/s) Skip:0枚(0.0/s)]100%|██████████| 1/1 [00:00<00:00, 684.45img/s, 推論:1枚(1991.6/s) Skip:0枚(0.0/s)]
+..
+----------------------------------------------------------------------
+Ran 133 tests in 7.721s
+
+OK (skipped=5)
+[WARN] 前処理済み転送に失敗しました: tensor rejected。元画像送信で続行します。
+[one.jpg] Gen:[32m████[90m░[0m90.0% Sen:[33m[90m░░░░░[0m10.0% Que:[35m[90m░░░░░[0m05.0% Exp:[31m[90m░░░░░[0m01.0% => [32m[R-00][0m
+
+[完了] 処理結果サマリー:
+  ・推論実行ファイル (DBV4 AI演算あり): 1 枚 | 速度: 1991.60 img/s (0.5 ms/img)
+  ・演算スキップファイル (DBV4 score): 0 枚 | 速度: 測定対象なし
+  ・詳細: タグ書き込み 0 枚, 整理移動 0 枚

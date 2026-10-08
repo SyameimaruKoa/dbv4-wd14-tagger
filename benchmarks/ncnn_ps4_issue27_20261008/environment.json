@@ -1,0 +1,7 @@
+{
+  "kernel": "7.1.7-Strawberry-General-FullLTO+",
+  "machine": "x86_64",
+  "source_commit": "4829fb9f381801a85fbf9be375cdfc77e5492108",
+  "note": "Working tree adds PS4 automatic partition cap; HF_HOME points to existing local cache. Original unsafe automatic inference was not rerun to avoid known GPU reset.",
+  "command": "HF_HOME=\"$PWD/.dbv4/huggingface\" venv_ncnn/bin/python benchmark_ncnn.py --provider ncnn --profile ultra --warmup 1 --iterations 1 --reference benchmarks/ncnn_local_20261002/cpu-b1.json --output benchmarks/ncnn_ps4_issue27_20261008/auto-b1.json"
+}

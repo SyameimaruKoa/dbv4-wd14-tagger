@@ -300,9 +300,12 @@ class NcnnRuntimeModel:
 class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
     """Execute unchanged graph sections with one section resident at a time.
 
+    Each section is reused across up to four images before it is released.
     This trades model reloads and CPU/GPU transfers for a lower memory peak.
     Memory-based selection or an explicit size enables this runtime.
     """
+
+    batch_limit = 4  # Reuse each loaded section across a bounded logical batch.
 
     def __init__(self, metadata, preprocessor, model_prefix, gpu_index=0,
                  precision='fp32', part_size_mib=128):
@@ -328,13 +331,18 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
     def _predict_sections(self, batch_nchw):
         import ncnn
 
+        samples = list(batch_nchw)
         results = []
-        for sample in batch_nchw:
-            tensor = np.ascontiguousarray(sample, dtype=np.float32)
-            if tensor.ndim != 3 or tensor.shape[0] != 3:
-                raise ValueError(f'ncnn入力はCHW 3チャネルが必要です: {tensor.shape}')
+        # Bound intermediate CPU activations even for direct callers with large batches.
+        for offset in range(0, len(samples), self.batch_limit):
+            tensors = [np.ascontiguousarray(sample, dtype=np.float32)
+                       for sample in samples[offset:offset + self.batch_limit]]
+            for tensor in tensors:
+                if tensor.ndim != 3 or tensor.shape[0] != 3:
+                    raise ValueError(f'ncnn入力はCHW 3チャネルが必要です: {tensor.shape}')
             for index, part in enumerate(self.parts):
-                print(f'[ncnn streaming] section {index + 1}/{len(self.parts)}', flush=True)
+                print(f'[ncnn streaming] section {index + 1}/{len(self.parts)} '
+                      f'({len(tensors)} images)', flush=True)
                 self.net = ncnn.Net()
                 extractor = output = mat = None
                 try:
@@ -345,20 +353,23 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
                         raise RuntimeError(f'Cannot load ncnn section {index}')
                     if self.net.load_model(str(self.part_directory / part['bin'])) != 0:
                         raise RuntimeError(f'Cannot load ncnn section weights {index}')
-                    extractor = self.net.create_extractor()
-                    # Owned ncnn allocation also supplies native alignment.
-                    mat = ncnn.Mat(tensor).clone()
-                    if extractor.input(part['input'], mat) != 0:
-                        raise RuntimeError(f'Cannot input ncnn section {index}')
-                    status, output = extractor.extract(part['output'])
-                    if status != 0:
-                        raise RuntimeError(f'ncnn section {index} failed: {status}')
-                    tensor = np.asarray(output).copy()
+                    for sample_index, tensor in enumerate(tensors):
+                        try:
+                            extractor = self.net.create_extractor()
+                            mat = ncnn.Mat(tensor).clone()
+                            if extractor.input(part['input'], mat) != 0:
+                                raise RuntimeError(f'Cannot input ncnn section {index}')
+                            status, output = extractor.extract(part['output'])
+                            if status != 0:
+                                raise RuntimeError(f'ncnn section {index} failed: {status}')
+                            tensors[sample_index] = np.asarray(output).copy()
+                        finally:
+                            output = extractor = mat = None
                 finally:
-                    output = extractor = mat = None
                     self.close()
-            raw = tensor.reshape(-1)
-            if raw.size != self.metadata.label_count:
-                raise ValueError(f'ncnn label count mismatch: {raw.size} != {self.metadata.label_count}')
-            results.append(infer_output_to_probabilities(raw))
+            for tensor in tensors:
+                raw = tensor.reshape(-1)
+                if raw.size != self.metadata.label_count:
+                    raise ValueError(f'ncnn label count mismatch: {raw.size} != {self.metadata.label_count}')
+                results.append(infer_output_to_probabilities(raw))
         return results
