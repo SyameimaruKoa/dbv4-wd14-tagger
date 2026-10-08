@@ -198,8 +198,9 @@ if ($LASTEXITCODE -eq 0) {
             Write-Host "[INFO] WSLサーバープロセスは既に稼働中です: $ContainerName" -ForegroundColor Cyan
             Write-Host '[INFO] 同じ設定の既存サーバーを使用します。再作成は行いません。'
             Write-Host "[INFO] サーバー公開設定: http://${PublishAddress}:${Port}"
-            Write-Host '[INFO] 初期化状況を含む直近のコンテナログ:'
-            & wslc logs --tail 20 $Existing.Id
+            Write-Host '[INFO] 以降のサーバーログを継続表示します。過去のログは再表示しません。'
+            Write-Host "[INFO] Ctrl+Cでログ表示を終了します。サーバーを停止する場合: wslc stop $ContainerName"
+            & wslc logs --follow --tail 0 $Existing.Id
             exit $LASTEXITCODE
         }
         throw "WSLコンテナは別の設定または処理で稼働中です。停止してから再実行してください: wslc stop $ContainerName"

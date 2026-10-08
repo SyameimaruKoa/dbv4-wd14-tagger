@@ -106,7 +106,9 @@ class WslLauncherTests(unittest.TestCase):
         result, calls = self.launch('-s -ep intel -m ultra', existing=self.existing_server())
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([call[0] for call in calls], ['image', 'container', 'logs'])
+        self.assertEqual(calls[-1], ['logs', '--follow', '--tail', 0, 'existing-id'])
         self.assertIn('既に稼働中', result.stdout.decode('utf-8'))
+        self.assertIn('継続表示', result.stdout.decode('utf-8'))
 
     def test_stopped_managed_container_is_removed_without_deleting_data(self):
         result, calls = self.launch('-s -ep intel -m ultra', existing=self.existing_server(False))
