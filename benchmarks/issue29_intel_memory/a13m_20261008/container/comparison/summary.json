@@ -1,0 +1,90 @@
+{
+  "model": "/model-cache/models/53e96223459a3046/model.onnx",
+  "device": "GPU.0",
+  "sample_interval_seconds": 0.05,
+  "runs": [
+    {
+      "load_seconds": 21.797759034999995,
+      "inference_seconds": [
+        38.887273072,
+        11.137113837000001,
+        10.604159157999987,
+        10.109021974000001,
+        9.68984804099999
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        4,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "batch_size": 4,
+      "device_name": "Intel(R) Graphics [0xa7a1] (iGPU)",
+      "status": "success",
+      "mode": "baseline",
+      "baseline": {
+        "rss_mib": 28.51171875,
+        "process_swap_mib": 0.0,
+        "available_mib": 15257.15625,
+        "swap_free_mib": 16233.99609375
+      },
+      "loaded": {
+        "rss_mib": 412.05859375,
+        "process_swap_mib": 0.0,
+        "available_mib": 15103.7265625,
+        "swap_free_mib": 16233.99609375,
+        "elapsed_seconds": 22.998406048999996
+      },
+      "peak_rss_mib": 5884.21875,
+      "min_available_mib": 12240.734375,
+      "peak_process_swap_mib": 0.0,
+      "max_swap_growth_mib": 0.0
+    },
+    {
+      "load_seconds": 31.569649116999983,
+      "inference_seconds": [
+        10.783721592000006,
+        3.251302387999999,
+        2.556037387999993,
+        2.492723005000016,
+        2.6694087199999785
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        1,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "batch_size": 1,
+      "device_name": "Intel(R) Graphics [0xa7a1] (iGPU)",
+      "status": "success",
+      "mode": "current",
+      "baseline": {
+        "rss_mib": 29.49609375,
+        "process_swap_mib": 0.0,
+        "available_mib": 15372.25,
+        "swap_free_mib": 16233.99609375
+      },
+      "loaded": {
+        "rss_mib": 429.75,
+        "process_swap_mib": 0.0,
+        "available_mib": 15068.0859375,
+        "swap_free_mib": 16233.99609375,
+        "elapsed_seconds": 32.70719031599998
+      },
+      "peak_rss_mib": 5885.62109375,
+      "min_available_mib": 12232.89453125,
+      "peak_process_swap_mib": 0.0,
+      "max_swap_growth_mib": 0.0
+    }
+  ],
+  "comparison": {
+    "status": "compared",
+    "max_abs_difference": 3.0517578125e-05,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  }
+}

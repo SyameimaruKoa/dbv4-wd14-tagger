@@ -1,0 +1,77 @@
+{
+  "model": "/opt/dbv4-wd14-tagger/models/53e96223459a3046/model.onnx",
+  "device": "GPU.0",
+  "sample_interval_seconds": 0.05,
+  "runs": [
+    {
+      "load_seconds": 22.83467967598699,
+      "inference_seconds": [
+        12.720600151980761,
+        5.43362588097807,
+        5.12215691502206
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        1,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "mode": "baseline",
+      "baseline": {
+        "rss_mib": 29.00390625,
+        "process_swap_mib": 0.0,
+        "available_mib": 6785.2890625,
+        "swap_free_mib": 28852.5546875
+      },
+      "loaded": {
+        "rss_mib": 2719.68359375,
+        "process_swap_mib": 93.765625,
+        "available_mib": 6513.515625,
+        "swap_free_mib": 25460.7265625
+      },
+      "peak_rss_mib": 7516.76171875,
+      "peak_process_swap_mib": 952.5078125,
+      "min_available_mib": 1728.28125,
+      "max_swap_growth_mib": 4424.1953125
+    },
+    {
+      "load_seconds": 15.08388815203216,
+      "inference_seconds": [
+        18.440423506021034,
+        6.12864663900109,
+        5.107192134018987
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        1,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "mode": "current",
+      "baseline": {
+        "rss_mib": 15.47265625,
+        "process_swap_mib": 11.5625,
+        "available_mib": 10056.10546875,
+        "swap_free_mib": 24574.10546875
+      },
+      "loaded": {
+        "rss_mib": 3010.5234375,
+        "process_swap_mib": 0.0,
+        "available_mib": 6858.83984375,
+        "swap_free_mib": 24516.1640625
+      },
+      "peak_rss_mib": 8301.4609375,
+      "peak_process_swap_mib": 330.75390625,
+      "min_available_mib": 2718.54296875,
+      "max_swap_growth_mib": 2415.92578125
+    }
+  ],
+  "comparison": {
+    "max_abs_difference": 0.0,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  }
+}

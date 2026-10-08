@@ -102,6 +102,10 @@ AMD実機のultraはFP32で確率・rating・タグとXMPの一致を確認し�
 
 Windows 11のCore i7-1355U／Intel Iris Xeでは、OpenVINOの既定FP16実行でultraの全出力がNaNになるため、Intel providerはFP32を明示する。修正後は約1.6秒/枚で、全12,476確率・rating・タグとXMP・両Client転送の一致を確認した。`-Provider intel -Gpu -ModelProfile ultra -OpenVinoDevice GPU` で利用できる。同じGPUのncnn FP32も約33秒/枚で確認済み。省メモリの分割設定はPowerShellでは `-NcnnPartSizeMiB` で指定する（省略時は自動、明示した0は分割なし）。[測定・失敗記録](BENCHMARKS.md)を参照。
 
+Intel providerではOpenVINOへグラフ最適化を任せ、ORTのCPUメモリアリーナとメモリパターンを無効にし、GPUをLATENCY・1ストリームで実行する。ultraの動的バッチは省メモリのため1枚に制限し、`--batch-size 4`も実行時に1へ調整する。Serverはこの上限をClientへ通知し、複数Clientの推論を同じモデルのロックで直列化する。固定バッチのモデルは入力仕様を維持する。FP32重みと出力精度は維持するため、1枚でもRAMを多く必要とし、スワップを完全には防げない。Intel HD Graphics 530／15GiB RAMでは従来の4枚バッチで大きなスワップを再現し、変更後の1枚で全12,476出力の一致を確認した。[調査と計測上の制約](benchmarks/issue29_intel_memory/README.md)を参照。RAMが足りなければbalanced、またはncnnの分割推論を選ぶ。
+
+WindowsネイティブとWSLCコンテナのIris Xeでも4枚時のメモリ圧迫・Windowsページファイル増加を再現し、1枚への制限後の数値一致を確認した。WSLC内の`free`やプロセスRSSにはWindows側のGPU共有メモリがすべて現れないため、Windowsの空きRAM・ページファイルと併せて確認する。[実験結果](benchmarks/issue29_intel_memory/a13m_20261008/README.md)を参照。
+
 初回変換は推論より多くのRAMを必要とする。保存するパラメーターの勾配を無効化し、pnnxが形状確認時に不要な勾配履歴を保持することを防ぐ。TorchScriptを作成するプロセスを終了してからpnnxを起動し、変換前半のメモリも解放する。pnnx自体がメモリ不足で終了する場合は、余裕のあるPCで変換してキャッシュ3ファイルを配置する。[CPUでの変換照合](validate_ncnn_conversion.py)、[ultra測定ランナー](benchmark_ncnn_matrix.sh)、[実GPUのXMP・Server/Client検証](tests/test_ncnn_integration.py)も用意している。
 
 ### 将来向け1B級
