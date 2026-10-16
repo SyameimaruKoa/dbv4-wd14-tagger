@@ -208,6 +208,8 @@ explicit_score:0.XXXX
 
 この4つのscoreとDBV4 model markerが揃っている場合、--organize では再推論せずratingを再計算できる。旧WD14 scoreだけが残っている場合はDBV4推論を実行するぞ。
 
+既存XMPが破損していてExifToolが解析できない場合（例: x:xmpmeta の閉じタグ欠落、空のXMPパケット）は、タグ書き込み時に既存XMPを破棄してXMP:Subjectを再構築し、`[INFO] 破損したXMPを再構築して書き込みました` と1行だけ表示する。破損診断の生警告は表示せず、XMP以外のメタデータ（EXIFなど）は保持する。
+
 
 ## Bash / Zsh のタブ補完
 
