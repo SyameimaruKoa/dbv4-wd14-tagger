@@ -1,0 +1,948 @@
+{
+  "total_mib": 2642.12691116333,
+  "auto_budget_mib": 1275,
+  "stages": [
+    {
+      "budget_mib": 512,
+      "status": "ok",
+      "fill": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 1548.3666729996912,
+            "infer_ms": 14677.137865999612
+          },
+          {
+            "section": 1,
+            "build_ms": 0.021676001779269427,
+            "infer_ms": 8065.137576999405
+          },
+          {
+            "section": 2,
+            "build_ms": 0.02422400029900018,
+            "infer_ms": 8612.880007998683
+          },
+          {
+            "section": 3,
+            "build_ms": 0.012077000064891763,
+            "infer_ms": 7961.308066000129
+          },
+          {
+            "section": 4,
+            "build_ms": 0.01807000080589205,
+            "infer_ms": 7795.873974000642
+          },
+          {
+            "section": 5,
+            "build_ms": 0.014884000847814605,
+            "infer_ms": 7965.993128000264
+          },
+          {
+            "section": 6,
+            "build_ms": 0.014055000065127388,
+            "infer_ms": 8444.49816999986
+          },
+          {
+            "section": 7,
+            "build_ms": 0.014155999451759271,
+            "infer_ms": 7974.05746700133
+          },
+          {
+            "section": 8,
+            "build_ms": 0.01336399873252958,
+            "infer_ms": 8200.442561001182
+          },
+          {
+            "section": 9,
+            "build_ms": 0.014448000001721084,
+            "infer_ms": 7330.394968001201
+          },
+          {
+            "section": 10,
+            "build_ms": 0.013685999874724075,
+            "infer_ms": 4965.85995499845
+          },
+          {
+            "section": 11,
+            "build_ms": 0.013736000255448744,
+            "infer_ms": 5034.365568000794
+          },
+          {
+            "section": 12,
+            "build_ms": 0.014474000636255369,
+            "infer_ms": 4208.719865000603
+          },
+          {
+            "section": 13,
+            "build_ms": 0.01408400021318812,
+            "infer_ms": 1783.5827630005952
+          }
+        ],
+        "wall_s": 104.63777938600106,
+        "build_s": 1.5485696070027188,
+        "infer_s": 103.02025193600275
+      },
+      "measure": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.011533998986124061,
+            "infer_ms": 15193.119113999273
+          },
+          {
+            "section": 1,
+            "build_ms": 0.015101999451871961,
+            "infer_ms": 8595.080302000497
+          },
+          {
+            "section": 2,
+            "build_ms": 0.011166001058882102,
+            "infer_ms": 6753.774755001359
+          },
+          {
+            "section": 3,
+            "build_ms": 0.012791000699508004,
+            "infer_ms": 6616.2707900002715
+          },
+          {
+            "section": 4,
+            "build_ms": 0.015923000319162384,
+            "infer_ms": 7663.509490999786
+          },
+          {
+            "section": 5,
+            "build_ms": 0.01384899951517582,
+            "infer_ms": 7897.206314999494
+          },
+          {
+            "section": 6,
+            "build_ms": 0.01406800038239453,
+            "infer_ms": 7926.921785001468
+          },
+          {
+            "section": 7,
+            "build_ms": 0.015290001101675443,
+            "infer_ms": 8573.76882799872
+          },
+          {
+            "section": 8,
+            "build_ms": 0.015731000530649908,
+            "infer_ms": 7866.559242000221
+          },
+          {
+            "section": 9,
+            "build_ms": 0.015183999494183809,
+            "infer_ms": 6573.522430999219
+          },
+          {
+            "section": 10,
+            "build_ms": 0.044312999307294376,
+            "infer_ms": 4088.9526110004226
+          },
+          {
+            "section": 11,
+            "build_ms": 0.015463001545867883,
+            "infer_ms": 3908.140405999802
+          },
+          {
+            "section": 12,
+            "build_ms": 0.014313000065158121,
+            "infer_ms": 3619.2609230001835
+          },
+          {
+            "section": 13,
+            "build_ms": 0.01472000076319091,
+            "infer_ms": 1281.1971840001206
+          }
+        ],
+        "wall_s": 96.62730868399922,
+        "build_s": 0.0002294470032211393,
+        "infer_s": 96.55728417700084
+      },
+      "min_available_mib": 2351.20703125,
+      "max_available_mib": 2469.94921875,
+      "min_swap_free_mib": 3269.51953125,
+      "max_swap_free_mib": 3273.234375,
+      "min_vram_mib": 795.11328125,
+      "max_vram_mib": 1407.84765625,
+      "min_gtt_mib": 25.109375,
+      "max_gtt_mib": 30.609375,
+      "min_rss_mib": 186.40625,
+      "max_rss_mib": 257.8359375,
+      "pswpout_mib": 3.78515625,
+      "pswpin_mib": 0.125,
+      "resident_keys": [
+        12,
+        13
+      ],
+      "resident_bytes_mib": 376.78687286376953,
+      "dmesg": [
+        "2026-10-16T07:44:12,101589-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T07:47:08,362305-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2",
+        "2026-10-16T07:47:08,362321-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch",
+        "2026-10-16T07:47:08,404596-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed",
+        "2026-10-16T07:47:08,412467-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T09:05:05,233690-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported"
+      ]
+    },
+    {
+      "budget_mib": 1024,
+      "status": "ok",
+      "fill": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.013517999832401983,
+            "infer_ms": 15127.811891999954
+          },
+          {
+            "section": 1,
+            "build_ms": 0.011234000339754857,
+            "infer_ms": 7180.500849999589
+          },
+          {
+            "section": 2,
+            "build_ms": 0.011830001312773675,
+            "infer_ms": 6774.836919999871
+          },
+          {
+            "section": 3,
+            "build_ms": 0.014889999874867499,
+            "infer_ms": 7072.996308999791
+          },
+          {
+            "section": 4,
+            "build_ms": 0.017017999198287725,
+            "infer_ms": 7639.33962900046
+          },
+          {
+            "section": 5,
+            "build_ms": 0.011902000551344827,
+            "infer_ms": 7871.195178999187
+          },
+          {
+            "section": 6,
+            "build_ms": 0.01634900036151521,
+            "infer_ms": 8397.999569000604
+          },
+          {
+            "section": 7,
+            "build_ms": 0.01846799932536669,
+            "infer_ms": 7911.036515000887
+          },
+          {
+            "section": 8,
+            "build_ms": 0.015476000044145621,
+            "infer_ms": 7820.528612999624
+          },
+          {
+            "section": 9,
+            "build_ms": 0.014723000276717357,
+            "infer_ms": 6011.3089160004165
+          },
+          {
+            "section": 10,
+            "build_ms": 0.01607100057299249,
+            "infer_ms": 4162.800092000907
+          },
+          {
+            "section": 11,
+            "build_ms": 0.01609900027688127,
+            "infer_ms": 4194.494362000114
+          },
+          {
+            "section": 12,
+            "build_ms": 0.015453999367309734,
+            "infer_ms": 3853.5691419983777
+          },
+          {
+            "section": 13,
+            "build_ms": 0.015469000572920777,
+            "infer_ms": 1319.2434340016916
+          }
+        ],
+        "wall_s": 95.41281215400159,
+        "build_s": 0.00020850100190727971,
+        "infer_s": 95.33766142200147
+      },
+      "measure": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.012622000213013962,
+            "infer_ms": 15032.328424000298
+          },
+          {
+            "section": 1,
+            "build_ms": 0.011931999324588105,
+            "infer_ms": 7926.391302999036
+          },
+          {
+            "section": 2,
+            "build_ms": 0.015198000255622901,
+            "infer_ms": 8097.888696000155
+          },
+          {
+            "section": 3,
+            "build_ms": 0.014834999092272483,
+            "infer_ms": 6626.937682000062
+          },
+          {
+            "section": 4,
+            "build_ms": 0.015593001080560498,
+            "infer_ms": 7594.647256999451
+          },
+          {
+            "section": 5,
+            "build_ms": 0.015085999621078372,
+            "infer_ms": 7838.360203000775
+          },
+          {
+            "section": 6,
+            "build_ms": 0.017270000171265565,
+            "infer_ms": 7856.191830000171
+          },
+          {
+            "section": 7,
+            "build_ms": 0.017283999113715254,
+            "infer_ms": 7924.231083001359
+          },
+          {
+            "section": 8,
+            "build_ms": 0.017889999071485363,
+            "infer_ms": 7915.812815999743
+          },
+          {
+            "section": 9,
+            "build_ms": 0.014973998986533843,
+            "infer_ms": 5847.995276999427
+          },
+          {
+            "section": 10,
+            "build_ms": 0.016416001017205417,
+            "infer_ms": 3878.233753999666
+          },
+          {
+            "section": 11,
+            "build_ms": 0.014969000403652899,
+            "infer_ms": 4047.391844000231
+          },
+          {
+            "section": 12,
+            "build_ms": 0.01564599915582221,
+            "infer_ms": 3621.451713999704
+          },
+          {
+            "section": 13,
+            "build_ms": 0.014883000403642654,
+            "infer_ms": 7.060685000396916
+          }
+        ],
+        "wall_s": 94.30085264800073,
+        "build_s": 0.00021459799791045953,
+        "infer_s": 94.21492256800047
+      },
+      "min_available_mib": 2377.10546875,
+      "max_available_mib": 2490.75390625,
+      "min_swap_free_mib": 3269.5546875,
+      "max_swap_free_mib": 3272.52734375,
+      "min_vram_mib": 1189.7578125,
+      "max_vram_mib": 1919.27734375,
+      "min_gtt_mib": 30.609375,
+      "max_gtt_mib": 32.609375,
+      "min_rss_mib": 217.30859375,
+      "max_rss_mib": 288.68359375,
+      "pswpout_mib": 0.0,
+      "pswpin_mib": 2.96484375,
+      "resident_keys": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "resident_bytes_mib": 862.1833953857422,
+      "dmesg": [
+        "2026-10-16T07:44:12,101588-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T07:47:08,362304-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2",
+        "2026-10-16T07:47:08,362320-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch",
+        "2026-10-16T07:47:08,404595-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed",
+        "2026-10-16T07:47:08,412466-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T09:05:05,233689-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported"
+      ]
+    },
+    {
+      "budget_mib": 1536,
+      "status": "ok",
+      "fill": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.01521299964224454,
+            "infer_ms": 15217.737185999795
+          },
+          {
+            "section": 1,
+            "build_ms": 0.012786998922820203,
+            "infer_ms": 8010.619107999446
+          },
+          {
+            "section": 2,
+            "build_ms": 0.012189000699436292,
+            "infer_ms": 8623.20104399987
+          },
+          {
+            "section": 3,
+            "build_ms": 0.011639000149443746,
+            "infer_ms": 7926.805911001793
+          },
+          {
+            "section": 4,
+            "build_ms": 0.017393000234733336,
+            "infer_ms": 7732.576796999638
+          },
+          {
+            "section": 5,
+            "build_ms": 0.012196998795843683,
+            "infer_ms": 7972.431688998768
+          },
+          {
+            "section": 6,
+            "build_ms": 0.01446799979021307,
+            "infer_ms": 8439.096816000529
+          },
+          {
+            "section": 7,
+            "build_ms": 0.015318000805564225,
+            "infer_ms": 7882.622585000718
+          },
+          {
+            "section": 8,
+            "build_ms": 0.013724999007536098,
+            "infer_ms": 8051.984773001095
+          },
+          {
+            "section": 9,
+            "build_ms": 0.015531000826740637,
+            "infer_ms": 6787.509063000471
+          },
+          {
+            "section": 10,
+            "build_ms": 0.014484001439996064,
+            "infer_ms": 4341.102348000277
+          },
+          {
+            "section": 11,
+            "build_ms": 0.016648999007884413,
+            "infer_ms": 4471.322264000264
+          },
+          {
+            "section": 12,
+            "build_ms": 0.015577999874949455,
+            "infer_ms": 3865.4033399998298
+          },
+          {
+            "section": 13,
+            "build_ms": 0.014829000065219589,
+            "infer_ms": 1654.3253199997707
+          }
+        ],
+        "wall_s": 101.03399383099895,
+        "build_s": 0.00020199999926262535,
+        "infer_s": 100.97673824400226
+      },
+      "measure": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.014392999219126068,
+            "infer_ms": 15193.458832998658
+          },
+          {
+            "section": 1,
+            "build_ms": 0.015161000192165375,
+            "infer_ms": 8219.060098999762
+          },
+          {
+            "section": 2,
+            "build_ms": 0.018116999854100868,
+            "infer_ms": 8642.214102001162
+          },
+          {
+            "section": 3,
+            "build_ms": 0.01477799924032297,
+            "infer_ms": 7914.34382800071
+          },
+          {
+            "section": 4,
+            "build_ms": 0.014835000911261886,
+            "infer_ms": 7862.7892330005125
+          },
+          {
+            "section": 5,
+            "build_ms": 0.01206399974762462,
+            "infer_ms": 7863.024973999927
+          },
+          {
+            "section": 6,
+            "build_ms": 0.013962999219074845,
+            "infer_ms": 7287.2201560003305
+          },
+          {
+            "section": 7,
+            "build_ms": 0.014925999494153075,
+            "infer_ms": 7299.205360000997
+          },
+          {
+            "section": 8,
+            "build_ms": 0.015665998944314197,
+            "infer_ms": 7358.35350600064
+          },
+          {
+            "section": 9,
+            "build_ms": 0.015324998457799666,
+            "infer_ms": 5578.122764
+          },
+          {
+            "section": 10,
+            "build_ms": 0.017100999684771523,
+            "infer_ms": 3510.9379300010914
+          },
+          {
+            "section": 11,
+            "build_ms": 0.01606299883860629,
+            "infer_ms": 3503.4832049987017
+          },
+          {
+            "section": 12,
+            "build_ms": 0.018663999071577564,
+            "infer_ms": 3645.7627790005063
+          },
+          {
+            "section": 13,
+            "build_ms": 0.019659000827232376,
+            "infer_ms": 1666.337406999446
+          }
+        ],
+        "wall_s": 95.61564594499941,
+        "build_s": 0.00022071499370213132,
+        "infer_s": 95.54431417600244
+      },
+      "min_available_mib": 2335.21484375,
+      "max_available_mib": 2466.91015625,
+      "min_swap_free_mib": 3242.5625,
+      "max_swap_free_mib": 3272.5390625,
+      "min_vram_mib": 1692.921875,
+      "max_vram_mib": 2549.79296875,
+      "min_gtt_mib": 28.609375,
+      "max_gtt_mib": 32.609375,
+      "min_rss_mib": 277.765625,
+      "max_rss_mib": 321.52734375,
+      "pswpout_mib": 28.6875,
+      "pswpin_mib": 0.11328125,
+      "resident_keys": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "resident_bytes_mib": 1409.49800491333,
+      "dmesg": [
+        "2026-10-16T07:44:12,101588-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T07:47:08,362304-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2",
+        "2026-10-16T07:47:08,362320-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch",
+        "2026-10-16T07:47:08,404595-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed",
+        "2026-10-16T07:47:08,412466-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T09:05:05,233689-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported"
+      ]
+    },
+    {
+      "budget_mib": 2048,
+      "status": "ok",
+      "fill": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.015001000065240078,
+            "infer_ms": 15241.95655100084
+          },
+          {
+            "section": 1,
+            "build_ms": 0.011691998224705458,
+            "infer_ms": 8199.192414002027
+          },
+          {
+            "section": 2,
+            "build_ms": 0.012561002222355455,
+            "infer_ms": 7871.229381999001
+          },
+          {
+            "section": 3,
+            "build_ms": 0.011808002454927191,
+            "infer_ms": 7624.03262099906
+          },
+          {
+            "section": 4,
+            "build_ms": 0.0145840022014454,
+            "infer_ms": 7622.856486999808
+          },
+          {
+            "section": 5,
+            "build_ms": 0.014436001947615296,
+            "infer_ms": 7716.690839999501
+          },
+          {
+            "section": 6,
+            "build_ms": 0.014363002264872193,
+            "infer_ms": 7350.557639998442
+          },
+          {
+            "section": 7,
+            "build_ms": 0.015036999684525654,
+            "infer_ms": 7411.860670999886
+          },
+          {
+            "section": 8,
+            "build_ms": 0.012361000699456781,
+            "infer_ms": 7322.291557000426
+          },
+          {
+            "section": 9,
+            "build_ms": 0.015054996765684336,
+            "infer_ms": 5569.7925979984575
+          },
+          {
+            "section": 10,
+            "build_ms": 0.015022997104097158,
+            "infer_ms": 3713.8465520001773
+          },
+          {
+            "section": 11,
+            "build_ms": 0.014837001799605787,
+            "infer_ms": 3823.460563999106
+          },
+          {
+            "section": 12,
+            "build_ms": 0.016514000890310854,
+            "infer_ms": 3850.061799003015
+          },
+          {
+            "section": 13,
+            "build_ms": 0.014969999028835446,
+            "infer_ms": 1735.487452999223
+          }
+        ],
+        "wall_s": 95.11344141200061,
+        "build_s": 0.0001982420053536771,
+        "infer_s": 95.05331712899897
+      },
+      "measure": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.01331400198978372,
+            "infer_ms": 15148.707259999355
+          },
+          {
+            "section": 1,
+            "build_ms": 0.01546400017105043,
+            "infer_ms": 8110.945331001858
+          },
+          {
+            "section": 2,
+            "build_ms": 0.015349996829172596,
+            "infer_ms": 8402.982641000563
+          },
+          {
+            "section": 3,
+            "build_ms": 0.014827000995865092,
+            "infer_ms": 7785.145056997862
+          },
+          {
+            "section": 4,
+            "build_ms": 0.01433900251868181,
+            "infer_ms": 7690.598514000158
+          },
+          {
+            "section": 5,
+            "build_ms": 0.018323000404052436,
+            "infer_ms": 8389.919150002243
+          },
+          {
+            "section": 6,
+            "build_ms": 0.015748999430797994,
+            "infer_ms": 7348.081603002356
+          },
+          {
+            "section": 7,
+            "build_ms": 0.017501999536762014,
+            "infer_ms": 7661.019149996719
+          },
+          {
+            "section": 8,
+            "build_ms": 0.011713000276358798,
+            "infer_ms": 7359.244872997806
+          },
+          {
+            "section": 9,
+            "build_ms": 0.015438999980688095,
+            "infer_ms": 5590.632398998423
+          },
+          {
+            "section": 10,
+            "build_ms": 0.014766999811399728,
+            "infer_ms": 3822.4427080021997
+          },
+          {
+            "section": 11,
+            "build_ms": 0.01452599826734513,
+            "infer_ms": 3818.3768859998963
+          },
+          {
+            "section": 12,
+            "build_ms": 0.01864600199041888,
+            "infer_ms": 3881.356649002555
+          },
+          {
+            "section": 13,
+            "build_ms": 0.013339998986339197,
+            "infer_ms": 7.082435000484111
+          }
+        ],
+        "wall_s": 95.08838440399995,
+        "build_s": 0.00021329900118871592,
+        "infer_s": 95.01653465600248
+      },
+      "min_available_mib": 2367.796875,
+      "max_available_mib": 2443.3828125,
+      "min_swap_free_mib": 3239.98828125,
+      "max_swap_free_mib": 3242.625,
+      "min_vram_mib": 2262.9375,
+      "max_vram_mib": 3068.90234375,
+      "min_gtt_mib": 30.609375,
+      "max_gtt_mib": 32.609375,
+      "min_rss_mib": 321.34375,
+      "max_rss_mib": 326.84375,
+      "pswpout_mib": 2.69140625,
+      "pswpin_mib": 0.078125,
+      "resident_keys": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "resident_bytes_mib": 1957.140266418457,
+      "dmesg": [
+        "2026-10-16T07:44:12,101588-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T07:47:08,362304-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2",
+        "2026-10-16T07:47:08,362320-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch",
+        "2026-10-16T07:47:08,404595-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed",
+        "2026-10-16T07:47:08,412466-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T09:05:05,233689-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported"
+      ]
+    },
+    {
+      "budget_mib": 2643,
+      "status": "ok",
+      "fill": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.013895001757191494,
+            "infer_ms": 15170.25738600205
+          },
+          {
+            "section": 1,
+            "build_ms": 0.011675998393911868,
+            "infer_ms": 8023.464464000426
+          },
+          {
+            "section": 2,
+            "build_ms": 0.01150699972640723,
+            "infer_ms": 8419.213888999366
+          },
+          {
+            "section": 3,
+            "build_ms": 0.011413998436182737,
+            "infer_ms": 5851.556388999597
+          },
+          {
+            "section": 4,
+            "build_ms": 0.02316999962204136,
+            "infer_ms": 5821.192931998667
+          },
+          {
+            "section": 5,
+            "build_ms": 0.017605998436920345,
+            "infer_ms": 5839.045825003268
+          },
+          {
+            "section": 6,
+            "build_ms": 0.013651999324792996,
+            "infer_ms": 5827.778716000466
+          },
+          {
+            "section": 7,
+            "build_ms": 0.013510998542187735,
+            "infer_ms": 5825.3121669986285
+          },
+          {
+            "section": 8,
+            "build_ms": 0.012856999092036858,
+            "infer_ms": 5821.267037998041
+          },
+          {
+            "section": 9,
+            "build_ms": 0.013042001228313893,
+            "infer_ms": 3883.883081998647
+          },
+          {
+            "section": 10,
+            "build_ms": 0.013411998224910349,
+            "infer_ms": 2008.3602449994942
+          },
+          {
+            "section": 11,
+            "build_ms": 0.01694300226517953,
+            "infer_ms": 2008.1406659992354
+          },
+          {
+            "section": 12,
+            "build_ms": 0.015437002730323002,
+            "infer_ms": 2002.803862997098
+          },
+          {
+            "section": 13,
+            "build_ms": 0.013692002539755777,
+            "infer_ms": 6.4441490030731075
+          }
+        ],
+        "wall_s": 76.52976481299993,
+        "build_s": 0.00020181400032015517,
+        "infer_s": 76.50872081099806
+      },
+      "measure": {
+        "per_section": [
+          {
+            "section": 0,
+            "build_ms": 0.013631997717311606,
+            "infer_ms": 13368.757203999849
+          },
+          {
+            "section": 1,
+            "build_ms": 0.012915999832330272,
+            "infer_ms": 5828.516506000597
+          },
+          {
+            "section": 2,
+            "build_ms": 0.014188997738528997,
+            "infer_ms": 5847.535216002143
+          },
+          {
+            "section": 3,
+            "build_ms": 0.013226002920418978,
+            "infer_ms": 5836.495195002499
+          },
+          {
+            "section": 4,
+            "build_ms": 0.013007000234210864,
+            "infer_ms": 5820.146743000805
+          },
+          {
+            "section": 5,
+            "build_ms": 0.01292699744226411,
+            "infer_ms": 5838.302485000895
+          },
+          {
+            "section": 6,
+            "build_ms": 0.015803998394403607,
+            "infer_ms": 5828.3962050008995
+          },
+          {
+            "section": 7,
+            "build_ms": 0.01369299934594892,
+            "infer_ms": 5826.885718997801
+          },
+          {
+            "section": 8,
+            "build_ms": 0.013307002518558875,
+            "infer_ms": 5820.906932996877
+          },
+          {
+            "section": 9,
+            "build_ms": 0.013508000847650692,
+            "infer_ms": 3884.017087999382
+          },
+          {
+            "section": 10,
+            "build_ms": 0.013598000805359334,
+            "infer_ms": 2012.4472669995157
+          },
+          {
+            "section": 11,
+            "build_ms": 0.013954002497484908,
+            "infer_ms": 2006.7638340005942
+          },
+          {
+            "section": 12,
+            "build_ms": 0.014736997400177643,
+            "infer_ms": 2002.1811540027556
+          },
+          {
+            "section": 13,
+            "build_ms": 0.014098000974627212,
+            "infer_ms": 6.522617000882747
+          }
+        ],
+        "wall_s": 69.94986443400194,
+        "build_s": 0.00019259599866927601,
+        "infer_s": 69.9278741660055
+      },
+      "min_available_mib": 2405.93359375,
+      "max_available_mib": 2444.78515625,
+      "min_swap_free_mib": 3239.99609375,
+      "max_swap_free_mib": 3240.171875,
+      "min_vram_mib": 2831.984375,
+      "max_vram_mib": 3211.171875,
+      "min_gtt_mib": 30.609375,
+      "max_gtt_mib": 32.609375,
+      "min_rss_mib": 326.84765625,
+      "max_rss_mib": 346.09765625,
+      "pswpout_mib": 0.0,
+      "pswpin_mib": 0.03515625,
+      "resident_keys": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "resident_bytes_mib": 2642.12691116333,
+      "dmesg": [
+        "2026-10-16T07:44:12,101589-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T07:47:08,362305-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2",
+        "2026-10-16T07:47:08,362321-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch",
+        "2026-10-16T07:47:08,404596-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed",
+        "2026-10-16T07:47:08,412467-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)",
+        "2026-10-16T09:05:05,233690-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported"
+      ]
+    }
+  ]
+}
