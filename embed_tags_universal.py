@@ -103,7 +103,7 @@ RATING_TAGS = {
 }
 
 DEFAULT_CONFIG: Dict[str, Any] = {
-    "model_profile": "balanced",
+    "model_profile": "ultra",
     "model_profiles": MODEL_PROFILES,
     "server_hosts": ["localhost", "google-colab", "100.xxx.xxx.xxx"],
     "server_port": 5000,
@@ -2588,7 +2588,7 @@ def main() -> None:
     profiles = APP_CONFIG.get("model_profiles", MODEL_PROFILES)
     args.auto_model_profile = args.model_profile is None
     if args.model_profile is None:
-        args.model_profile = APP_CONFIG.get("model_profile", "balanced")
+        args.model_profile = APP_CONFIG.get("model_profile", "ultra")
     if args.model_profile not in profiles:
         raise SystemExit(f"[ERROR] 不明なDBV4モデルプロファイルです: {args.model_profile}")
     if args.probe_provider:
