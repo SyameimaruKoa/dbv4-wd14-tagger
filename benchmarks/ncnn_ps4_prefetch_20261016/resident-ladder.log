@@ -1,0 +1,200 @@
+[INFO] ncnn AMD RADV: shader同期を有効にします (syncshaders)。
+parts: 14 total 2642.1 MiB largest 242.7 MiB
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  queueC=1[4]  queueT=0[1]  rebar=1  r-score=11
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  fp16-p/s/u/a=1/1/1/0  int8-p/s/u/a=1/1/1/1  bf16-p/s=1/0
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  subgroup=64(64~64)  ops=1/1/1/1/1/1/1/1/1/1
+[0 AMD Liverpool (PlayStation 4) (RADV LIVERPOOL)]  fp16-cm=0  int8-cm=0  bf16-cm=0  fp8-cm=0
+[INFO] ncnn streaming: GPUメモリ予算 3930 MiBで次区間の重み転送 (最大 243 MiB) を先読みし、GPU実行と並行させます。
+[INFO] ncnn streaming: 空きRAM 2555 MiBのため最大 1275 MiBの区間を常駐させ、再循環時の再読み込みを減らします。
+auto resident budget: 1275 MiB
+=== stage 512 MiB ===
+  [stage 512 fill] sec 00 build    1548.4 infer  14677.1 ms
+  [stage 512 fill] sec 01 build       0.0 infer   8065.1 ms
+  [stage 512 fill] sec 02 build       0.0 infer   8612.9 ms
+  [stage 512 fill] sec 03 build       0.0 infer   7961.3 ms
+  [stage 512 fill] sec 04 build       0.0 infer   7795.9 ms
+  [stage 512 fill] sec 05 build       0.0 infer   7966.0 ms
+  [stage 512 fill] sec 06 build       0.0 infer   8444.5 ms
+  [stage 512 fill] sec 07 build       0.0 infer   7974.1 ms
+  [stage 512 fill] sec 08 build       0.0 infer   8200.4 ms
+  [stage 512 fill] sec 09 build       0.0 infer   7330.4 ms
+  [stage 512 fill] sec 10 build       0.0 infer   4965.9 ms
+  [stage 512 fill] sec 11 build       0.0 infer   5034.4 ms
+  [stage 512 fill] sec 12 build       0.0 infer   4208.7 ms
+  [stage 512 fill] sec 13 build       0.0 infer   1783.6 ms
+  [stage 512 fill] wall 104.6 s build 1.5 s infer 103.0 s
+  [stage 512 measure] sec 00 build       0.0 infer  15193.1 ms
+  [stage 512 measure] sec 01 build       0.0 infer   8595.1 ms
+  [stage 512 measure] sec 02 build       0.0 infer   6753.8 ms
+  [stage 512 measure] sec 03 build       0.0 infer   6616.3 ms
+  [stage 512 measure] sec 04 build       0.0 infer   7663.5 ms
+  [stage 512 measure] sec 05 build       0.0 infer   7897.2 ms
+  [stage 512 measure] sec 06 build       0.0 infer   7926.9 ms
+  [stage 512 measure] sec 07 build       0.0 infer   8573.8 ms
+  [stage 512 measure] sec 08 build       0.0 infer   7866.6 ms
+  [stage 512 measure] sec 09 build       0.0 infer   6573.5 ms
+  [stage 512 measure] sec 10 build       0.0 infer   4089.0 ms
+  [stage 512 measure] sec 11 build       0.0 infer   3908.1 ms
+  [stage 512 measure] sec 12 build       0.0 infer   3619.3 ms
+  [stage 512 measure] sec 13 build       0.0 infer   1281.2 ms
+  [stage 512 measure] wall 96.6 s build 0.0 s infer 96.6 s
+[stage 512] ok resident 377 MiB vram max 1407.84765625 avail min 2351.20703125 swapfree min 3269.51953125 pswpout 3.78515625 MiB
+  dmesg: 2026-10-16T07:44:12,101589-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T07:47:08,362305-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+  dmesg: 2026-10-16T07:47:08,362321-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+  dmesg: 2026-10-16T07:47:08,404596-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+  dmesg: 2026-10-16T07:47:08,412467-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T09:05:05,233690-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported
+=== stage 1024 MiB ===
+  [stage 1024 fill] sec 00 build       0.0 infer  15127.8 ms
+  [stage 1024 fill] sec 01 build       0.0 infer   7180.5 ms
+  [stage 1024 fill] sec 02 build       0.0 infer   6774.8 ms
+  [stage 1024 fill] sec 03 build       0.0 infer   7073.0 ms
+  [stage 1024 fill] sec 04 build       0.0 infer   7639.3 ms
+  [stage 1024 fill] sec 05 build       0.0 infer   7871.2 ms
+  [stage 1024 fill] sec 06 build       0.0 infer   8398.0 ms
+  [stage 1024 fill] sec 07 build       0.0 infer   7911.0 ms
+  [stage 1024 fill] sec 08 build       0.0 infer   7820.5 ms
+  [stage 1024 fill] sec 09 build       0.0 infer   6011.3 ms
+  [stage 1024 fill] sec 10 build       0.0 infer   4162.8 ms
+  [stage 1024 fill] sec 11 build       0.0 infer   4194.5 ms
+  [stage 1024 fill] sec 12 build       0.0 infer   3853.6 ms
+  [stage 1024 fill] sec 13 build       0.0 infer   1319.2 ms
+  [stage 1024 fill] wall 95.4 s build 0.0 s infer 95.3 s
+  [stage 1024 measure] sec 00 build       0.0 infer  15032.3 ms
+  [stage 1024 measure] sec 01 build       0.0 infer   7926.4 ms
+  [stage 1024 measure] sec 02 build       0.0 infer   8097.9 ms
+  [stage 1024 measure] sec 03 build       0.0 infer   6626.9 ms
+  [stage 1024 measure] sec 04 build       0.0 infer   7594.6 ms
+  [stage 1024 measure] sec 05 build       0.0 infer   7838.4 ms
+  [stage 1024 measure] sec 06 build       0.0 infer   7856.2 ms
+  [stage 1024 measure] sec 07 build       0.0 infer   7924.2 ms
+  [stage 1024 measure] sec 08 build       0.0 infer   7915.8 ms
+  [stage 1024 measure] sec 09 build       0.0 infer   5848.0 ms
+  [stage 1024 measure] sec 10 build       0.0 infer   3878.2 ms
+  [stage 1024 measure] sec 11 build       0.0 infer   4047.4 ms
+  [stage 1024 measure] sec 12 build       0.0 infer   3621.5 ms
+  [stage 1024 measure] sec 13 build       0.0 infer      7.1 ms
+  [stage 1024 measure] wall 94.3 s build 0.0 s infer 94.2 s
+[stage 1024] ok resident 862 MiB vram max 1919.27734375 avail min 2377.10546875 swapfree min 3269.5546875 pswpout 0.0 MiB
+  dmesg: 2026-10-16T07:44:12,101588-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T07:47:08,362304-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+  dmesg: 2026-10-16T07:47:08,362320-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+  dmesg: 2026-10-16T07:47:08,404595-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+  dmesg: 2026-10-16T07:47:08,412466-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T09:05:05,233689-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported
+=== stage 1536 MiB ===
+  [stage 1536 fill] sec 00 build       0.0 infer  15217.7 ms
+  [stage 1536 fill] sec 01 build       0.0 infer   8010.6 ms
+  [stage 1536 fill] sec 02 build       0.0 infer   8623.2 ms
+  [stage 1536 fill] sec 03 build       0.0 infer   7926.8 ms
+  [stage 1536 fill] sec 04 build       0.0 infer   7732.6 ms
+  [stage 1536 fill] sec 05 build       0.0 infer   7972.4 ms
+  [stage 1536 fill] sec 06 build       0.0 infer   8439.1 ms
+  [stage 1536 fill] sec 07 build       0.0 infer   7882.6 ms
+  [stage 1536 fill] sec 08 build       0.0 infer   8052.0 ms
+  [stage 1536 fill] sec 09 build       0.0 infer   6787.5 ms
+  [stage 1536 fill] sec 10 build       0.0 infer   4341.1 ms
+  [stage 1536 fill] sec 11 build       0.0 infer   4471.3 ms
+  [stage 1536 fill] sec 12 build       0.0 infer   3865.4 ms
+  [stage 1536 fill] sec 13 build       0.0 infer   1654.3 ms
+  [stage 1536 fill] wall 101.0 s build 0.0 s infer 101.0 s
+  [stage 1536 measure] sec 00 build       0.0 infer  15193.5 ms
+  [stage 1536 measure] sec 01 build       0.0 infer   8219.1 ms
+  [stage 1536 measure] sec 02 build       0.0 infer   8642.2 ms
+  [stage 1536 measure] sec 03 build       0.0 infer   7914.3 ms
+  [stage 1536 measure] sec 04 build       0.0 infer   7862.8 ms
+  [stage 1536 measure] sec 05 build       0.0 infer   7863.0 ms
+  [stage 1536 measure] sec 06 build       0.0 infer   7287.2 ms
+  [stage 1536 measure] sec 07 build       0.0 infer   7299.2 ms
+  [stage 1536 measure] sec 08 build       0.0 infer   7358.4 ms
+  [stage 1536 measure] sec 09 build       0.0 infer   5578.1 ms
+  [stage 1536 measure] sec 10 build       0.0 infer   3510.9 ms
+  [stage 1536 measure] sec 11 build       0.0 infer   3503.5 ms
+  [stage 1536 measure] sec 12 build       0.0 infer   3645.8 ms
+  [stage 1536 measure] sec 13 build       0.0 infer   1666.3 ms
+  [stage 1536 measure] wall 95.6 s build 0.0 s infer 95.5 s
+[stage 1536] ok resident 1409 MiB vram max 2549.79296875 avail min 2335.21484375 swapfree min 3242.5625 pswpout 28.6875 MiB
+  dmesg: 2026-10-16T07:44:12,101588-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T07:47:08,362304-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+  dmesg: 2026-10-16T07:47:08,362320-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+  dmesg: 2026-10-16T07:47:08,404595-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+  dmesg: 2026-10-16T07:47:08,412466-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T09:05:05,233689-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported
+=== stage 2048 MiB ===
+  [stage 2048 fill] sec 00 build       0.0 infer  15242.0 ms
+  [stage 2048 fill] sec 01 build       0.0 infer   8199.2 ms
+  [stage 2048 fill] sec 02 build       0.0 infer   7871.2 ms
+  [stage 2048 fill] sec 03 build       0.0 infer   7624.0 ms
+  [stage 2048 fill] sec 04 build       0.0 infer   7622.9 ms
+  [stage 2048 fill] sec 05 build       0.0 infer   7716.7 ms
+  [stage 2048 fill] sec 06 build       0.0 infer   7350.6 ms
+  [stage 2048 fill] sec 07 build       0.0 infer   7411.9 ms
+  [stage 2048 fill] sec 08 build       0.0 infer   7322.3 ms
+  [stage 2048 fill] sec 09 build       0.0 infer   5569.8 ms
+  [stage 2048 fill] sec 10 build       0.0 infer   3713.8 ms
+  [stage 2048 fill] sec 11 build       0.0 infer   3823.5 ms
+  [stage 2048 fill] sec 12 build       0.0 infer   3850.1 ms
+  [stage 2048 fill] sec 13 build       0.0 infer   1735.5 ms
+  [stage 2048 fill] wall 95.1 s build 0.0 s infer 95.1 s
+  [stage 2048 measure] sec 00 build       0.0 infer  15148.7 ms
+  [stage 2048 measure] sec 01 build       0.0 infer   8110.9 ms
+  [stage 2048 measure] sec 02 build       0.0 infer   8403.0 ms
+  [stage 2048 measure] sec 03 build       0.0 infer   7785.1 ms
+  [stage 2048 measure] sec 04 build       0.0 infer   7690.6 ms
+  [stage 2048 measure] sec 05 build       0.0 infer   8389.9 ms
+  [stage 2048 measure] sec 06 build       0.0 infer   7348.1 ms
+  [stage 2048 measure] sec 07 build       0.0 infer   7661.0 ms
+  [stage 2048 measure] sec 08 build       0.0 infer   7359.2 ms
+  [stage 2048 measure] sec 09 build       0.0 infer   5590.6 ms
+  [stage 2048 measure] sec 10 build       0.0 infer   3822.4 ms
+  [stage 2048 measure] sec 11 build       0.0 infer   3818.4 ms
+  [stage 2048 measure] sec 12 build       0.0 infer   3881.4 ms
+  [stage 2048 measure] sec 13 build       0.0 infer      7.1 ms
+  [stage 2048 measure] wall 95.1 s build 0.0 s infer 95.0 s
+[stage 2048] ok resident 1957 MiB vram max 3068.90234375 avail min 2367.796875 swapfree min 3239.98828125 pswpout 2.69140625 MiB
+  dmesg: 2026-10-16T07:44:12,101588-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T07:47:08,362304-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+  dmesg: 2026-10-16T07:47:08,362320-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+  dmesg: 2026-10-16T07:47:08,404595-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+  dmesg: 2026-10-16T07:47:08,412466-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T09:05:05,233689-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported
+=== stage full MiB ===
+  [stage full fill] sec 00 build       0.0 infer  15170.3 ms
+  [stage full fill] sec 01 build       0.0 infer   8023.5 ms
+  [stage full fill] sec 02 build       0.0 infer   8419.2 ms
+  [stage full fill] sec 03 build       0.0 infer   5851.6 ms
+  [stage full fill] sec 04 build       0.0 infer   5821.2 ms
+  [stage full fill] sec 05 build       0.0 infer   5839.0 ms
+  [stage full fill] sec 06 build       0.0 infer   5827.8 ms
+  [stage full fill] sec 07 build       0.0 infer   5825.3 ms
+  [stage full fill] sec 08 build       0.0 infer   5821.3 ms
+  [stage full fill] sec 09 build       0.0 infer   3883.9 ms
+  [stage full fill] sec 10 build       0.0 infer   2008.4 ms
+  [stage full fill] sec 11 build       0.0 infer   2008.1 ms
+  [stage full fill] sec 12 build       0.0 infer   2002.8 ms
+  [stage full fill] sec 13 build       0.0 infer      6.4 ms
+  [stage full fill] wall 76.5 s build 0.0 s infer 76.5 s
+  [stage full measure] sec 00 build       0.0 infer  13368.8 ms
+  [stage full measure] sec 01 build       0.0 infer   5828.5 ms
+  [stage full measure] sec 02 build       0.0 infer   5847.5 ms
+  [stage full measure] sec 03 build       0.0 infer   5836.5 ms
+  [stage full measure] sec 04 build       0.0 infer   5820.1 ms
+  [stage full measure] sec 05 build       0.0 infer   5838.3 ms
+  [stage full measure] sec 06 build       0.0 infer   5828.4 ms
+  [stage full measure] sec 07 build       0.0 infer   5826.9 ms
+  [stage full measure] sec 08 build       0.0 infer   5820.9 ms
+  [stage full measure] sec 09 build       0.0 infer   3884.0 ms
+  [stage full measure] sec 10 build       0.0 infer   2012.4 ms
+  [stage full measure] sec 11 build       0.0 infer   2006.8 ms
+  [stage full measure] sec 12 build       0.0 infer   2002.2 ms
+  [stage full measure] sec 13 build       0.0 infer      6.5 ms
+  [stage full measure] wall 69.9 s build 0.0 s infer 69.9 s
+[stage full] ok resident 2642 MiB vram max 3211.171875 avail min 2405.93359375 swapfree min 3239.99609375 pswpout 0.0 MiB
+  dmesg: 2026-10-16T07:44:12,101589-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T07:47:08,362305-04:00 amdgpu 0000:00:01.0: Direct firmware load for edid/my_edid.bin failed with error -2
+  dmesg: 2026-10-16T07:47:08,362321-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: trying ICC EDID fetch
+  dmesg: 2026-10-16T07:47:08,404596-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: ICC EDID fetch failed
+  dmesg: 2026-10-16T07:47:08,412467-04:00 amdgpu 0000:00:01.0: [drm] ps4_bridge: EDID loaded from AUX DDC, 34 modes, 1 extension block(s)
+  dmesg: 2026-10-16T09:05:05,233690-04:00 systemd-journald[279]: Failed to set ACL on /var/log/journal/9c7f4b3d0e584684808ae3c316833bfa/user-1000.journal, ignoring: Operation not supported
+LADDER DONE last_status=ok
