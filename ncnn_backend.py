@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import queue as queue_module
 import subprocess
 import sys
 import threading
@@ -308,19 +309,137 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
     batch_limit = 4  # Reuse each loaded section across a bounded logical batch.
 
     def __init__(self, metadata, preprocessor, model_prefix, gpu_index=0,
-                 precision='fp32', part_size_mib=128):
+                 precision='fp32', part_size_mib=128, batch_limit=4):
         from partition_ncnn_model import partition_model
 
-        self._inference_lock = threading.Lock()
+        if batch_limit is None or int(batch_limit) < 1:
+            raise ValueError('Streaming batch limit must be a positive integer')
+        self.batch_limit = int(batch_limit)
         self.part_directory, self.parts = partition_model(model_prefix, part_size_mib)
         self.gpu_index = gpu_index
         first = self.part_directory / self.parts[0]['param']
         super().__init__(metadata, preprocessor,
                          Path(str(first)[:-len('.ncnn.param')]), gpu_index, precision)
         self.close()
+        self._prepare_streaming_state()
         print(f'[INFO] ncnn streaming: {len(self.parts)} sections, '
               f'largest {max(p["bytes"] for p in self.parts) / 1048576:.1f} MiB weights',
               flush=True)
+
+    def _prepare_streaming_state(self, prefetch: bool | None = None) -> None:
+        """Create the section loader state; tests may set up without a GPU."""
+        self._prefetch_stop = object()
+        self._inference_lock = threading.Lock()
+        self._prefetch_queue = queue_module.Queue()
+        self._slot_lock = threading.Lock()
+        self._slot_index = None
+        self._slot_net = None
+        self._slot_error = None
+        self._prefetch_enabled = False
+        self._loader = None
+        if prefetch is None:
+            import ncnn
+
+            _, gpu_budget = memory_budgets_mib(ncnn, self.gpu_index)
+            largest_mib = max(part['bytes'] for part in self.parts) / 1048576
+            # The loader keeps at most one more section resident; devices that
+            # cannot report a budget stay on the synchronous execution path.
+            if gpu_budget is None:
+                print('[INFO] ncnn streaming: GPUメモリ予算を取得できないため先読みは無効です。', flush=True)
+            elif gpu_budget >= largest_mib * 2 + 512 and len(self.parts) > 1:
+                self._prefetch_enabled = True
+                print(f'[INFO] ncnn streaming: GPUメモリ予算 {gpu_budget} MiBで'
+                      f'次区間の重み転送 (最大 {largest_mib:.0f} MiB) を先読みし、GPU実行と並行させます。',
+                      flush=True)
+            else:
+                print(f'[INFO] ncnn streaming: GPUメモリ予算 {gpu_budget} MiBでは'
+                      f'2区間分 ({largest_mib * 2:.0f} MiB) の先読みが保持できません。'
+                      '同期ロードで実行します。', flush=True)
+        else:
+            self._prefetch_enabled = bool(prefetch)
+        if self._prefetch_enabled and self._loader is None:
+            self._loader = threading.Thread(target=self._prefetch_loop, daemon=True,
+                                            name='dbv4-ncnn-prefetch')
+            self._loader.start()
+
+    def _build_section_net(self, index: int):
+        import ncnn
+
+        part = self.parts[index]
+        net = ncnn.Net()
+        try:
+            for name, value in self.options.items():
+                setattr(net.opt, name, value)
+            net.set_vulkan_device(self.gpu_index)
+            if net.load_param(str(self.part_directory / part['param'])) != 0:
+                raise RuntimeError(f'Cannot load ncnn section {index}')
+            if net.load_model(str(self.part_directory / part['bin'])) != 0:
+                raise RuntimeError(f'Cannot load ncnn section weights {index}')
+            return net
+        except Exception:
+            try:
+                net.clear()
+            except Exception:
+                pass
+            raise
+
+    def _prefetch_loop(self) -> None:
+        """Build the next section into the free slot while inference runs."""
+        while True:
+            index = self._prefetch_queue.get()
+            # Drain to the most recent request; superseded builds are skipped.
+            while True:
+                try:
+                    newest = self._prefetch_queue.get_nowait()
+                except queue_module.Empty:
+                    break
+                if newest is self._prefetch_stop:
+                    return
+                index = newest
+            if index is self._prefetch_stop:
+                return
+            try:
+                net = self._build_section_net(index)
+            except Exception as exc:  # Publish so the main thread can fall back.
+                with self._slot_lock:
+                    self._slot_index, self._slot_net, self._slot_error = index, None, exc
+                continue
+            with self._slot_lock:
+                self._slot_index, self._slot_net, self._slot_error = index, net, None
+
+    def _drop_stale_slot(self, wanted: int) -> None:
+        with self._slot_lock:
+            index, net = self._slot_index, self._slot_net
+            if index is None or index == wanted:
+                return
+            self._slot_index, self._slot_net, self._slot_error = None, None, None
+        if net is not None:
+            self._discard_net(net)
+
+    def _acquire_section_net(self, index: int):
+        if not self._prefetch_enabled:
+            return self._build_section_net(index)
+        with self._slot_lock:
+            slot_index, slot_net, slot_error = (
+                self._slot_index, self._slot_net, self._slot_error)
+            if slot_index == index:
+                self._slot_index, self._slot_net, self._slot_error = None, None, None
+        if slot_index == index:
+            if slot_net is not None:
+                return slot_net
+            print(f'[WARN] ncnn streaming: 区間 {index} の先読みに失敗したため'
+                  f'同期ロードに切り替えます: {slot_error}', flush=True)
+        return self._build_section_net(index)
+
+    def _request_prefetch(self, index: int) -> None:
+        if self._prefetch_enabled:
+            self._prefetch_queue.put(index)
+
+    def _discard_net(self, net) -> None:
+        try:
+            net.clear()
+        except Exception:  # Native teardown is best effort.
+            pass
 
     def predict_preprocessed(self, batch_nchw):
         # Server workers share this runtime. Reloading/clearing a section must
@@ -340,23 +459,21 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
             for tensor in tensors:
                 if tensor.ndim != 3 or tensor.shape[0] != 3:
                     raise ValueError(f'ncnn入力はCHW 3チャネルが必要です: {tensor.shape}')
+            sections = len(self.parts)
             for index, part in enumerate(self.parts):
-                print(f'[ncnn streaming] section {index + 1}/{len(self.parts)} '
+                print(f'[ncnn streaming] section {index + 1}/{sections} '
                       f'({len(tensors)} images)', flush=True)
-                self.net = ncnn.Net()
+                self._drop_stale_slot(index)
+                net = self._acquire_section_net(index)
+                self._request_prefetch((index + 1) % sections)
                 extractor = output = mat = None
                 try:
-                    for name, value in self.options.items():
-                        setattr(self.net.opt, name, value)
-                    self.net.set_vulkan_device(self.gpu_index)
-                    if self.net.load_param(str(self.part_directory / part['param'])) != 0:
-                        raise RuntimeError(f'Cannot load ncnn section {index}')
-                    if self.net.load_model(str(self.part_directory / part['bin'])) != 0:
-                        raise RuntimeError(f'Cannot load ncnn section weights {index}')
                     for sample_index, tensor in enumerate(tensors):
                         try:
-                            extractor = self.net.create_extractor()
-                            mat = ncnn.Mat(tensor).clone()
+                            extractor = net.create_extractor()
+                            # ncnn.Mat borrows NumPy storage; the list keeps the
+                            # array alive through extract, so no clone is needed.
+                            mat = ncnn.Mat(tensor)
                             if extractor.input(part['input'], mat) != 0:
                                 raise RuntimeError(f'Cannot input ncnn section {index}')
                             status, output = extractor.extract(part['output'])
@@ -366,10 +483,32 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
                         finally:
                             output = extractor = mat = None
                 finally:
-                    self.close()
+                    # Release this section right after its last readback so the
+                    # prefetched next section never stacks a third net.
+                    self._discard_net(net)
+                    net = None
             for tensor in tensors:
                 raw = tensor.reshape(-1)
                 if raw.size != self.metadata.label_count:
                     raise ValueError(f'ncnn label count mismatch: {raw.size} != {self.metadata.label_count}')
                 results.append(infer_output_to_probabilities(raw))
         return results
+
+    def close(self) -> None:
+        loader = getattr(self, '_loader', None)
+        if loader is not None:
+            try:
+                self._prefetch_queue.put(self._prefetch_stop)
+            except Exception:
+                pass
+            if loader is not threading.current_thread():
+                loader.join(timeout=2)
+            self._loader = None
+        net = getattr(self, '_slot_net', None)
+        if net is not None:
+            self._discard_net(net)
+            self._slot_net = self._slot_index = self._slot_error = None
+        net = getattr(self, 'net', None)
+        if net is not None:
+            net.clear()
+            self.net = None

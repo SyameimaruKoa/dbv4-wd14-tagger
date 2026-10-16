@@ -199,6 +199,14 @@ class FakeNet:
         return result
 
 
+class PrefetchStubMat(np.ndarray):
+    def __new__(cls, value):
+        return np.asarray(value).view(cls)
+
+    def clone(self):
+        return np.array(self)
+
+
 class NcnnBackendTests(unittest.TestCase):
     def test_runtime_returns_dbv4_probabilities_for_each_image(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -228,12 +236,12 @@ class NcnnBackendTests(unittest.TestCase):
     def test_streaming_batch_reuses_sections_and_preserves_order(self):
         nets = []
 
-        class Mat:
-            def __init__(self, value):
-                self.value = value
+        class Mat(np.ndarray):
+            def __new__(cls, value):
+                return np.asarray(value).view(cls)
 
             def clone(self):
-                return self.value.copy()
+                return np.array(self)
 
         class Net(FakeNet):
             def __init__(self):
@@ -253,10 +261,10 @@ class NcnnBackendTests(unittest.TestCase):
                 return result
 
         runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
-        runtime._inference_lock = threading.Lock()
         runtime.part_directory = Path('.')
         runtime.parts = [{'param': 'p.param', 'bin': 'p.bin',
                           'input': 'in', 'output': 'out'}] * 2
+        runtime._prepare_streaming_state(prefetch=False)
         runtime.options = {}
         runtime.gpu_index = 0
         runtime.metadata = SimpleNamespace(label_count=12)
@@ -279,12 +287,12 @@ class NcnnBackendTests(unittest.TestCase):
         second_net_created = threading.Event()
         nets = []
 
-        class Mat:
-            def __init__(self, value):
-                self.value = value
+        class Mat(np.ndarray):
+            def __new__(cls, value):
+                return np.asarray(value).view(cls)
 
             def clone(self):
-                return self.value.copy()
+                return np.array(self)
 
         class Net(FakeNet):
             def __init__(self):
@@ -314,10 +322,10 @@ class NcnnBackendTests(unittest.TestCase):
                 return Extractor(None)
 
         runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
-        runtime._inference_lock = threading.Lock()
         runtime.part_directory = Path('.')
         runtime.parts = [{'param': 'part.param', 'bin': 'part.bin',
                           'input': 'in', 'output': 'out'}]
+        runtime._prepare_streaming_state(prefetch=False)
         runtime.options = {}
         runtime.gpu_index = 0
         runtime.metadata = SimpleNamespace(label_count=4)
@@ -415,6 +423,139 @@ class NcnnBackendTests(unittest.TestCase):
                 self.assertIn('--trace-only', run.call_args_list[0].args[0])
                 self.assertFalse((destination / 'model.ncnn.json').exists())
                 self.assertEqual(list(destination.iterdir()), [])
+
+
+class StreamingPrefetchTests(unittest.TestCase):
+    def _runtime(self, sections, label_count=48):
+        runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
+        runtime.part_directory = Path('.')
+        runtime.parts = [{'param': f'part{index}.ncnn.param', 'bin': f'part{index}.ncnn.bin',
+                          'input': f'in{index}', 'output': f'out{index}'}
+                         for index in range(sections)]
+        runtime._prepare_streaming_state(prefetch=True)
+        runtime.options = {}
+        runtime.gpu_index = 0
+        runtime.metadata = SimpleNamespace(label_count=label_count)
+        runtime.net = None
+        return runtime
+
+    def test_auto_prefetch_follows_reported_budget(self):
+        for budget, expected in ((2000, True), (900, False), (None, False)):
+            with self.subTest(budget=budget):
+                device = None
+                if budget is not None:
+                    device = SimpleNamespace(get_heap_budget=lambda: budget)
+                fake_ncnn = SimpleNamespace(get_gpu_device=lambda index: device)
+                runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
+                runtime.gpu_index = 0
+                runtime.part_directory = '.'
+                runtime.parts = [{'bytes': 240 * 1048576}, {'bytes': 240 * 1048576}]
+                with patch.dict(sys.modules, {'ncnn': fake_ncnn}):
+                    runtime._prepare_streaming_state()
+                self.assertEqual(runtime._prefetch_enabled, expected)
+                runtime.close()
+
+    def test_prefetch_loads_next_section_while_current_computes(self):
+        nets = []
+        section1_built = threading.Event()
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                self.index = len(nets)
+                nets.append(self)
+                if self.index == 1:
+                    section1_built.set()
+
+            def clear(self):
+                self.cleared = True
+
+            def create_extractor(self):
+                holder = self
+                result = None
+
+                class Extractor(FakeExtractor):
+                    pushed = None
+
+                    def input(self, name, mat):
+                        self.pushed = (name, np.asarray(mat))
+                        return 0
+
+                    def extract(self, name):
+                        if holder.index == 0:
+                            # Section 0 is still computing; require the loader
+                            # to make section 1 ready before returning.
+                            if not section1_built.wait(3):
+                                raise RuntimeError('prefetch did not build section 1')
+                        return 0, self.pushed[1].reshape(-1).copy()
+
+                result = Extractor(None)
+                self.extractors.append(result)
+                return result
+
+        runtime = self._runtime(2)
+        batch = np.zeros((1, 3, 4, 4), np.float32)
+        with patch.dict(sys.modules,
+                        {'ncnn': SimpleNamespace(Net=Net, Mat=PrefetchStubMat)}):
+            outputs = runtime.predict_preprocessed(batch)
+            runtime.close()
+        self.assertEqual(len(outputs), 1)
+        # A wraparound build for the next cycle may already exist; the two
+        # executed sections are always the first two nets built.
+        self.assertEqual([len(net.extractors) for net in nets[:2]], [1, 1])
+        self.assertTrue(all(net.cleared for net in nets))
+
+    def test_missing_prefetch_build_falls_back_to_synchronous_load(self):
+        nets = []
+        stale_cleared = threading.Event()
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                self.index = len(nets)
+                nets.append(self)
+
+            def clear(self):
+                self.cleared = True
+                stale_cleared.set()
+
+        runtime = self._runtime(2, label_count=4)
+        stale = Net()
+        with runtime._slot_lock:
+            runtime._slot_index, runtime._slot_net = 1, stale
+        batch = np.zeros((1, 3, 4, 4), np.float32)
+        with patch.dict(sys.modules,
+                        {'ncnn': SimpleNamespace(Net=Net, Mat=PrefetchStubMat)}):
+            outputs = runtime.predict_preprocessed(batch)
+            runtime.close()
+        self.assertEqual(len(outputs), 1)
+        self.assertTrue(stale.cleared)
+        self.assertTrue(all(net.cleared for net in nets))
+
+    def test_close_stops_loader_and_releases_prefetched_net(self):
+        nets = []
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                self.index = len(nets)
+                nets.append(self)
+
+            def clear(self):
+                self.cleared = True
+
+        runtime = self._runtime(2)
+        seeded = Net()
+        runtime._slot_index, runtime._slot_net = 0, seeded
+        loader = runtime._loader
+        runtime.close()
+        self.assertFalse(loader.is_alive())
+        self.assertIsNone(runtime._slot_net)
+        self.assertTrue(all(net.cleared for net in nets))
+        runtime.close()
 
 
 if __name__ == "__main__":
