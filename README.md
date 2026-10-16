@@ -421,7 +421,7 @@ Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使�
 
 | Key | 初期値 | 説明 |
 | --- | --- | --- |
-| model_profile | "balanced" | 使用するDBV4プロファイル |
+| model_profile | "ultra" | 使用するDBV4プロファイル |
 | server_hosts | ["localhost", "google-colab", "100.xxx.xxx.xxx"] | Client接続先 |
 | server_port | 5000 | Server/Clientポート |
 | server_workers | 2 | Server同時推論数（GPUメモリに応じて調整） |
@@ -449,8 +449,8 @@ Serverは次の情報をJSONで返す。
 ~~~json
 {
     "protocol": 1,
-    "model_id": "animetimm/caformer_b36.dbv4-full",
-    "profile": "balanced",
+    "model_id": "itterative/convnextv2_huge.dbv4-full-onnx",
+    "profile": "ultra",
     "metadata_version": "xxxxxxxxxxxxxxxx",
     "output_size": 12476,
     "rating_labels": [
