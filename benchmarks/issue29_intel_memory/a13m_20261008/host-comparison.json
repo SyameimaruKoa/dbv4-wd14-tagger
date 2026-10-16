@@ -1,0 +1,48 @@
+{
+  "native": {
+    "baseline": {
+      "host_sample_count": 31,
+      "host_min_available_mib": 170,
+      "pagefile_start_mib": 160,
+      "pagefile_peak_mib": 1038,
+      "pagefile_end_mib": 986,
+      "gpu_shared_peak_mib": 15093.8359375,
+      "wslc_vm_peak_working_set_mib": null,
+      "steady_median_ms_per_image": 2522.0818750000262
+    },
+    "current": {
+      "host_sample_count": 22,
+      "host_min_available_mib": 8427,
+      "pagefile_start_mib": 983,
+      "pagefile_peak_mib": 983,
+      "pagefile_end_mib": 951,
+      "gpu_shared_peak_mib": 7971.26953125,
+      "wslc_vm_peak_working_set_mib": null,
+      "steady_median_ms_per_image": 2581.839899999977
+    },
+    "phase_boundary": "2026-10-08T20:40:55+09:00"
+  },
+  "container": {
+    "baseline": {
+      "host_sample_count": 59,
+      "host_min_available_mib": 6,
+      "pagefile_start_mib": 951,
+      "pagefile_peak_mib": 4172,
+      "pagefile_end_mib": 1576,
+      "gpu_shared_peak_mib": null,
+      "wslc_vm_peak_working_set_mib": 16797.30859375,
+      "steady_median_ms_per_image": 2589.1476414999984
+    },
+    "current": {
+      "host_sample_count": 27,
+      "host_min_available_mib": 7084,
+      "pagefile_start_mib": 1575,
+      "pagefile_peak_mib": 1575,
+      "pagefile_end_mib": 1551,
+      "gpu_shared_peak_mib": null,
+      "wslc_vm_peak_working_set_mib": 10369.7890625,
+      "steady_median_ms_per_image": 2612.7230539999855
+    },
+    "phase_boundary": "2026-10-08T20:46:21+09:00"
+  }
+}
