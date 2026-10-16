@@ -430,7 +430,8 @@ class StreamingPrefetchTests(unittest.TestCase):
         runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
         runtime.part_directory = Path('.')
         runtime.parts = [{'param': f'part{index}.ncnn.param', 'bin': f'part{index}.ncnn.bin',
-                          'input': f'in{index}', 'output': f'out{index}'}
+                          'input': f'in{index}', 'output': f'out{index}',
+                          'bytes': 200 * 1048576}
                          for index in range(sections)]
         runtime._prepare_streaming_state(prefetch=True)
         runtime.options = {}
@@ -440,19 +441,26 @@ class StreamingPrefetchTests(unittest.TestCase):
         return runtime
 
     def test_auto_prefetch_follows_reported_budget(self):
-        for budget, expected in ((2000, True), (900, False), (None, False)):
-            with self.subTest(budget=budget):
-                device = None
-                if budget is not None:
-                    device = SimpleNamespace(get_heap_budget=lambda: budget)
-                fake_ncnn = SimpleNamespace(get_gpu_device=lambda index: device)
+        cases = (
+            # (ram, gpu) -> (prefetch, resident budget MiB); 2 parts of 240 MiB.
+            ((2000, 2000), True, 480),
+            ((1200, 2000), True, 0),
+            ((2000, 900), False, 480),
+            ((2000, None), False, 480),
+            ((None, 2000), True, 0),
+        )
+        for (ram, gpu), expected_prefetch, expected_resident in cases:
+            with self.subTest(ram=ram, gpu=gpu):
+                fake_ncnn = SimpleNamespace()
                 runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
                 runtime.gpu_index = 0
                 runtime.part_directory = '.'
                 runtime.parts = [{'bytes': 240 * 1048576}, {'bytes': 240 * 1048576}]
-                with patch.dict(sys.modules, {'ncnn': fake_ncnn}):
+                with patch.dict(sys.modules, {'ncnn': fake_ncnn}), patch(
+                        'ncnn_backend.memory_budgets_mib', return_value=(ram, gpu)):
                     runtime._prepare_streaming_state()
-                self.assertEqual(runtime._prefetch_enabled, expected)
+                self.assertEqual(runtime._prefetch_enabled, expected_prefetch)
+                self.assertEqual(runtime._resident_budget_mib, expected_resident)
                 runtime.close()
 
     def test_prefetch_loads_next_section_while_current_computes(self):
@@ -556,6 +564,94 @@ class StreamingPrefetchTests(unittest.TestCase):
         self.assertIsNone(runtime._slot_net)
         self.assertTrue(all(net.cleared for net in nets))
         runtime.close()
+
+    def test_resident_cache_reuses_nets_and_evicts_lru(self):
+        nets = []
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                self.index = len(nets)
+                nets.append(self)
+
+            def clear(self):
+                self.cleared = True
+
+        runtime = self._runtime(2)
+        runtime.parts = [{'param': 'p.param', 'bin': 'p.bin', 'bytes': 200 * 1048576},
+                         {'param': 'p.param', 'bin': 'p.bin', 'bytes': 200 * 1048576}]
+        runtime._resident_budget_mib = 300
+        with patch.dict(sys.modules,
+                        {'ncnn': SimpleNamespace(Net=Net, Mat=PrefetchStubMat)}):
+            first = runtime._acquire_section_net(0)
+            self.assertEqual(len(nets), 1)
+            runtime._release_section_net(0, first)
+            second = runtime._acquire_section_net(0)
+            self.assertIs(second, first)
+            runtime._release_section_net(0, second)
+            third = runtime._acquire_section_net(1)
+            self.assertEqual(len(nets), 2)
+            runtime._release_section_net(1, third)
+            runtime.close()
+        self.assertTrue(nets[0].cleared)  # LRU eviction discards section 0.
+        self.assertTrue(all(net.cleared for net in nets))
+        self.assertEqual(len(runtime._resident_cache), 0)
+
+    def test_request_prefetch_skips_resident_sections(self):
+        nets = []
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                nets.append(self)
+
+            def clear(self):
+                self.cleared = True
+
+        runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
+        runtime.part_directory = Path('.')
+        runtime.parts = [{'param': 'p0.param', 'bin': 'p0.bin', 'bytes': 200 * 1048576},
+                         {'param': 'p1.param', 'bin': 'p1.bin', 'bytes': 200 * 1048576}]
+        runtime._prepare_streaming_state(prefetch=False)
+        runtime._prefetch_enabled = True  # Inspect the queue without a loader thread.
+        seeded = Net()
+        with runtime._resident_lock:
+            runtime._resident_cache[1] = seeded
+            runtime._resident_bytes = runtime.parts[1]['bytes']
+        runtime._request_prefetch(1)
+        runtime._request_prefetch(0)
+        self.assertEqual(runtime._prefetch_queue.get_nowait(), 0)
+        self.assertTrue(runtime._prefetch_queue.empty())
+        runtime.close()
+        self.assertTrue(seeded.cleared)
+        self.assertEqual(len(runtime._resident_cache), 0)
+
+    def test_close_stops_loader_and_clears_resident_cache(self):
+        nets = []
+
+        class Net(FakeNet):
+            def __init__(self):
+                super().__init__()
+                self.cleared = False
+                self.index = len(nets)
+                nets.append(self)
+
+            def clear(self):
+                self.cleared = True
+
+        runtime = self._runtime(2)
+        seeded = Net()
+        with runtime._resident_lock:
+            runtime._resident_cache[0] = seeded
+            runtime._resident_bytes = runtime.parts[0]['bytes']
+        loader = runtime._loader
+        runtime.close()
+        self.assertFalse(loader.is_alive())
+        self.assertEqual(len(runtime._resident_cache), 0)
+        self.assertEqual(runtime._resident_bytes, 0)
+        self.assertTrue(all(net.cleared for net in nets))
 
 
 if __name__ == "__main__":

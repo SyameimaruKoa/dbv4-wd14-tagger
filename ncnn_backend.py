@@ -5,6 +5,7 @@ import atexit
 import hashlib
 import json
 import os
+from collections import OrderedDict
 from pathlib import Path
 import platform
 import queue as queue_module
@@ -302,6 +303,9 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
     """Execute unchanged graph sections with one section resident at a time.
 
     Each section is reused across up to four images before it is released.
+    The loader thread builds the next section while the GPU works on the
+    current one, and released sections may stay in a bounded LRU cache so
+    later cycles reuse them instead of re-reading their weights.
     This trades model reloads and CPU/GPU transfers for a lower memory peak.
     Memory-based selection or an explicit size enables this runtime.
     """
@@ -337,10 +341,16 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
         self._slot_error = None
         self._prefetch_enabled = False
         self._loader = None
+        # Resident cache: released section nets stay loaded while they fit in
+        # the RAM budget so later images skip their weight transfers/parsing.
+        self._resident_budget_mib = 0
+        self._resident_bytes = 0
+        self._resident_lock = threading.Lock()
+        self._resident_cache = OrderedDict()
         if prefetch is None:
             import ncnn
 
-            _, gpu_budget = memory_budgets_mib(ncnn, self.gpu_index)
+            ram_mib, gpu_budget = memory_budgets_mib(ncnn, self.gpu_index)
             largest_mib = max(part['bytes'] for part in self.parts) / 1048576
             # The loader keeps at most one more section resident; devices that
             # cannot report a budget stay on the synchronous execution path.
@@ -355,6 +365,15 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
                 print(f'[INFO] ncnn streaming: GPUメモリ予算 {gpu_budget} MiBでは'
                       f'2区間分 ({largest_mib * 2:.0f} MiB) の先読みが保持できません。'
                       '同期ロードで実行します。', flush=True)
+            # Keep the measured headroom for the OS and the activations; the
+            # LRU cache only takes what the RAM budget cannot need elsewhere.
+            if ram_mib is not None and len(self.parts) > 1:
+                total_mib = sum(part['bytes'] for part in self.parts) / 1048576
+                self._resident_budget_mib = int(min(total_mib, max(0, ram_mib - 1280)))
+                if self._resident_budget_mib:
+                    print(f'[INFO] ncnn streaming: 空きRAM {ram_mib} MiBのため'
+                          f'最大 {self._resident_budget_mib} MiBの区間を常駐させ、'
+                          '再循環時の再読み込みを減らします。', flush=True)
         else:
             self._prefetch_enabled = bool(prefetch)
         if self._prefetch_enabled and self._loader is None:
@@ -417,23 +436,68 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
             self._discard_net(net)
 
     def _acquire_section_net(self, index: int):
-        if not self._prefetch_enabled:
-            return self._build_section_net(index)
-        with self._slot_lock:
-            slot_index, slot_net, slot_error = (
-                self._slot_index, self._slot_net, self._slot_error)
+        if self._prefetch_enabled:
+            with self._slot_lock:
+                slot_index, slot_net, slot_error = (
+                    self._slot_index, self._slot_net, self._slot_error)
+                if slot_index == index:
+                    self._slot_index, self._slot_net, self._slot_error = None, None, None
             if slot_index == index:
-                self._slot_index, self._slot_net, self._slot_error = None, None, None
-        if slot_index == index:
-            if slot_net is not None:
-                return slot_net
-            print(f'[WARN] ncnn streaming: 区間 {index} の先読みに失敗したため'
-                  f'同期ロードに切り替えます: {slot_error}', flush=True)
+                if slot_net is not None:
+                    # A cached copy of the same section must not stack budget.
+                    self._drop_resident(index)
+                    return slot_net
+                print(f'[WARN] ncnn streaming: 区間 {index} の先読みに失敗したため'
+                      f'同期ロードに切り替えます: {slot_error}', flush=True)
+        with self._resident_lock:
+            net = self._resident_cache.pop(index, None)
+            if net is not None:
+                self._resident_bytes -= self.parts[index]['bytes']
+        if net is not None:
+            return net
         return self._build_section_net(index)
 
+    def _drop_resident(self, index: int) -> None:
+        with self._resident_lock:
+            net = self._resident_cache.pop(index, None)
+            if net is not None:
+                self._resident_bytes -= self.parts[index]['bytes']
+        if net is not None:
+            self._discard_net(net)
+
+    def _release_section_net(self, index: int, net) -> None:
+        if self._resident_budget_mib <= 0:
+            self._discard_net(net)
+            return
+        evicted = []
+        with self._resident_lock:
+            stale = self._resident_cache.get(index)
+            if stale is not None and stale is not net:
+                evicted.append(stale)
+                self._resident_bytes -= self.parts[index]['bytes']
+            self._resident_cache[index] = net
+            self._resident_bytes += self.parts[index]['bytes']
+            while self._resident_bytes > self._resident_budget_mib * 1048576:
+                oldest_index, oldest = self._resident_cache.popitem(last=False)
+                if oldest is net:
+                    # Only the just-used section remains; accept it without
+                    # eviction so the cache can never loop forever.
+                    self._resident_cache[oldest_index] = oldest
+                    break
+                self._resident_bytes -= self.parts[oldest_index]['bytes']
+                evicted.append(oldest)
+                if not self._resident_cache:
+                    break
+        for oldest in evicted:
+            self._discard_net(oldest)
+
     def _request_prefetch(self, index: int) -> None:
-        if self._prefetch_enabled:
-            self._prefetch_queue.put(index)
+        if not self._prefetch_enabled:
+            return
+        with self._resident_lock:
+            if index in self._resident_cache:
+                return
+        self._prefetch_queue.put(index)
 
     def _discard_net(self, net) -> None:
         try:
@@ -483,9 +547,9 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
                         finally:
                             output = extractor = mat = None
                 finally:
-                    # Release this section right after its last readback so the
-                    # prefetched next section never stacks a third net.
-                    self._discard_net(net)
+                    # Retain (or release) the net right after its last readback;
+                    # the resident budget bounds how many sections may stack.
+                    self._release_section_net(index, net)
                     net = None
             for tensor in tensors:
                 raw = tensor.reshape(-1)
@@ -508,6 +572,13 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
         if net is not None:
             self._discard_net(net)
             self._slot_net = self._slot_index = self._slot_error = None
+        cache = getattr(self, '_resident_cache', None)
+        if cache:
+            for net in list(cache.values()):
+                if net is not None:
+                    self._discard_net(net)
+            cache.clear()
+        self._resident_bytes = 0
         net = getattr(self, 'net', None)
         if net is not None:
             net.clear()
