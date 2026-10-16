@@ -443,11 +443,13 @@ class StreamingPrefetchTests(unittest.TestCase):
     def test_auto_prefetch_follows_reported_budget(self):
         cases = (
             # (ram, gpu) -> (prefetch, resident budget MiB); 2 parts of 240 MiB.
-            ((2000, 2000), True, 480),
-            ((1200, 2000), True, 0),
-            ((2000, 900), False, 480),
-            ((2000, None), False, 480),
-            ((None, 2000), True, 0),
+            # The resident cache is all-or-nothing: it needs the 480 MiB total
+            # plus one section of headroom on the device budget.
+            ((2000, 2000), True, 481),
+            ((1200, 2000), True, 481),
+            ((2000, 900), False, 0),
+            ((2000, None), False, 0),
+            ((None, 2000), True, 481),
         )
         for (ram, gpu), expected_prefetch, expected_resident in cases:
             with self.subTest(ram=ram, gpu=gpu):
@@ -461,6 +463,27 @@ class StreamingPrefetchTests(unittest.TestCase):
                     runtime._prepare_streaming_state()
                 self.assertEqual(runtime._prefetch_enabled, expected_prefetch)
                 self.assertEqual(runtime._resident_budget_mib, expected_resident)
+                runtime.close()
+
+    def test_resident_requires_room_for_all_sections(self):
+        cases = (
+            # (ram, gpu) -> enabled; 2 parts of 1321 MiB (2642 MiB total).
+            ((2555, 3930), True),    # PS4-like headroom: full set fits.
+            ((2100, 3930), False),   # RAM headroom too small (2642 > 2100+512).
+            ((3930, 3000), False),   # Device budget lacks the 512 MiB headroom.
+            ((None, 3930), True),    # Unknown RAM stays allowed when the device fits.
+            ((2555, None), False),   # Unknown device budget disables residency.
+        )
+        for (ram, gpu), expected in cases:
+            with self.subTest(ram=ram, gpu=gpu):
+                runtime = StreamingNcnnRuntimeModel.__new__(StreamingNcnnRuntimeModel)
+                runtime.gpu_index = 0
+                runtime.part_directory = '.'
+                runtime.parts = [{'bytes': 1321 * 1048576}, {'bytes': 1321 * 1048576}]
+                with patch.dict(sys.modules, {'ncnn': SimpleNamespace()}), patch(
+                        'ncnn_backend.memory_budgets_mib', return_value=(ram, gpu)):
+                    runtime._prepare_streaming_state()
+                self.assertEqual(runtime._resident_budget_mib > 0, expected)
                 runtime.close()
 
     def test_prefetch_loads_next_section_while_current_computes(self):

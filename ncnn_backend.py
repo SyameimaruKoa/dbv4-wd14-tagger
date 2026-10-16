@@ -304,8 +304,8 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
 
     Each section is reused across up to four images before it is released.
     The loader thread builds the next section while the GPU works on the
-    current one, and released sections may stay in a bounded LRU cache so
-    later cycles reuse them instead of re-reading their weights.
+    current one. When the whole weight set fits the RAM and device budgets,
+    every section stays resident so later cycles never re-read or rebuild.
     This trades model reloads and CPU/GPU transfers for a lower memory peak.
     Memory-based selection or an explicit size enables this runtime.
     """
@@ -365,15 +365,24 @@ class StreamingNcnnRuntimeModel(NcnnRuntimeModel):
                 print(f'[INFO] ncnn streaming: GPUメモリ予算 {gpu_budget} MiBでは'
                       f'2区間分 ({largest_mib * 2:.0f} MiB) の先読みが保持できません。'
                       '同期ロードで実行します。', flush=True)
-            # Keep the measured headroom for the OS and the activations; the
-            # LRU cache only takes what the RAM budget cannot need elsewhere.
-            if ram_mib is not None and len(self.parts) > 1:
+            # Measured on the PS4: the win comes only from eliminating every
+            # reload, so cache all sections or none (partial caching still
+            # rebuilds sections and shows no gain). Require one section of
+            # headroom on the device budget for activations/slot, and allow
+            # the RAM side to read slightly below the weight total because
+            # resident pages are the (reclaimable) partition file cache.
+            if len(self.parts) > 1:
                 total_mib = sum(part['bytes'] for part in self.parts) / 1048576
-                self._resident_budget_mib = int(min(total_mib, max(0, ram_mib - 1280)))
-                if self._resident_budget_mib:
-                    print(f'[INFO] ncnn streaming: 空きRAM {ram_mib} MiBのため'
-                          f'最大 {self._resident_budget_mib} MiBの区間を常駐させ、'
-                          '再循環時の再読み込みを減らします。', flush=True)
+                device_fits = gpu_budget is not None and total_mib + 512 <= gpu_budget
+                ram_fits = ram_mib is None or total_mib <= ram_mib + 512
+                if device_fits and ram_fits:
+                    self._resident_budget_mib = int(total_mib) + 1
+                    print(f'[INFO] ncnn streaming: 全区間 {total_mib:.0f} MiBの重みを'
+                          '常駐させ、再循環時の再読み込みを排除します。', flush=True)
+                else:
+                    print(f'[INFO] ncnn streaming: 全区間 {total_mib:.0f} MiBの常駐は'
+                          f'空きRAM {ram_mib} MiB / GPU予算 {gpu_budget} MiBには'
+                          '収まらないため無効です。先読みのみで実行します。', flush=True)
         else:
             self._prefetch_enabled = bool(prefetch)
         if self._prefetch_enabled and self._loader is None:
