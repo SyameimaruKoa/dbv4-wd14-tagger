@@ -22,12 +22,13 @@ from dbv4 import DBV4Metadata
 class RuntimeCompatibilityTests(unittest.TestCase):
     def test_exiftool_diagnostics_are_not_merged_into_tag_output(self):
         process = MagicMock()
+        process.stderr = app.io.BytesIO(b"")
         wrapper = app.ExifToolWrapper("exiftool")
 
         with patch.object(app.subprocess, "Popen", return_value=process) as popen:
             wrapper.start()
 
-        self.assertIsNone(popen.call_args.kwargs["stderr"])
+        self.assertEqual(popen.call_args.kwargs["stderr"], app.subprocess.PIPE)
         self.assertIsNot(popen.call_args.kwargs["stderr"], app.subprocess.STDOUT)
         wrapper.stop()
 
@@ -626,6 +627,101 @@ class RuntimeCompatibilityTests(unittest.TestCase):
                 app.process_images(args)
 
             self.assertEqual(predict_calls, [2])
+
+
+class ExifToolXmpRecoveryTests(unittest.TestCase):
+    """壊れたXMPの検出・自動修復と書き込み結果判定のテスト。"""
+
+    def setUp(self):
+        self.wrapper = app.ExifToolWrapper("exiftool")
+        self.calls = []
+
+    def _stub_execute(self, *outputs):
+        def execute(arguments):
+            self.calls.append(list(arguments))
+            return outputs[min(len(self.calls) - 1, len(outputs) - 1)]
+
+        self.wrapper.execute = execute
+
+    def test_write_uses_rebuild_when_update_reports_errors(self):
+        self._stub_execute(
+            "0 image files updated\n    1 files weren't updated due to errors",
+            "1 image files updated",
+        )
+        with patch.object(app, "safe_write") as write:
+            self.assertTrue(self.wrapper.write_tags("/tmp/pic.jpg", ["alpha", "beta"]))
+
+        self.assertEqual(len(self.calls), 2)
+        self.assertNotIn("-XMP:all=", self.calls[0])
+        self.assertIn("-XMP:all=", self.calls[1])
+        self.assertIn("-XMP:Subject=alpha, beta", self.calls[1])
+        self.assertEqual(self.calls[1][-1], "/tmp/pic.jpg")
+        self.assertTrue(any("再構築" in call.args[0] for call in write.call_args_list))
+
+    def test_zero_updated_is_not_treated_as_success(self):
+        self._stub_execute(
+            "0 image files updated\n    1 files weren't updated due to errors",
+            "0 image files updated\n    1 files weren't updated due to errors",
+        )
+        with patch.object(app, "safe_write") as write:
+            self.assertFalse(self.wrapper.write_tags("/tmp/pic.jpg", ["alpha"]))
+
+        self.assertEqual(len(self.calls), 2)
+        self.assertTrue(
+            any("タグ書き込み失敗" in call.args[0] for call in write.call_args_list)
+        )
+
+    def test_unchanged_write_is_success_without_rebuild(self):
+        self._stub_execute("0 image files updated\n    1 image files unchanged")
+        with patch.object(app, "safe_write"):
+            self.assertTrue(self.wrapper.write_tags("/tmp/pic.jpg", ["alpha"]))
+
+        self.assertEqual(len(self.calls), 1)
+        self.assertNotIn("-XMP:all=", self.calls[0])
+
+    def test_corrupt_read_diagnostic_forces_rebuild_and_is_hidden(self):
+        with patch.object(app, "safe_write") as write:
+            handled = self.wrapper._note_diagnostic(
+                "Warning: XMP format error (no closing tag for x:xmpmeta) - /tmp/broken.jpg"
+            )
+        self.assertTrue(handled)
+        write.assert_not_called()
+
+        self._stub_execute("1 image files updated")
+        with patch.object(app, "safe_write"):
+            self.assertTrue(self.wrapper.write_tags("/tmp/broken.jpg", ["alpha"]))
+        self.assertIn("-XMP:all=", self.calls[0])
+
+    def test_unknown_diagnostics_are_printed_with_prefix(self):
+        with patch.object(app, "safe_write") as write:
+            handled = self.wrapper._note_diagnostic("Warning: Something else - /tmp/pic.jpg")
+        self.assertFalse(handled)
+        write.assert_not_called()
+
+        self.wrapper.process = SimpleNamespace(
+            stderr=app.io.BytesIO(
+                b"Warning: [minor] Empty XMP - /tmp/empty.jpg\n"
+                b"Error: XMP format error (no closing tag for x:xmpmeta) - /tmp/broken.jpg\n"
+                b"\n"
+                b"Warning: Something else - /tmp/pic.jpg\n"
+            )
+        )
+        with patch.object(app, "safe_write") as write:
+            self.wrapper._drain_stderr()
+
+        messages = [call.args[0] for call in write.call_args_list]
+        self.assertEqual(messages, ["[exiftool] Warning: Something else - /tmp/pic.jpg"])
+
+        self._stub_execute("1 image files updated")
+        with patch.object(app, "safe_write"):
+            self.assertTrue(self.wrapper.write_tags("/tmp/broken.jpg", ["alpha"]))
+            self.assertTrue(self.wrapper.write_tags("/tmp/empty.jpg", ["alpha"]))
+        self.assertIn("-XMP:all=", self.calls[0])
+        self.assertIn("-XMP:all=", self.calls[1])
+
+    def test_write_tags_without_tags_is_noop(self):
+        self.assertFalse(self.wrapper.write_tags("/tmp/pic.jpg", []))
+        self.assertEqual(self.calls, [])
 
 
 if __name__ == "__main__":

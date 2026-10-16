@@ -15,6 +15,11 @@
   - `StreamingPrefetchTests`へ全か無かゲートの判定（PS4型予算・RAM不足・GPU不足・予算不明）とLRU再利用・追い出し、常駐スキップ、`close()`解放のテストを追加（計159件・skip 21）。
 - PS4 Liverpool実測: 全区間常駐でb1中央値69,877.77ms/枚（第1弾比−27.6%）、b4中央値69,870.40ms/枚（第1弾比−20.8%）。精度は両測定とも全12,476ラベルが許容差内（最大差2.742e-6）、採用タグ差0。VRAMピーク3,214.33MiB（デバイス全体）でもring timeout・GPU reset・OOMなし、スワップアウトほぼゼロ。詳細は`BENCHMARKS.md`へ記録。
 - デフォルトのモデルプロファイルを`ultra`へ変更。新規生成される`config.json`とプロファイル未指定時の既定を`ultra`とし、既存設定ファイルの値は上書きしない。READMEの設定表とServer応答例も合わせた。
+- `ExifToolWrapper`: 破損した既存XMP（`x:xmpmeta`の閉じタグ欠落、空のXMPパケットなど）を検出したら、`-XMP:all=`でXMPを作り直してから`XMP:Subject`を書き込む自動修復を追加。修復時は`[INFO] 破損したXMPを再構築して書き込みました`を1行表示し、XMP以外のメタデータ（EXIFなど）は保持する。
+  - 従来は書き込み結果の`"image files updated"`文字列一致が`0 image files updated`にもマッチし、実際にはXMP解析エラーで更新されていないファイルを成功と誤判定していた。更新数を確認する判定へ変更し、`1 files unchanged`は成功として扱う。
+  - ExifToolのstderrは専用スレッドで読み続けてパイプ詰まりを防ぎ、既知のXMP破損診断（`XMP format error`・`Invalid XMP`・`[minor] Empty XMP`）だけを記録して自動修復に使う。それ以外の診断は`[exiftool]`接頭辞付きで表示する。
+  - ExifTool 13.59でJPEG / PNGの破損XMPを再現し、閉じタグ欠落は書き込みが`weren't updated due to errors`、空パケットは無言の`unchanged`で失敗することを確認。修復書き込みでタグ付与と警告解消、EXIF保持、60ファイル連続処理で停止しないことを確認した。
+- `tests/test_runtime_compat.py`: `ExifToolXmpRecoveryTests`を追加し、更新エラー後の再構築書き込み、`0 image files updated`の非成功判定、`unchanged`の成功扱い、破損診断の抑制とフラグ経由の初回再構築、`[exiftool]`接頭辞表示を確認。既存のstderrテストは`stderr=PIPE`前提へ更新（計165件・skip 21）。READMEのXMP節へ自動修復の挙動を追記。
 
 ## 2026-10-08
 

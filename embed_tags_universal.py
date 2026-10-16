@@ -273,12 +273,24 @@ def resolve_exiftool_cmd(command: str) -> str:
     return resolved or command
 
 
+# 既存XMPが壊れていて解析できないときにExifToolが返す診断。
+# ファイル側の問題で、書き込み時にXMPを作り直せば解消するため、
+# 表示せずに検出だけして自動修復へ回す。
+XMP_CORRUPTION_DIAGNOSTIC = re.compile(
+    r"^(?:Warning|Error): (?:(?:XMP format error \([^)]+\))|Invalid XMP|\[[Mm]inor\] Empty XMP)"
+    r" - (?P<path>.+)$"
+)
+
+
 class ExifToolWrapper:
     def __init__(self, command: str = "exiftool") -> None:
         self.raw_command = command
         self.command = resolve_exiftool_cmd(command)
         self.process = None
         self.running = False
+        self._stderr_thread = None
+        self._corrupt_xmp_paths = set()
+        self._state_lock = threading.Lock()
 
     def start(self) -> None:
         if self.running:
@@ -304,12 +316,56 @@ class ExifToolWrapper:
                 stdout=subprocess.PIPE,
                 # ExifToolの診断出力をコマンド結果へ混ぜない。stderrをstdoutへ
                 # 結合すると、Perlのlocale警告などが既存タグとして解釈される。
-                stderr=None,
+                # stderrは専用スレッドで読み続けてパイプ詰まりを防ぎ、XMP破損の
+                # 診断だけを記録して書き込み時の自動修復に使う。
+                stderr=subprocess.PIPE,
                 startupinfo=startupinfo,
             )
+            self._stderr_thread = threading.Thread(
+                target=self._drain_stderr,
+                name="exiftool-stderr",
+                daemon=True,
+            )
+            self._stderr_thread.start()
             self.running = True
         except Exception as exc:
             print(f"[ERROR] ExifToolの起動に失敗しました: {exc}")
+
+    def _drain_stderr(self) -> None:
+        process = self.process
+        stream = process.stderr if process else None
+        if stream is None:
+            return
+        try:
+            for raw in iter(stream.readline, b""):
+                text = raw.decode("utf-8", errors="ignore").strip()
+                if not text or self._note_diagnostic(text):
+                    continue
+                safe_write(f"[exiftool] {text}")
+        except Exception:
+            return
+
+    def _note_diagnostic(self, line: str) -> bool:
+        """既知のXMP破損診断を記録して非表示にする。表示すべき行はFalseを返す。"""
+        match = XMP_CORRUPTION_DIAGNOSTIC.match(line)
+        if not match:
+            return False
+        key = self._path_key(match.group("path"))
+        with self._state_lock:
+            self._corrupt_xmp_paths.add(key)
+        return True
+
+    @staticmethod
+    def _path_key(path: str) -> str:
+        return os.path.normcase(os.path.abspath(path))
+
+    def _take_corrupt_flag(self, path: str) -> bool:
+        key = self._path_key(path)
+        with self._state_lock:
+            if key in self._corrupt_xmp_paths:
+                self._corrupt_xmp_paths.discard(key)
+                return True
+        return False
 
     def stop(self) -> None:
         if not self.running:
@@ -327,6 +383,12 @@ class ExifToolWrapper:
         except Exception:
             pass
         finally:
+            thread = self._stderr_thread
+            self._stderr_thread = None
+            if thread is not None:
+                thread.join(timeout=2)
+            with self._state_lock:
+                self._corrupt_xmp_paths.clear()
             self.process = None
             self.running = False
 
@@ -364,21 +426,47 @@ class ExifToolWrapper:
     def write_tags(self, path: str, tags: Sequence[str]) -> bool:
         if not tags:
             return False
-        output = self.execute(
-            [
-                "-overwrite_original",
-                "-P",
-                "-m",
-                "-sep",
-                ", ",
-                f"-XMP:Subject={', '.join(tags)}",
-                path,
-            ]
-        )
-        if "image files updated" in output:
+        common = ["-overwrite_original", "-P", "-m", "-sep", ", "]
+        subject = f"-XMP:Subject={', '.join(tags)}"
+        if self._take_corrupt_flag(path):
+            # 読み取り時にXMP破損を検出済み。直接書き込むと
+            # 「weren't updated due to errors」または無言のunchangedで
+            # 失敗するため、最初から作り直す。
+            return self._rebuild_and_write(path, common, subject)
+        output = self.execute(common + [subject, path])
+        if self._write_updated_files(output):
+            return True
+        if self._write_reported_errors(output):
+            return self._rebuild_and_write(path, common, subject)
+        if self._write_reported_unchanged(output):
             return True
         safe_write(f"[WARN] タグ書き込み失敗 ({os.path.basename(path)}): {output}")
         return False
+
+    def _rebuild_and_write(self, path: str, common: Sequence[str], subject: str) -> bool:
+        """壊れた既存XMPを捨ててXMP:Subjectを新規に書き込む。XMP以外は保持される。"""
+        output = self.execute(list(common) + ["-XMP:all=", subject, path])
+        if self._write_updated_files(output):
+            safe_write(
+                f"[INFO] 破損したXMPを再構築して書き込みました ({os.path.basename(path)})"
+            )
+            return True
+        safe_write(f"[WARN] タグ書き込み失敗 ({os.path.basename(path)}): {output}")
+        return False
+
+    @staticmethod
+    def _write_updated_files(output: str) -> bool:
+        # 「0 image files updated」を成功と誤判定しないよう更新数を確認する。
+        match = re.search(r"(?m)^\s*(\d+) image files? updated\s*$", output)
+        return bool(match and int(match.group(1)) > 0)
+
+    @staticmethod
+    def _write_reported_unchanged(output: str) -> bool:
+        return bool(re.search(r"(?m)^\s*\d+ image files? unchanged\s*$", output))
+
+    @staticmethod
+    def _write_reported_errors(output: str) -> bool:
+        return "weren't updated due to errors" in output
 
     def __del__(self) -> None:
         try:
