@@ -1,0 +1,127 @@
+Collecting numpy==2.3.5
+  Downloading numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.1/62.1 kB 4.3 MB/s eta 0:00:00
+Collecting onnxruntime-openvino==1.24.1
+  Downloading onnxruntime_openvino-1.24.1-cp312-cp312-manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+Collecting openvino==2025.4.1
+  Downloading openvino-2025.4.1-20426-cp312-cp312-manylinux2014_x86_64.whl.metadata (12 kB)
+Collecting flatbuffers (from onnxruntime-openvino==1.24.1)
+  Downloading flatbuffers-25.12.19-py2.py3-none-any.whl.metadata (1.0 kB)
+Collecting packaging (from onnxruntime-openvino==1.24.1)
+  Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting protobuf (from onnxruntime-openvino==1.24.1)
+  Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl.metadata (595 bytes)
+Collecting sympy (from onnxruntime-openvino==1.24.1)
+  Downloading sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+Collecting openvino-telemetry>=2023.2.1 (from openvino==2025.4.1)
+  Downloading openvino_telemetry-2025.2.0-py3-none-any.whl.metadata (2.3 kB)
+Collecting mpmath<1.4,>=1.1.0 (from sympy->onnxruntime-openvino==1.24.1)
+  Downloading mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+Downloading numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.6/16.6 MB 27.1 MB/s eta 0:00:00
+Downloading onnxruntime_openvino-1.24.1-cp312-cp312-manylinux_2_28_x86_64.whl (84.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.4/84.4 MB 20.4 MB/s eta 0:00:00
+Downloading openvino-2025.4.1-20426-cp312-cp312-manylinux2014_x86_64.whl (50.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.3/50.3 MB 24.8 MB/s eta 0:00:00
+Downloading openvino_telemetry-2025.2.0-py3-none-any.whl (25 kB)
+Downloading flatbuffers-25.12.19-py2.py3-none-any.whl (26 kB)
+Downloading packaging-26.3-py3-none-any.whl (129 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 130.0/130.0 kB 26.4 MB/s eta 0:00:00
+Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl (343 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343.2/343.2 kB 19.0 MB/s eta 0:00:00
+Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 29.4 MB/s eta 0:00:00
+Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 21.6 MB/s eta 0:00:00
+Installing collected packages: openvino-telemetry, mpmath, flatbuffers, sympy, protobuf, packaging, numpy, openvino, onnxruntime-openvino
+Successfully installed flatbuffers-25.12.19 mpmath-1.3.0 numpy-2.3.5 onnxruntime-openvino-1.24.1 openvino-2025.4.1 openvino-telemetry-2025.2.0 packaging-26.3 protobuf-7.36.2 sympy-1.14.0
+{
+  "model": "/model-cache/models/53e96223459a3046/model.onnx",
+  "device": "GPU.0",
+  "sample_interval_seconds": 0.05,
+  "runs": [
+    {
+      "load_seconds": 21.797759034999995,
+      "inference_seconds": [
+        38.887273072,
+        11.137113837000001,
+        10.604159157999987,
+        10.109021974000001,
+        9.68984804099999
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        4,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "batch_size": 4,
+      "device_name": "Intel(R) Graphics [0xa7a1] (iGPU)",
+      "status": "success",
+      "mode": "baseline",
+      "baseline": {
+        "rss_mib": 28.51171875,
+        "process_swap_mib": 0.0,
+        "available_mib": 15257.15625,
+        "swap_free_mib": 16233.99609375
+      },
+      "loaded": {
+        "rss_mib": 412.05859375,
+        "process_swap_mib": 0.0,
+        "available_mib": 15103.7265625,
+        "swap_free_mib": 16233.99609375,
+        "elapsed_seconds": 22.998406048999996
+      },
+      "peak_rss_mib": 5884.21875,
+      "min_available_mib": 12240.734375,
+      "peak_process_swap_mib": 0.0,
+      "max_swap_growth_mib": 0.0
+    },
+    {
+      "load_seconds": 31.569649116999983,
+      "inference_seconds": [
+        10.783721592000006,
+        3.251302387999999,
+        2.556037387999993,
+        2.492723005000016,
+        2.6694087199999785
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        1,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "batch_size": 1,
+      "device_name": "Intel(R) Graphics [0xa7a1] (iGPU)",
+      "status": "success",
+      "mode": "current",
+      "baseline": {
+        "rss_mib": 29.49609375,
+        "process_swap_mib": 0.0,
+        "available_mib": 15372.25,
+        "swap_free_mib": 16233.99609375
+      },
+      "loaded": {
+        "rss_mib": 429.75,
+        "process_swap_mib": 0.0,
+        "available_mib": 15068.0859375,
+        "swap_free_mib": 16233.99609375,
+        "elapsed_seconds": 32.70719031599998
+      },
+      "peak_rss_mib": 5885.62109375,
+      "min_available_mib": 12232.89453125,
+      "peak_process_swap_mib": 0.0,
+      "max_swap_growth_mib": 0.0
+    }
+  ],
+  "comparison": {
+    "status": "compared",
+    "max_abs_difference": 3.0517578125e-05,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  }
+}

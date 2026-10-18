@@ -1,0 +1,18 @@
+{
+  "native-baseline": {
+    "max_abs_difference": 3.0517578125e-05,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  },
+  "native-current": {
+    "max_abs_difference": 0.0,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  },
+  "container-baseline": {
+    "max_abs_difference": 3.0517578125e-05,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  },
+  "container-current": {
+    "max_abs_difference": 0.0,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  }
+}
