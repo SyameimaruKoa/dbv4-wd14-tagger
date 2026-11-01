@@ -65,7 +65,7 @@ show_help() {
     echo "  ★ -w <数>             読込ワーカー数（既定 -1=自動、Clientは0）"
     echo "    -H <ホスト名/IP>           Client接続先（例: google-colab）"
     echo "  ★ -P <ポート番号>            Server/Clientポート（既定 5000）"
-    echo "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 balanced）"
+    echo "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 ultra）"
     echo "    -e <所有者/リポジトリ名>  HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）"
     echo "    -M <ファイル名/パス>       ONNXモデル（例: model.onnx）"
     echo "    -T <ファイル名/パス>       タグCSV（例: selected_tags.csv）"
@@ -336,7 +336,7 @@ auto_venv_name() {
 }
 
 select_auto_provider() {
-    local detected="$1" candidate mode venv_name probe_python openvino_libs
+    local detected="$1" candidate mode venv_name probe_python openvino_libs result ready_file
     local candidates=()
     case "$detected" in
         nvidia) candidates=(tensorrt cuda ncnn webgpu cpu) ;;
@@ -363,9 +363,13 @@ select_auto_provider() {
             continue
         fi
         probe_python="$SCRIPT_DIR/$venv_name/bin/python"
-        local probe_args=("${PY_ARGS[@]}" --provider "$candidate" --probe-provider)
+        ready_file=$(mktemp "${TMPDIR:-/tmp}/dbv4-provider.XXXXXXXX") || return 1
+        rm -f "$ready_file"
+        local probe_args=("${PY_ARGS[@]}" --provider "$candidate" --auto-provider-ready-file "$ready_file")
         if [ "$candidate" != "cpu" ]; then
             probe_args+=(--gpu)
+        else
+            probe_args+=(--io-workers 0)
         fi
         if [ "$candidate" = "webgpu" ] && [ "$detected" != "none" ]; then
             case "$detected" in
@@ -376,31 +380,22 @@ select_auto_provider() {
         fi
         if [ "$candidate" = "intel" ]; then
             openvino_libs=$("$probe_python" -c 'import importlib.util,pathlib; print(pathlib.Path(importlib.util.find_spec("openvino").origin).parent / "libs")' 2>/dev/null)
-            if ! LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}" "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"; then
-                echo "[WARN] $candidate の起動検証に失敗しました。"
-                continue
-            fi
-        elif ! "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"; then
-            echo "[WARN] $candidate の起動検証に失敗しました。"
-            continue
+            LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}" "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"
+            result=$?
+        else
+            "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"
+            result=$?
         fi
-        PROVIDER="$candidate"
-        BACKEND_MODE="$mode"
-        PY_ARGS+=(--provider "$candidate")
-        if [ "$candidate" = "webgpu" ]; then
-            case "$detected" in
-                amd*|ps4) PY_ARGS+=(--target-vendor amd) ;;
-                intel) PY_ARGS+=(--target-vendor intel) ;;
-                nvidia|switch) PY_ARGS+=(--target-vendor nvidia) ;;
-            esac
+        if [ -f "$ready_file" ]; then
+            rm -f "$ready_file"
+            return "$result"
         fi
-        echo "[INFO] 自動選択しました: $candidate"
-        return 0
+        rm -f "$ready_file"
+        echo "[WARN] $candidate の起動検証に失敗しました。"
     done
     echo "[ERROR] 利用可能なProviderがありません。"
     return 1
 }
-
 # 引数なしチェック
 if [ $# -eq 0 ]; then
     configure_storage_paths
@@ -576,7 +571,8 @@ if [ $USE_GPU -eq 1 ]; then
     else
         # 自動判別
         DETECTED=$(detect_gpu_vendor)
-        select_auto_provider "$DETECTED" || exit 1
+        select_auto_provider "$DETECTED"
+        exit $?
     fi
     if [ -z "$PROVIDER" ] && [ "$BACKEND_MODE" = "intel" ]; then
         PY_ARGS+=("--provider" "intel")
