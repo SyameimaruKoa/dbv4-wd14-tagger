@@ -1543,12 +1543,14 @@ def run_server(args: argparse.Namespace) -> None:
 
     def load_model() -> None:
         try:
-            runtime = load_runtime_model(
-                args.gpu, args.model_profile, args.model_repo, args.model_file,
-                args.tags_file, use_webgpu=getattr(args, "webgpu", False),
-                status_callback=lambda stage: setattr(handler, "startup_stage", stage),
-                **runtime_cli_options(args),
-            )
+            runtime = getattr(args, "preloaded_runtime", None)
+            if runtime is None:
+                runtime = load_runtime_model(
+                    args.gpu, args.model_profile, args.model_repo, args.model_file,
+                    args.tags_file, use_webgpu=getattr(args, "webgpu", False),
+                    status_callback=lambda stage: setattr(handler, "startup_stage", stage),
+                    **runtime_cli_options(args),
+                )
             session = getattr(runtime, "session", None)
             if session and "TensorrtExecutionProvider" in session.get_providers():
                 batch_limit = min(
@@ -1937,15 +1939,17 @@ def process_images(args: argparse.Namespace) -> None:
         raise SystemExit(f"[ERROR] {exc}") from exc
     runtime: Optional[RuntimeModel] = None
     if not is_client:
-        runtime = load_runtime_model(
-            args.gpu,
-            args.model_profile,
-            args.model_repo,
-            args.model_file,
-            args.tags_file,
-            use_webgpu=getattr(args, "webgpu", False),
-            **runtime_cli_options(args),
-        )
+        runtime = getattr(args, "preloaded_runtime", None)
+        if runtime is None:
+            runtime = load_runtime_model(
+                args.gpu,
+                args.model_profile,
+                args.model_repo,
+                args.model_file,
+                args.tags_file,
+                use_webgpu=getattr(args, "webgpu", False),
+                **runtime_cli_options(args),
+            )
         metadata = runtime.metadata
 
     assert metadata is not None
@@ -2633,7 +2637,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--model-profile",
         default=None,
         metavar="NAME",
-        help="★balanced。compact_manual/lightweight/medium_manual/balanced/high/ultra（configのカスタム定義も可）",
+        help="★ultra。compact_manual/lightweight/medium_manual/balanced/high/ultra（configのカスタム定義も可）",
     )
     values.add_argument("-e", "--model-repo", default=None, metavar="所有者/リポジトリ", help="HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）")
     values.add_argument("-l", "--model-file", default=None, metavar="ファイル", help="ONNXモデルファイル名またはパス（例: model.onnx）")
@@ -2657,6 +2661,7 @@ def create_parser() -> argparse.ArgumentParser:
     switches.add_argument("-i", "--ignore-sensitive", action="store_true", help="Sensitive判定をGeneralとして扱う")
     switches.add_argument("-G", "--gen-config", action="store_true", help="config.jsonを生成・更新")
     switches.add_argument("--probe-provider", action="store_true", help=argparse.SUPPRESS)
+    switches.add_argument("--auto-provider-ready-file", help=argparse.SUPPRESS)
     switches.add_argument("-h", "--help", action="help", help="このヘルプを表示")
     return parser
 
@@ -2679,12 +2684,23 @@ def main() -> None:
         args.model_profile = APP_CONFIG.get("model_profile", "ultra")
     if args.model_profile not in profiles:
         raise SystemExit(f"[ERROR] 不明なDBV4モデルプロファイルです: {args.model_profile}")
-    if args.probe_provider:
-        load_runtime_model(
-            args.gpu, args.model_profile, args.model_repo, args.model_file,
-            args.tags_file, use_webgpu=args.webgpu, **runtime_cli_options(args),
-        )
-        return
+    if args.probe_provider or args.auto_provider_ready_file:
+        try:
+            runtime = load_runtime_model(
+                args.gpu, args.model_profile, args.model_repo, args.model_file,
+                args.tags_file, use_webgpu=args.webgpu, **runtime_cli_options(args),
+            )
+        except Exception as exc:
+            if not args.auto_provider_ready_file:
+                raise
+            print(f"[WARN] {args.provider} の起動検証に失敗しました: {exc}", flush=True)
+            raise SystemExit(1) from exc
+        if args.probe_provider:
+            return
+        args.preloaded_runtime = runtime
+        with open(args.auto_provider_ready_file, "x", encoding="utf-8"):
+            pass
+        print(f"[INFO] 自動選択しました: {args.provider}", flush=True)
 
     if args.sensitive_split_mode is not None:
         print("[WARN] --sensitive-split-mode はDBV4移行後は非推奨です。R-15/R-17は5段階固定で処理します。")
