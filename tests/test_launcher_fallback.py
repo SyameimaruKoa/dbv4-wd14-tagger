@@ -42,6 +42,7 @@ exit 1
                 python.chmod(0o755)
             script = functions + '''
 setup_env() { return 0; }
+prepare_backend_environment() { return 0; }
 SCRIPT_DIR="$WORK"
 PYTHON_SCRIPT=embed_tags_universal.py
 PY_ARGS=(--model-profile ultra)
