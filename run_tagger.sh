@@ -493,6 +493,9 @@ select_auto_provider() {
             return "$result"
         fi
         rm -f "$ready_file"
+        if [ "$result" -ge 128 ]; then
+            return "$result"
+        fi
         echo "[WARN] $candidate の起動検証に失敗しました。"
     done
     echo "[ERROR] 利用可能なProviderがありません。"
