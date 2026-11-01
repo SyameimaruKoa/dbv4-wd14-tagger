@@ -2690,7 +2690,7 @@ def main() -> None:
                 args.gpu, args.model_profile, args.model_repo, args.model_file,
                 args.tags_file, use_webgpu=args.webgpu, **runtime_cli_options(args),
             )
-        except Exception as exc:
+        except (Exception, SystemExit) as exc:
             if not args.auto_provider_ready_file:
                 raise
             print(f"[WARN] {args.provider} の起動検証に失敗しました: {exc}", flush=True)
