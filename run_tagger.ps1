@@ -314,7 +314,7 @@ function Show-Help {
     Write-Host "  ★ -w <数>           読込ワーカー数（既定 -1=自動、Clientは0）"
     Write-Host "    -j <ホスト名/IP>           Client接続先（例: google-colab）"
     Write-Host "  ★ -u <ポート番号>            Server/Clientポート（既定 5000）"
-    Write-Host "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 balanced）"
+    Write-Host "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 ultra）"
     Write-Host "    -e <所有者/リポジトリ名>  HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）"
     Write-Host "    -l <ファイル名/パス>       ONNXモデル（例: model.onnx）"
     Write-Host "    -y <ファイル名/パス>       タグCSV（例: selected_tags.csv）"
