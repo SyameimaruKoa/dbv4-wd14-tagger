@@ -1539,7 +1539,10 @@ def run_server(args: argparse.Namespace) -> None:
         "batch_limit_override": None,
     })
     server = ParallelTagServer(("0.0.0.0", args.port), handler, workers)
-    print(f"\n[INFO] Port: {server.server_port} で待受開始。モデル読み込み中はClientを待機させます。", flush=True)
+    if getattr(args, "preloaded_runtime", None) is None:
+        print(f"\n[INFO] Port: {server.server_port} で待受開始。モデル読み込み中はClientを待機させます。", flush=True)
+    else:
+        print(f"\n[INFO] Port: {server.server_port} で待受開始。検証済みモデルを再利用します。", flush=True)
 
     def load_model() -> None:
         try:
