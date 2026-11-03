@@ -180,6 +180,12 @@ def merge_defaults(target: Dict[str, Any], source: Dict[str, Any]) -> bool:
 
 def migrate_legacy_config(config: Dict[str, Any]) -> bool:
     changed = False
+    if not config.get("default_model_profile_ultra_migrated", False):
+        if config.get("model_profile") == "balanced":
+            config["model_profile"] = "ultra"
+            print("[INFO] 旧デフォルトモデル balanced を ultra に更新しました。")
+        config["default_model_profile_ultra_migrated"] = True
+        changed = True
     if config.get("server_max_image_pixels") == 20000000:
         config["server_max_image_pixels"] = 80000000
         changed = True
