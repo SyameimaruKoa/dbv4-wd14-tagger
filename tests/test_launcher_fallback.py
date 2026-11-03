@@ -11,7 +11,7 @@ import unittest
 
 @unittest.skipUnless(os.name != 'nt' and shutil.which('bash'), 'POSIX Bash is required')
 class LauncherFallbackTests(unittest.TestCase):
-    def select(self, vendor, succeeds):
+    def select(self, vendor, succeeds, run_exit=0):
         source = (Path(__file__).resolve().parents[1] / 'run_tagger.sh').read_text()
         functions = '\n'.join(re.search(
             rf'(?ms)^{name}\(\) \{{.*?^\}}', source
@@ -21,11 +21,18 @@ class LauncherFallbackTests(unittest.TestCase):
             executable = '''#!/usr/bin/env bash
 if [[ "$1" == -c ]]; then exit 0; fi
 while [[ $# -gt 0 ]]; do
-    if [[ "$1" == --provider ]]; then provider="$2"; break; fi
-    shift
+    case "$1" in
+        --provider) provider="$2"; shift 2 ;;
+        --auto-provider-ready-file) ready_file="$2"; shift 2 ;;
+        *) shift ;;
+    esac
 done
 printf '%s\\n' "$provider" >> "$TRACE"
-[[ "$provider" == "$SUCCEEDS" ]]
+if [[ "$provider" == "$SUCCEEDS" ]]; then
+    : > "$ready_file"
+    exit "$RUN_EXIT"
+fi
+exit 1
 '''
             for venv in ('venv_gpu', 'venv_intel', 'venv_migraphx', 'venv_rocm',
                          'venv_ncnn', 'venv_webgpu', 'venv_std'):
@@ -35,18 +42,18 @@ printf '%s\\n' "$provider" >> "$TRACE"
                 python.chmod(0o755)
             script = functions + '''
 setup_env() { return 0; }
+prepare_backend_environment() { return 0; }
 SCRIPT_DIR="$WORK"
 PYTHON_SCRIPT=embed_tags_universal.py
 PY_ARGS=(--model-profile ultra)
 IS_CLIENT=0
 select_auto_provider "$VENDOR"
-printf 'selected=%s\\n' "$PROVIDER"
+exit $?
 '''
             result = subprocess.run(['bash', '-c', script], text=True, capture_output=True,
                                     env={**os.environ, 'WORK': directory, 'VENDOR': vendor,
-                                         'TRACE': str(root / 'trace'), 'SUCCEEDS': succeeds})
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn('selected=' + succeeds, result.stdout)
+                                         'TRACE': str(root / 'trace'), 'SUCCEEDS': succeeds, 'RUN_EXIT': str(run_exit)})
+            self.assertEqual(result.returncode, run_exit, result.stdout + result.stderr)
             return (root / 'trace').read_text().splitlines()
 
     def test_failing_gpu_initializations_follow_vendor_priorities(self):
@@ -68,6 +75,9 @@ printf 'selected=%s\\n' "$PROVIDER"
 
     def test_ncnn_initialization_failure_reaches_webgpu_before_cpu(self):
         self.assertEqual(self.select('amd_unsupported', 'webgpu'), ['ncnn', 'webgpu'])
+
+    def test_runtime_error_after_successful_probe_does_not_select_another_provider(self):
+        self.assertEqual(self.select('amd_unsupported', 'ncnn', run_exit=23), ['ncnn'])
 
 
 if __name__ == '__main__':

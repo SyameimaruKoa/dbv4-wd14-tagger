@@ -1,11 +1,60 @@
 import unittest
 import contextlib
 import io
+import os
+import sys
+import tempfile
+from unittest import mock
 
+import embed_tags_universal as tagger
 from embed_tags_universal import create_parser, runtime_cli_options
 
 
 class CliShortOptionTests(unittest.TestCase):
+    def test_ultra_is_the_default_profile(self):
+        self.assertEqual(tagger.DEFAULT_CONFIG["model_profile"], "ultra")
+        self.assertIn("★ultra", create_parser().format_help())
+
+    def test_auto_provider_reuses_probed_runtime(self):
+        for mode in ("standalone", "server"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                ready_file = os.path.join(directory, "ready")
+                runtime = object()
+                args = [
+                    "tagger", "--provider", "ncnn", "--gpu",
+                    "--auto-provider-ready-file", ready_file,
+                ]
+                if mode == "server":
+                    args += ["--mode", "server"]
+                else:
+                    args += ["example.png"]
+                with (
+                    mock.patch.object(sys, "argv", args),
+                    mock.patch.object(tagger, "load_runtime_model", return_value=runtime) as loader,
+                    mock.patch.object(tagger, "process_images") as process,
+                    mock.patch.object(tagger, "run_server") as server,
+                ):
+                    tagger.main()
+                    self.assertTrue(os.path.isfile(ready_file))
+                    self.assertEqual(loader.call_count, 1)
+                    handler = server if mode == "server" else process
+                    self.assertIs(handler.call_args.args[0].preloaded_runtime, runtime)
+
+    def test_auto_provider_does_not_mark_failed_probe_as_ready(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ready_file = os.path.join(directory, "ready")
+            with (
+                mock.patch.object(sys, "argv", [
+                    "tagger", "--provider", "ncnn", "--gpu",
+                    "--auto-provider-ready-file", ready_file, "example.png",
+                ]),
+                mock.patch.object(tagger, "load_runtime_model", side_effect=RuntimeError("probe failed")),
+                self.assertRaises(SystemExit) as caught,
+            ):
+                tagger.main()
+            self.assertEqual(caught.exception.code, 1)
+            self.assertFalse(os.path.exists(ready_file))
+
     def test_ncnn_streaming_default_is_distinct_from_explicit_zero(self):
         self.assertIsNone(runtime_cli_options(create_parser().parse_args([]))['ncnn_part_size_mib'])
         args = create_parser().parse_args(['--ncnn-part-size-mib', '0'])

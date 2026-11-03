@@ -97,6 +97,21 @@ class RuntimeCompatibilityTests(unittest.TestCase):
             config["model_profiles"]["ultra"]["vram_warning"],
         )
 
+    def test_migrate_previous_balanced_default_to_ultra_only_once(self):
+        config = {"model_profile": "balanced", "model_profiles": {}}
+        self.assertTrue(app.migrate_legacy_config(config))
+        self.assertEqual(config["model_profile"], "ultra")
+        self.assertTrue(config["default_model_profile_ultra_migrated"])
+
+        config["model_profile"] = "balanced"
+        self.assertFalse(app.migrate_legacy_config(config))
+        self.assertEqual(config["model_profile"], "balanced")
+
+    def test_migrate_default_does_not_override_another_profile(self):
+        config = {"model_profile": "lightweight", "model_profiles": {}}
+        self.assertTrue(app.migrate_legacy_config(config))
+        self.assertEqual(config["model_profile"], "lightweight")
+
     def test_parser_accepts_custom_model_profile(self):
         args = app.create_parser().parse_args(["--model-profile", "custom", "image.jpg"])
         self.assertEqual(args.model_profile, "custom")

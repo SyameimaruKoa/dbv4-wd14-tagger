@@ -27,13 +27,13 @@ WindowsでLinux版と同じ実行環境を利用するための[WSL Linuxコン�
 | compact_manual | animetimm/repvit_m2_3.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/repvit_m2_3.dbv4-full/resolve/main/model.onnx) | 122,111,601 bytes（約116.5 MiB） | 承認制・省メモリ |
 | lightweight | animetimm/mobilenetv4_conv_aa_large.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/mobilenetv4_conv_aa_large.dbv4-full/resolve/main/model.onnx) | 189,162,894 bytes（約180.4 MiB） | 軽量 |
 | medium_manual | animetimm/convformer_s36.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/convformer_s36.dbv4-full/resolve/main/model.onnx) | 254,865,174 bytes（約243.1 MiB） | 承認制・軽量とbalancedの中間 |
-| balanced | animetimm/caformer_b36.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx) | 536,982,484 bytes（約512.1 MiB） | デフォルト |
+| balanced | animetimm/caformer_b36.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/caformer_b36.dbv4-full/resolve/main/model.onnx) | 536,982,484 bytes（約512.1 MiB） | バランス重視 |
 | high | animetimm/eva02_large_patch14_448.dbv4-full | [`model.onnx`](https://huggingface.co/animetimm/eva02_large_patch14_448.dbv4-full/resolve/main/model.onnx) | 1,268,832,518 bytes（約1.18 GiB） | 高精度 |
-| ultra | itterative/convnextv2_huge.dbv4-full-onnx | [`model.onnx`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx) + [`model.onnx_data`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx_data) | 324,944 + 2,770,470,128 bytes（合計約2.58 GiB） | 精度最優先 |
+| ultra | itterative/convnextv2_huge.dbv4-full-onnx | [`model.onnx`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx) + [`model.onnx_data`](https://huggingface.co/itterative/convnextv2_huge.dbv4-full-onnx/resolve/main/model.onnx_data) | 324,944 + 2,770,470,128 bytes（合計約2.58 GiB） | デフォルト・精度最優先 |
 | wd14_v3 | SmilingWolf/wd-swinv2-tagger-v3 | [`model.onnx`](https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/model.onnx) | 467,460,978 bytes（約445.8 MiB） | 旧WD14互換 |
 | future_1b | animetimm/vit_giantopt_patch16_siglip_384.dbv4-full | ONNX未公開（`model.safetensors`のみ） | 4,734,142,376 bytes（約4.41 GiB） | 将来対応予約・現在実行不可 |
 
-balanced は、精度とモデル規模のバランスから caformer_b36.dbv4-full をデフォルトとして使用する。
+デフォルトは ultra。旧デフォルトの balanced が既存 config.json に残っている場合は、初回起動時に一度だけ ultra へ移行する。以後、config.json または -m で明示したプロファイルは保持する。
 
 各プロファイルはモデル・タグCSV・前処理定義・カテゴリ定義・threshold定義を一つの論理単位として扱う。ultraだけはONNX変換済みrepoに前処理metadataがないため、metadataを`animetimm/convnextv2_huge.dbv4-full`から取得する。将来DBV4モデルを追加する場合も、このプロファイルへ定義を追加すれば共通推論経路を変更せず切り替えられる設計じゃ。
 
@@ -411,7 +411,7 @@ run_colab_server.ipynb はDBV4サーバーを起動する構成へ更新され�
 
 <a href="https://colab.research.google.com/github/SyameimaruKoa/dbv4-wd14-tagger/blob/main/run_colab_server.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-初期状態では balanced プロファイルを使用する。設定セルのプルダウンから、実行可能なDBV4プロファイルと旧WD14 V3互換プロファイルを選択できる。承認制モデルで未ログインの場合は、サーバー起動前にノートブック上でHugging Faceログインを要求する。モデルページでの利用条件への同意も必要。Colab Secretsの`HF_TOKEN`を設定済みなら、そのトークンを使用する。
+初期状態では ultra プロファイルを使用する。設定セルのプルダウンから、実行可能なDBV4プロファイルと旧WD14 V3互換プロファイルを選択できる。承認制モデルで未ログインの場合は、サーバー起動前にノートブック上でHugging Faceログインを要求する。モデルページでの利用条件への同意も必要。Colab Secretsの`HF_TOKEN`を設定済みなら、そのトークンを使用する。
 
 Tailscaleホスト名はColab Secretsの`TAILSCALE_HOSTNAME`を優先して使用し、未登録の場合は設定セルの`HOSTNAME`へフォールバックする。Tailscale認証キーを使う場合は従来どおり`TAILSCALE_AUTHKEY`へ登録する。ローカル側は通常のClientモードで接続できるぞ。
 

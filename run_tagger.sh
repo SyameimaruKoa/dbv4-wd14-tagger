@@ -65,7 +65,7 @@ show_help() {
     echo "  ★ -w <数>             読込ワーカー数（既定 -1=自動、Clientは0）"
     echo "    -H <ホスト名/IP>           Client接続先（例: google-colab）"
     echo "  ★ -P <ポート番号>            Server/Clientポート（既定 5000）"
-    echo "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 balanced）"
+    echo "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 ultra）"
     echo "    -e <所有者/リポジトリ名>  HFリポジトリID（例: animetimm/caformer_b36.dbv4-full）"
     echo "    -M <ファイル名/パス>       ONNXモデル（例: model.onnx）"
     echo "    -T <ファイル名/パス>       タグCSV（例: selected_tags.csv）"
@@ -335,8 +335,111 @@ auto_venv_name() {
     esac
 }
 
+prepare_backend_environment() {
+    if [ -n "$TENSORRT_LIB_DIR_ARG" ]; then
+        export TENSORRT_LIB_DIR="$TENSORRT_LIB_DIR_ARG"
+    fi
+    if [ "$BACKEND_MODE" = "intel" ] && [ "$IS_CLIENT" != "1" ]; then
+        OPENVINO_LIBS=$("$VENV_DIR/bin/python" -c 'import importlib.util, pathlib; print(pathlib.Path(importlib.util.find_spec("openvino").origin).parent / "libs")') || exit 1
+        export LD_LIBRARY_PATH="$OPENVINO_LIBS:${LD_LIBRARY_PATH:-}"
+    fi
+    if [ "$BACKEND_MODE" = "nvidia" ]; then
+        if [ -n "${TENSORRT_LIB_DIR:-}" ]; then
+            export LD_LIBRARY_PATH="$TENSORRT_LIB_DIR:${LD_LIBRARY_PATH:-}"
+        fi
+        EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64", "/usr/lib/aarch64-linux-gnu/tegra"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("nvidia" in root or "tensorrt" in root) and any(f.endswith(".so") or ".so." in f for f in files)]; print(":".join(list(dict.fromkeys([p for p in paths if os.path.exists(p)]))))' 2>/dev/null)
+        if [ -n "$EXTRA_LD_PATHS" ]; then
+            export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
+        fi
+    elif [ "$BACKEND_MODE" = "amd" ]; then
+        EXTRA_LD_PATHS=$(VENV_DIR="$VENV_DIR" "$VENV_DIR/bin/python" -c '
+import os, glob, site
+vdir = os.environ.get("VENV_DIR", "")
+cdir = os.path.join(vdir, "lib", "rocm_compat") if vdir else ""
+if cdir:
+    os.makedirs(cdir, exist_ok=True)
+    sdirs = ["/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/usr/local/lib", "/opt/rocm/lib", "/opt/rocm/lib64"]
+    fallback_src = None
+    for sdir in sdirs:
+        m = glob.glob(os.path.join(sdir, "libamdhip64.so*")) or glob.glob(os.path.join(sdir, "libhsa-runtime64.so*"))
+        if m:
+            m.sort(key=len)
+            fallback_src = m[0]
+            break
+    known_targets = [
+        "librocm_smi64.so", "libroctracer64.so", "libroctx64.so", "libamdhip64.so",
+        "librocblas.so", "libhsa-runtime64.so", "libMIOpen.so", "libmigraphx_c.so",
+        "librocsolver.so", "librocsparse.so", "librocrand.so", "librccl.so", "libamd_comgr.so"
+    ]
+    prefixes = ("libroc", "libamd", "libhsa", "libMIOpen", "libmigraphx", "librccl", "libhip")
+    bases = set(known_targets)
+    for sdir in sdirs:
+        if os.path.exists(sdir):
+            try:
+                for fname in os.listdir(sdir):
+                    if fname.startswith(prefixes) and (".so" in fname):
+                        base = fname.split(".so")[0] + ".so"
+                        bases.add(base)
+            except Exception:
+                pass
+    for lbase in bases:
+        fsrc = None
+        for sdir in sdirs:
+            matches = glob.glob(os.path.join(sdir, lbase + "*"))
+            if matches:
+                matches.sort(key=len)
+                fsrc = matches[0]
+                break
+        if not fsrc:
+            fsrc = fallback_src
+        if fsrc:
+            lpath = os.path.join(cdir, lbase)
+            if not os.path.exists(lpath):
+                try:
+                    os.symlink(fsrc, lpath)
+                except Exception:
+                    pass
+            for ver in range(1, 8):
+                vname = f"{lbase}.{ver}"
+                lpath = os.path.join(cdir, vname)
+                if not os.path.exists(lpath):
+                    try:
+                        os.symlink(fsrc, lpath)
+                    except Exception:
+                        pass
+paths = [cdir] if cdir else []
+paths.extend(["/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/usr/local/lib", "/opt/rocm/lib", "/opt/rocm/migraphx/lib", "/opt/rocm/lib64", "/opt/rocm/hsa/lib"])
+for p in site.getsitepackages():
+    if os.path.exists(p):
+        for root, dirs, files in os.walk(p):
+            if any(f.startswith(("libmigraphx", "libamd", "libhsa", "libroc", "libonnxruntime")) for f in files):
+                paths.append(root)
+print(":".join(list(dict.fromkeys([p for p in paths if p and os.path.exists(p)]))))
+    ' 2>/dev/null)
+        if [ -n "$EXTRA_LD_PATHS" ]; then
+            export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
+        fi
+        if [ -z "${HSA_OVERRIDE_GFX_VERSION:-}" ]; then
+            if command -v rocminfo >/dev/null 2>&1; then
+                ARCH=$(rocminfo 2>/dev/null | grep -o "gfx90[0-9a-f]\+" | head -n 1)
+                if [ "$ARCH" = "gfx906" ]; then
+                    export HSA_OVERRIDE_GFX_VERSION=9.0.6
+                else
+                    export HSA_OVERRIDE_GFX_VERSION=9.0.0
+                fi
+            else
+                export HSA_OVERRIDE_GFX_VERSION=9.0.0
+            fi
+            echo "[INFO] AMD GPU用環境変数を自動設定しました: HSA_OVERRIDE_GFX_VERSION=$HSA_OVERRIDE_GFX_VERSION"
+        fi
+        export HSA_ENABLE_SDMA=0
+        echo "[INFO] AMD iGPU/APU コアダンプ回避設定を適用しました: HSA_ENABLE_SDMA=0"
+    fi
+
+}
+
 select_auto_provider() {
-    local detected="$1" candidate mode venv_name probe_python openvino_libs
+    local detected="$1" candidate mode venv_name probe_python openvino_libs result ready_file
     local candidates=()
     case "$detected" in
         nvidia) candidates=(tensorrt cuda ncnn webgpu cpu) ;;
@@ -363,9 +466,13 @@ select_auto_provider() {
             continue
         fi
         probe_python="$SCRIPT_DIR/$venv_name/bin/python"
-        local probe_args=("${PY_ARGS[@]}" --provider "$candidate" --probe-provider)
+        ready_file=$(mktemp "${TMPDIR:-/tmp}/dbv4-provider.XXXXXXXX") || return 1
+        rm -f "$ready_file"
+        local probe_args=("${PY_ARGS[@]}" --provider "$candidate" --auto-provider-ready-file "$ready_file")
         if [ "$candidate" != "cpu" ]; then
             probe_args+=(--gpu)
+        else
+            probe_args+=(--io-workers 0)
         fi
         if [ "$candidate" = "webgpu" ] && [ "$detected" != "none" ]; then
             case "$detected" in
@@ -374,33 +481,26 @@ select_auto_provider() {
                 nvidia|switch) probe_args+=(--target-vendor nvidia) ;;
             esac
         fi
-        if [ "$candidate" = "intel" ]; then
-            openvino_libs=$("$probe_python" -c 'import importlib.util,pathlib; print(pathlib.Path(importlib.util.find_spec("openvino").origin).parent / "libs")' 2>/dev/null)
-            if ! LD_LIBRARY_PATH="$openvino_libs:${LD_LIBRARY_PATH:-}" "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"; then
-                echo "[WARN] $candidate の起動検証に失敗しました。"
-                continue
-            fi
-        elif ! "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"; then
-            echo "[WARN] $candidate の起動検証に失敗しました。"
-            continue
+        (
+            BACKEND_MODE="$mode"
+            VENV_DIR="$SCRIPT_DIR/$venv_name"
+            prepare_backend_environment
+            "$probe_python" "$PYTHON_SCRIPT" "${probe_args[@]}"
+        )
+        result=$?
+        if [ -f "$ready_file" ]; then
+            rm -f "$ready_file"
+            return "$result"
         fi
-        PROVIDER="$candidate"
-        BACKEND_MODE="$mode"
-        PY_ARGS+=(--provider "$candidate")
-        if [ "$candidate" = "webgpu" ]; then
-            case "$detected" in
-                amd*|ps4) PY_ARGS+=(--target-vendor amd) ;;
-                intel) PY_ARGS+=(--target-vendor intel) ;;
-                nvidia|switch) PY_ARGS+=(--target-vendor nvidia) ;;
-            esac
+        rm -f "$ready_file"
+        if [ "$result" -ge 128 ]; then
+            return "$result"
         fi
-        echo "[INFO] 自動選択しました: $candidate"
-        return 0
+        echo "[WARN] $candidate の起動検証に失敗しました。"
     done
     echo "[ERROR] 利用可能なProviderがありません。"
     return 1
 }
-
 # 引数なしチェック
 if [ $# -eq 0 ]; then
     configure_storage_paths
@@ -576,7 +676,8 @@ if [ $USE_GPU -eq 1 ]; then
     else
         # 自動判別
         DETECTED=$(detect_gpu_vendor)
-        select_auto_provider "$DETECTED" || exit 1
+        select_auto_provider "$DETECTED"
+        exit $?
     fi
     if [ -z "$PROVIDER" ] && [ "$BACKEND_MODE" = "intel" ]; then
         PY_ARGS+=("--provider" "intel")
@@ -594,105 +695,7 @@ fi
 
 setup_env "$BACKEND_MODE" "$IS_CLIENT"
 
-if [ -n "$TENSORRT_LIB_DIR_ARG" ]; then
-    export TENSORRT_LIB_DIR="$TENSORRT_LIB_DIR_ARG"
-fi
-if [ "$BACKEND_MODE" = "intel" ] && [ "$IS_CLIENT" != "1" ]; then
-    OPENVINO_LIBS=$("$VENV_DIR/bin/python" -c 'import importlib.util, pathlib; print(pathlib.Path(importlib.util.find_spec("openvino").origin).parent / "libs")') || exit 1
-    export LD_LIBRARY_PATH="$OPENVINO_LIBS:${LD_LIBRARY_PATH:-}"
-fi
-if [ "$BACKEND_MODE" = "nvidia" ]; then
-    if [ -n "${TENSORRT_LIB_DIR:-}" ]; then
-        export LD_LIBRARY_PATH="$TENSORRT_LIB_DIR:${LD_LIBRARY_PATH:-}"
-    fi
-    EXTRA_LD_PATHS=$("$VENV_DIR/bin/python" -c 'import site, os; paths = ["/usr/local/cuda/lib64", "/usr/local/nvidia/lib64", "/usr/lib/aarch64-linux-gnu/tegra"]; [paths.append(root) for p in site.getsitepackages() if os.path.exists(p) for root, dirs, files in os.walk(p) if ("nvidia" in root or "tensorrt" in root) and any(f.endswith(".so") or ".so." in f for f in files)]; print(":".join(list(dict.fromkeys([p for p in paths if os.path.exists(p)]))))' 2>/dev/null)
-    if [ -n "$EXTRA_LD_PATHS" ]; then
-        export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
-    fi
-elif [ "$BACKEND_MODE" = "amd" ]; then
-    EXTRA_LD_PATHS=$(VENV_DIR="$VENV_DIR" "$VENV_DIR/bin/python" -c '
-import os, glob, site
-vdir = os.environ.get("VENV_DIR", "")
-cdir = os.path.join(vdir, "lib", "rocm_compat") if vdir else ""
-if cdir:
-    os.makedirs(cdir, exist_ok=True)
-    sdirs = ["/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/usr/local/lib", "/opt/rocm/lib", "/opt/rocm/lib64"]
-    fallback_src = None
-    for sdir in sdirs:
-        m = glob.glob(os.path.join(sdir, "libamdhip64.so*")) or glob.glob(os.path.join(sdir, "libhsa-runtime64.so*"))
-        if m:
-            m.sort(key=len)
-            fallback_src = m[0]
-            break
-    known_targets = [
-        "librocm_smi64.so", "libroctracer64.so", "libroctx64.so", "libamdhip64.so",
-        "librocblas.so", "libhsa-runtime64.so", "libMIOpen.so", "libmigraphx_c.so",
-        "librocsolver.so", "librocsparse.so", "librocrand.so", "librccl.so", "libamd_comgr.so"
-    ]
-    prefixes = ("libroc", "libamd", "libhsa", "libMIOpen", "libmigraphx", "librccl", "libhip")
-    bases = set(known_targets)
-    for sdir in sdirs:
-        if os.path.exists(sdir):
-            try:
-                for fname in os.listdir(sdir):
-                    if fname.startswith(prefixes) and (".so" in fname):
-                        base = fname.split(".so")[0] + ".so"
-                        bases.add(base)
-            except Exception:
-                pass
-    for lbase in bases:
-        fsrc = None
-        for sdir in sdirs:
-            matches = glob.glob(os.path.join(sdir, lbase + "*"))
-            if matches:
-                matches.sort(key=len)
-                fsrc = matches[0]
-                break
-        if not fsrc:
-            fsrc = fallback_src
-        if fsrc:
-            lpath = os.path.join(cdir, lbase)
-            if not os.path.exists(lpath):
-                try:
-                    os.symlink(fsrc, lpath)
-                except Exception:
-                    pass
-            for ver in range(1, 8):
-                vname = f"{lbase}.{ver}"
-                lpath = os.path.join(cdir, vname)
-                if not os.path.exists(lpath):
-                    try:
-                        os.symlink(fsrc, lpath)
-                    except Exception:
-                        pass
-paths = [cdir] if cdir else []
-paths.extend(["/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/usr/local/lib", "/opt/rocm/lib", "/opt/rocm/migraphx/lib", "/opt/rocm/lib64", "/opt/rocm/hsa/lib"])
-for p in site.getsitepackages():
-    if os.path.exists(p):
-        for root, dirs, files in os.walk(p):
-            if any(f.startswith(("libmigraphx", "libamd", "libhsa", "libroc", "libonnxruntime")) for f in files):
-                paths.append(root)
-print(":".join(list(dict.fromkeys([p for p in paths if p and os.path.exists(p)]))))
-' 2>/dev/null)
-    if [ -n "$EXTRA_LD_PATHS" ]; then
-        export LD_LIBRARY_PATH="$EXTRA_LD_PATHS:${LD_LIBRARY_PATH:-}"
-    fi
-    if [ -z "${HSA_OVERRIDE_GFX_VERSION:-}" ]; then
-        if command -v rocminfo >/dev/null 2>&1; then
-            ARCH=$(rocminfo 2>/dev/null | grep -o "gfx90[0-9a-f]\+" | head -n 1)
-            if [ "$ARCH" = "gfx906" ]; then
-                export HSA_OVERRIDE_GFX_VERSION=9.0.6
-            else
-                export HSA_OVERRIDE_GFX_VERSION=9.0.0
-            fi
-        else
-            export HSA_OVERRIDE_GFX_VERSION=9.0.0
-        fi
-        echo "[INFO] AMD GPU用環境変数を自動設定しました: HSA_OVERRIDE_GFX_VERSION=$HSA_OVERRIDE_GFX_VERSION"
-    fi
-    export HSA_ENABLE_SDMA=0
-    echo "[INFO] AMD iGPU/APU コアダンプ回避設定を適用しました: HSA_ENABLE_SDMA=0"
-fi
+prepare_backend_environment
 
 if [ "$BACKEND_MODE" = "amd" ] && [ "$IS_CLIENT" != "1" ]; then
     "$VENV_DIR/bin/python" -c 'import onnxruntime as ort, sys; p=ort.get_available_providers(); print("[INFO] AMD providers:", p); sys.exit(0 if any(x in p for x in ("MIGraphXExecutionProvider", "ROCMExecutionProvider")) else 1)' || {
