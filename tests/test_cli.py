@@ -171,6 +171,26 @@ class CliShortOptionTests(unittest.TestCase):
                     self.assertEqual(args.batch_size, 1)
                     self.assertEqual(args.io_workers, 0)
 
+    def test_automatic_low_memory_controls_batch_size(self):
+        for enabled in (False, True):
+            with self.subTest(enabled=enabled):
+                reasons = ["専用VRAM 4.00 GiB < 8 GiB"] if enabled else []
+                with (
+                    mock.patch.object(sys, "argv", [
+                        "tagger", "--provider", "intel", "--gpu",
+                        "--batch-size", "4", "--io-workers", "2", "example.png",
+                    ]),
+                    mock.patch.object(tagger.memory_policy, "detect_low_memory",
+                                      return_value=(enabled, reasons, 32 * 1024 ** 3, 4 * 1024 ** 3)),
+                    mock.patch.object(tagger, "process_images") as process,
+                    contextlib.redirect_stdout(io.StringIO()),
+                ):
+                    tagger.main()
+                    args = process.call_args.args[0]
+                    self.assertEqual(args.low_memory, enabled)
+                    self.assertEqual(args.batch_size, 1 if enabled else 4)
+                    self.assertEqual(args.io_workers, 0 if enabled else 2)
+
     def test_low_memory_server_limits_batch_and_workers(self):
         for enabled in (False, True):
             with self.subTest(low_memory=enabled):
