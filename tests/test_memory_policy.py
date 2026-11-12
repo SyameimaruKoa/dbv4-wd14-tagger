@@ -79,7 +79,7 @@ class LowMemoryPolicyTests(TestCase):
             ("Type.dGPU", 12 * memory.GIB, 12 * memory.GIB),
         ):
             with self.subTest(kind=kind), patch.object(memory.subprocess, "run",
-                    return_value=SimpleNamespace(stdout=f"{kind}\\n{capacity}\\n")):
+                    return_value=SimpleNamespace(stdout=f"{kind}\n{capacity}\n")):
                 self.assertEqual(memory._openvino_vram_bytes("GPU.0"), expected)
 
     def test_select_openvino_gpu_number_and_vendor(self):
