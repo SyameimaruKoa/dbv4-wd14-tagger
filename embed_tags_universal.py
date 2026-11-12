@@ -2703,7 +2703,7 @@ def main() -> None:
             args.low_memory = True
             print(f"[INFO] 低メモリモードを自動有効化: {', '.join(reasons)}")
         elif args.gpu and vram is None:
-            print("[WARN] 専用VRAM容量を判定できませんでした。RAM条件のみで自動判定します。")
+            print("[WARN] GPUメモリ容量（専用優先・なければ共有）を判定できませんでした。RAM条件のみで自動判定します。")
     if args.low_memory:
         args.batch_size = 1
         args.io_workers = 0
