@@ -259,10 +259,13 @@ compinit
 | 再帰検索 | `-r` / `--recursive` | `-r` / `-Recursive` |
 | 再帰検索OFF | `-n` / `--no-recursive` | `-n` / `-NoRecursive` |
 | バッチサイズ | `-b` / `--batch-size` | `-b` / `-BatchSize` |
+| 低メモリモード | `-lm` / `--low-memory` | `-lm` / `-LowMemory` |
 | モデルプロファイル | `-m` / `--model-profile` | `-m` / `-ModelProfile` |
 | Server | `-S` / `--server` | `-s` / `-Server` |
 | Client | `-K` / `--client` | `-c` / `-Client` |
 | Help | `-h` / `--help` | `-h` / `-Help` |
+
+低メモリモードはモデルとGPU実行プロバイダを維持したまま、バッチサイズを1、画像読込ワーカーを0へ固定する。Serverでは同時処理数と受信バッチ上限も1に制限する。`-b` / `-w` の指定より優先し、解除すれば従来どおり動作する。HD Graphics 530でultraをOpenVINO FP32実行した際、batch=4でGPUメモリ不足、batch=1で動作した環境向けに用意した。
 
 全オプションと短縮形は `./run_tagger.sh -h` または `.\\run_tagger.ps1 -h` で確認できる。
 
