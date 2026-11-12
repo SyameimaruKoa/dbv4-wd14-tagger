@@ -1537,12 +1537,12 @@ class ParallelTagServer(ThreadingMixIn, HTTPServer):
 
 
 def run_server(args: argparse.Namespace) -> None:
-    workers = max(1, int(APP_CONFIG.get("server_workers", 2)))
+    workers = 1 if getattr(args, "low_memory", False) else max(1, int(APP_CONFIG.get("server_workers", 2)))
     handler = type("ActiveTagServerHandler", (TagServerHandler,), {
         "runtime": None,
         "startup_stage": "モデル読み込み・GPU起動検証中",
         "startup_error": None,
-        "batch_limit_override": None,
+        "batch_limit_override": 1 if getattr(args, "low_memory", False) else None,
     })
     server = ParallelTagServer(("0.0.0.0", args.port), handler, workers)
     if getattr(args, "preloaded_runtime", None) is None:
@@ -2638,6 +2638,7 @@ def create_parser() -> argparse.ArgumentParser:
     values.add_argument("-td", "--tensorrt-lib-dir", metavar="ディレクトリ", help="TensorRT 10ライブラリの場所")
     values.add_argument("-b", "--batch-size", type=int, default=4, help="★推論バッチサイズ 4（モデル上限で調整）")
     values.add_argument("-w", "--io-workers", type=int, default=-1, help="★画像読込みの並列数 -1=自動（Clientは0）")
+    switches.add_argument("-lm", "--low-memory", action="store_true", help="低メモリモード（batch-size=1、io-workers=0、Server同時処理=1）")
     switches.add_argument("-f", "--force", action="store_true", help="既存DBV4 scoreを使わず強制再推論")
     switches.add_argument("-r", "--recursive", action="store_const", const=True, default=None, help="再帰検索ON")
     switches.add_argument("-n", "--no-recursive", action="store_const", const=False, dest="recursive", help="再帰検索OFF")
@@ -2677,6 +2678,10 @@ def create_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = create_parser().parse_args()
+    if args.low_memory:
+        args.batch_size = 1
+        args.io_workers = 0
+        print("[INFO] 低メモリモード: batch-size=1、io-workers=0、Server同時処理=1")
     if args.webgpu and args.provider not in (None, "webgpu"):
         raise SystemExit("[ERROR] --webgpu conflicts with --provider")
     if args.provider == "cpu":
