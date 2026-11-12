@@ -5,6 +5,7 @@ import os
 import platform
 import re
 import subprocess
+import sys
 from pathlib import Path
 from uuid import UUID
 
@@ -131,6 +132,27 @@ def _windows_dxgi_adapters():
     return adapters
 
 
+def _openvino_vram_bytes(device):
+    query = (
+        "import openvino as ov,sys; c=ov.Core(); d=sys.argv[1]; "
+        "print(str(c.get_property(d, 'DEVICE_TYPE'))); "
+        "print(c.get_property(d, 'GPU_DEVICE_TOTAL_MEM_SIZE'))"
+    )
+    try:
+        result = subprocess.run([sys.executable, "-c", query, device or "GPU.0"],
+                                capture_output=True, text=True, timeout=15, check=True)
+        kind, capacity = result.stdout.strip().splitlines()[-2:]
+        kind = kind.lower()
+        if "igpu" in kind or "integrated" in kind:
+            return 0
+        if "dgpu" in kind or "discrete" in kind:
+            value = int(capacity)
+            return value if value > 0 else None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    return None
+
+
 def _nvidia_vram_bytes(index):
     try:
         result = subprocess.run(
@@ -173,6 +195,10 @@ def dedicated_vram_bytes(provider=None, gpu_index=0, directml_device_index=0,
                          openvino_device=None, target_vendor=None):
     if provider == "cpu":
         return None
+    if provider == "intel":
+        detected = _openvino_vram_bytes(openvino_device)
+        if detected is not None:
+            return detected
     if provider in ("cuda", "tensorrt"):
         detected = _nvidia_vram_bytes(gpu_index)
         if detected is not None:
