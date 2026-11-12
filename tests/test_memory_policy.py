@@ -64,6 +64,7 @@ class LowMemoryPolicyTests(TestCase):
         with (
             patch.object(memory.platform, "system", return_value="Linux"),
             patch.object(memory, "_linux_cards", return_value=adapters),
+            patch.object(memory, "_openvino_vram_bytes", return_value=None),
             patch.object(memory, "total_ram_bytes", return_value=32 * memory.GIB),
         ):
             enabled, reasons, _, vram = memory.detect_low_memory(self.make_args())
@@ -71,6 +72,15 @@ class LowMemoryPolicyTests(TestCase):
             self.assertEqual(vram, 0)
             self.assertEqual(len(reasons), 1)
             self.assertIn("VRAM", reasons[0])
+
+    def test_openvino_igpu_does_not_count_host_ram_as_dedicated_vram(self):
+        for kind, capacity, expected in (
+            ("Type.iGPU", 32 * memory.GIB, 0),
+            ("Type.dGPU", 12 * memory.GIB, 12 * memory.GIB),
+        ):
+            with self.subTest(kind=kind), patch.object(memory.subprocess, "run",
+                    return_value=SimpleNamespace(stdout=f"{kind}\\n{capacity}\\n")):
+                self.assertEqual(memory._openvino_vram_bytes("GPU.0"), expected)
 
     def test_select_openvino_gpu_number_and_vendor(self):
         adapters = [
