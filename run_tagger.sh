@@ -63,6 +63,7 @@ show_help() {
     echo "  ★ -U, -um <p|o>       p=前処理・可逆圧縮 / o=元画像送信（初期設定 p）"
     echo "  ★ -b <枚数>           バッチサイズ（既定 4、モデル上限で調整）"
     echo "  ★ -w <数>             読込ワーカー数（既定 -1=自動、Clientは0）"
+    echo "    -lm, --low-memory   低メモリモード（バッチ1、読込並列0、Server同時処理1）"
     echo "    -H <ホスト名/IP>           Client接続先（例: google-colab）"
     echo "  ★ -P <ポート番号>            Server/Clientポート（既定 5000）"
     echo "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 ultra）"
@@ -537,6 +538,7 @@ while [[ $# -gt 0 ]]; do
         -n|--no-recursive) PY_ARGS+=("--no-recursive"); shift ;;
         -b|--batch-size) PY_ARGS+=("--batch-size" "$2"); shift 2 ;;
         -w|--io-workers) PY_ARGS+=("--io-workers" "$2"); shift 2 ;;
+        -lm|--low-memory) PY_ARGS+=("--low-memory"); shift ;;
         -m|--model-profile) PY_ARGS+=("--model-profile" "$2"); shift 2 ;;
         -e|--model-repo) PY_ARGS+=("--model-repo" "$2"); shift 2 ;;
         -M|--model-file) PY_ARGS+=("--model-file" "$2"); shift 2 ;;
