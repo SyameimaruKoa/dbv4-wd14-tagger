@@ -31,6 +31,7 @@ from socketserver import ThreadingMixIn
 from typing import Any, Deque, Dict, List, Optional, Sequence, Tuple
 
 import gpu_runtime
+import memory_policy
 
 import numpy as np
 import onnxruntime as ort
@@ -2678,10 +2679,6 @@ def create_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = create_parser().parse_args()
-    if args.low_memory:
-        args.batch_size = 1
-        args.io_workers = 0
-        print("[INFO] 低メモリモード: batch-size=1、io-workers=0、Server同時処理=1")
     if args.webgpu and args.provider not in (None, "webgpu"):
         raise SystemExit("[ERROR] --webgpu conflicts with --provider")
     if args.provider == "cpu":
@@ -2698,6 +2695,19 @@ def main() -> None:
         args.model_profile = APP_CONFIG.get("model_profile", "ultra")
     if args.model_profile not in profiles:
         raise SystemExit(f"[ERROR] 不明なDBV4モデルプロファイルです: {args.model_profile}")
+    if args.low_memory:
+        print("[INFO] 低メモリモードを明示指定しました。")
+    else:
+        automatic, reasons, ram, vram = memory_policy.detect_low_memory(args)
+        if automatic:
+            args.low_memory = True
+            print(f"[INFO] 低メモリモードを自動有効化: {', '.join(reasons)}")
+        elif args.gpu and vram is None:
+            print("[WARN] 専用VRAM容量を判定できませんでした。RAM条件のみで自動判定します。")
+    if args.low_memory:
+        args.batch_size = 1
+        args.io_workers = 0
+        print("[INFO] 低メモリモード: batch-size=1、io-workers=0、Server同時処理=1")
     if args.probe_provider or args.auto_provider_ready_file:
         try:
             runtime = load_runtime_model(
