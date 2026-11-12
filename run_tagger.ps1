@@ -56,6 +56,10 @@
     【前処理ワーカー数】 (数値)
     画像の読み込み・前処理を並列化するワーカー数（デフォルト: 自動）。
 
+.PARAMETER LowMemory
+    【低メモリモード】 (スイッチ)
+    推論バッチ1枚、読込並列0、Server同時処理1に制限する。
+
 .PARAMETER ModelProfile
     【DBV4モデルプロファイル】 (文字列)
     compact_manual / lightweight / medium_manual / balanced / high / ultra から選択する。
@@ -197,6 +201,8 @@ param (
     [int]$BatchSize,
     [Alias('w')]
     [int]$IoWorkers,
+    [Alias('lm')]
+    [switch]$LowMemory,
     [Alias('m')]
     [string]$ModelProfile,
     [Alias('e')]
@@ -312,6 +318,7 @@ function Show-Help {
     Write-Host "  ★ -um <p|o>         p=前処理・可逆圧縮 / o=元画像送信（初期設定 p）"
     Write-Host "  ★ -b <枚数>         バッチサイズ（既定 4、モデル上限で調整）"
     Write-Host "  ★ -w <数>           読込ワーカー数（既定 -1=自動、Clientは0）"
+    Write-Host "    -lm                 低メモリモード（バッチ1、読込並列0、Server同時処理1）"
     Write-Host "    -j <ホスト名/IP>           Client接続先（例: google-colab）"
     Write-Host "  ★ -u <ポート番号>            Server/Clientポート（既定 5000）"
     Write-Host "  ★ -m <プロファイル名>        compact_manual/lightweight/medium_manual/balanced/high/ultra（既定 ultra）"
@@ -441,6 +448,7 @@ function Get-TaggerArguments {
     if ($TensorRtLibDir) { $PyArgs += @('--tensorrt-lib-dir', $TensorRtLibDir) }
     if ($TaggerParameters.ContainsKey('BatchSize')) { $PyArgs += ("--batch-size", $BatchSize) }
     if ($TaggerParameters.ContainsKey('IoWorkers')) { $PyArgs += ("--io-workers", $IoWorkers) }
+    if ($LowMemory) { $PyArgs += '--low-memory' }
     if ($TaggerParameters.ContainsKey('ModelProfile')) { $PyArgs += ("--model-profile", $ModelProfile) }
     if ($TaggerParameters.ContainsKey('ModelRepo')) { $PyArgs += ("--model-repo", $ModelRepo) }
     if ($TaggerParameters.ContainsKey('ModelFile')) { $PyArgs += ("--model-file", $ModelFile) }
@@ -814,6 +822,7 @@ if ($AutoProviderSelection) {
                     '--ncnn-precision', $NcnnPrecision)
                 if ($PSBoundParameters.ContainsKey('NcnnPartSizeMiB')) { $ProbeArgs += @('--ncnn-part-size-mib', "$NcnnPartSizeMiB") }
                 if ($PSBoundParameters.ContainsKey('WebGpuDeviceIndex')) { $ProbeArgs += @('--webgpu-device-index', "$WebGpuDeviceIndex") }
+                if ($LowMemory) { $ProbeArgs += '--low-memory' }
                 if ($ModelProfile) { $ProbeArgs += @('--model-profile', $ModelProfile) }
                 if ($ModelRepo) { $ProbeArgs += @('--model-repo', $ModelRepo) }
                 if ($ModelFile) { $ProbeArgs += @('--model-file', $ModelFile) }
