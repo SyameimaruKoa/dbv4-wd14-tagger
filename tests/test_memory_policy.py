@@ -29,7 +29,8 @@ class LowMemoryPolicyTests(TestCase):
             (32, 16, False, 0),
         ]
         for ram_gib, vram_gib, expected, reason_count in cases:
-            with self.subTest(ram_gib=ram_gib, vram_gib=vram_gib), (
+            with (
+                self.subTest(ram_gib=ram_gib, vram_gib=vram_gib),
                 patch.object(memory, "total_ram_bytes", return_value=ram_gib * memory.GIB),
                 patch.object(memory, "dedicated_vram_bytes", return_value=vram_gib * memory.GIB),
             ):
