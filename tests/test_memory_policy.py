@@ -133,7 +133,7 @@ class LowMemoryPolicyTests(TestCase):
             self.assertEqual(reasons, [])
             self.assertEqual(vram, 12 * memory.GIB)
 
-    def test_windows_dedicated_has_priority_even_when_shared_is_larger(self):
+    def test_windows_intel_128_mib_report_uses_shared_memory(self):
         adapters = [{"vendor": 0x8086, "dedicated": 128 * 1024 ** 2,
                      "shared": 12 * memory.GIB, "name": "HD 530", "index": 0}]
         with (
@@ -144,9 +144,42 @@ class LowMemoryPolicyTests(TestCase):
             patch.object(memory, "total_ram_bytes", return_value=32 * memory.GIB),
         ):
             enabled, reasons, _, vram = memory.detect_low_memory(self.make_args())
-            self.assertTrue(enabled)
-            self.assertEqual(vram, 128 * 1024 ** 2)
-            self.assertIn("専用VRAM", reasons[0])
+            self.assertFalse(enabled)
+            self.assertEqual(vram, 12 * memory.GIB)
+            self.assertEqual(reasons, [])
+
+    def test_linux_intel_128_mib_report_uses_shared_memory(self):
+        adapters = [{"vendor": 0x8086, "dedicated": 128 * 1024 ** 2,
+                     "shared": 12 * memory.GIB, "name": "card0"}]
+        with (
+            patch.object(memory.platform, "system", return_value="Linux"),
+            patch.object(memory, "_linux_cards", return_value=adapters),
+            patch.object(memory, "_openvino_gpu_memory", return_value=(None, None)),
+        ):
+            self.assertEqual(memory.gpu_memory_capacity(provider="intel"),
+                             (12 * memory.GIB, "共有GPUメモリ"))
+
+    def test_openvino_integrated_precedes_dxgi_dedicated_report(self):
+        adapters = [{"vendor": 0x8086, "dedicated": 128 * 1024 ** 2,
+                     "shared": 12 * memory.GIB, "name": "HD Graphics 530", "index": 0}]
+        with (
+            patch.object(memory.platform, "system", return_value="Windows"),
+            patch.object(memory, "_windows_dxgi_adapters", return_value=adapters),
+            patch.object(memory, "_openvino_gpu_memory",
+                         return_value=(None, 16 * memory.GIB)),
+        ):
+            self.assertEqual(memory.gpu_memory_capacity(provider="intel"),
+                             (16 * memory.GIB, "共有GPUメモリ"))
+
+    def test_discrete_gpu_uses_dedicated_even_when_shared_is_larger(self):
+        adapters = [{"vendor": 0x10DE, "dedicated": 4 * memory.GIB,
+                     "shared": 16 * memory.GIB, "name": "RTX", "index": 0}]
+        with (
+            patch.object(memory.platform, "system", return_value="Windows"),
+            patch.object(memory, "_windows_dxgi_adapters", return_value=adapters),
+        ):
+            self.assertEqual(memory.gpu_memory_capacity(provider="directml"),
+                             (4 * memory.GIB, "専用VRAM"))
 
     def test_cpu_does_not_probe_vram(self):
         with (
