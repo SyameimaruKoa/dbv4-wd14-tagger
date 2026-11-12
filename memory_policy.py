@@ -1,4 +1,4 @@
-"""Detect physical RAM and dedicated GPU memory for automatic low-memory mode."""
+"""Detect physical RAM and dedicated or shared GPU memory for automatic low-memory mode."""
 
 import ctypes
 import os
@@ -72,7 +72,12 @@ def _linux_cards():
             vram = int((device / "mem_info_vram_total").read_text().strip())
         except (OSError, ValueError):
             vram = 0 if vendor == GPU_VENDORS["intel"] else None
-        devices.append({"vendor": vendor, "vram": vram, "name": card.name})
+        try:
+            shared = int((device / "mem_info_gtt_total").read_text().strip())
+        except (OSError, ValueError):
+            shared = None
+        devices.append({"vendor": vendor, "dedicated": vram,
+                        "shared": shared, "name": card.name})
     return devices
 
 
@@ -121,7 +126,8 @@ def _windows_dxgi_adapters():
                 get_desc = method(adapter, 10, ctypes.c_long, ctypes.POINTER(AdapterDesc))
                 if get_desc(adapter, ctypes.byref(desc)) == 0:
                     adapters.append({"vendor": int(desc.vendor),
-                                     "vram": int(desc.dedicated_vram),
+                                     "dedicated": int(desc.dedicated_vram),
+                                     "shared": int(desc.shared_system),
                                      "name": desc.description, "index": index,
                                      "software": bool(desc.flags & 2)})
             finally:
@@ -132,7 +138,7 @@ def _windows_dxgi_adapters():
     return adapters
 
 
-def _openvino_vram_bytes(device):
+def _openvino_gpu_memory(device):
     query = (
         "import openvino as ov,sys; c=ov.Core(); d=sys.argv[1]; "
         "print(str(c.get_property(d, 'DEVICE_TYPE'))); "
@@ -142,15 +148,17 @@ def _openvino_vram_bytes(device):
         result = subprocess.run([sys.executable, "-c", query, device or "GPU.0"],
                                 capture_output=True, text=True, timeout=15, check=True)
         kind, capacity = result.stdout.strip().splitlines()[-2:]
+        capacity = int(capacity)
+        if capacity <= 0:
+            return None, None
         kind = kind.lower()
         if "igpu" in kind or "integrated" in kind:
-            return 0
+            return None, capacity
         if "dgpu" in kind or "discrete" in kind:
-            value = int(capacity)
-            return value if value > 0 else None
-    except (OSError, ValueError, subprocess.SubprocessError):
-        return None
-    return None
+            return capacity, None
+    except (OSError, ValueError, IndexError, subprocess.SubprocessError):
+        pass
+    return None, None
 
 
 def _nvidia_vram_bytes(index):
@@ -191,18 +199,24 @@ def _selected_adapter(adapters, provider, gpu_index, directml_device_index,
     return adapters[index] if 0 <= index < len(adapters) else None
 
 
-def dedicated_vram_bytes(provider=None, gpu_index=0, directml_device_index=0,
-                         openvino_device=None, target_vendor=None):
+def select_gpu_memory(dedicated, shared):
+    if dedicated is not None and dedicated > 0:
+        return dedicated, "専用VRAM"
+    if shared is not None and shared > 0:
+        return shared, "共有GPUメモリ"
+    return None, None
+
+
+def gpu_memory_capacity(provider=None, gpu_index=0, directml_device_index=0,
+                        openvino_device=None, target_vendor=None):
     if provider == "cpu":
-        return None
-    if provider == "intel":
-        detected = _openvino_vram_bytes(openvino_device)
-        if detected is not None:
-            return detected
+        return None, None
     if provider in ("cuda", "tensorrt"):
         detected = _nvidia_vram_bytes(gpu_index)
-        if detected is not None:
-            return detected
+        if detected is not None and detected > 0:
+            return detected, "専用VRAM"
+
+    dedicated = shared = None
     try:
         system = platform.system()
         if system == "Linux":
@@ -210,26 +224,36 @@ def dedicated_vram_bytes(provider=None, gpu_index=0, directml_device_index=0,
         elif system == "Windows":
             adapters = _windows_dxgi_adapters()
         else:
-            return None
+            adapters = []
         selected = _selected_adapter(adapters, provider, gpu_index, directml_device_index,
                                      openvino_device, target_vendor)
-        return selected["vram"] if selected is not None else None
+        if selected is not None:
+            dedicated = selected.get("dedicated")
+            shared = selected.get("shared")
     except (OSError, ValueError, AttributeError):
-        return None
+        pass
+
+    if provider == "intel":
+        openvino_dedicated, openvino_shared = _openvino_gpu_memory(openvino_device)
+        if dedicated is None or dedicated <= 0:
+            dedicated = openvino_dedicated
+        if openvino_shared is not None and openvino_shared > 0:
+            shared = openvino_shared
+    return select_gpu_memory(dedicated, shared)
 
 
 def detect_low_memory(args):
     ram = total_ram_bytes()
-    vram = dedicated_vram_bytes(
+    vram, memory_type = gpu_memory_capacity(
         provider=getattr(args, "provider", None),
         gpu_index=getattr(args, "gpu_index", 0),
         directml_device_index=getattr(args, "directml_device_index", 0),
         openvino_device=getattr(args, "openvino_device", None),
         target_vendor=getattr(args, "target_vendor", None),
-    ) if getattr(args, "gpu", False) or getattr(args, "provider", None) not in (None, "cpu") else None
+    ) if getattr(args, "gpu", False) or getattr(args, "provider", None) not in (None, "cpu") else (None, None)
     reasons = []
     if ram is not None and ram < RAM_LIMIT:
         reasons.append(f"RAM {ram / GIB:.2f} GiB < 16 GiB")
     if vram is not None and vram < VRAM_LIMIT:
-        reasons.append(f"専用VRAM {vram / GIB:.2f} GiB < 8 GiB")
+        reasons.append(f"{memory_type} {vram / GIB:.2f} GiB < 8 GiB")
     return bool(reasons), reasons, ram, vram
