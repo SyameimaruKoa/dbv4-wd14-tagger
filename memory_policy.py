@@ -199,12 +199,31 @@ def _selected_adapter(adapters, provider, gpu_index, directml_device_index,
     return adapters[index] if 0 <= index < len(adapters) else None
 
 
-def select_gpu_memory(dedicated, shared):
+def select_gpu_memory(dedicated, shared, integrated=False):
+    if integrated:
+        if shared is not None and shared > 0:
+            return shared, "共有GPUメモリ"
+        return None, None
     if dedicated is not None and dedicated > 0:
         return dedicated, "専用VRAM"
     if shared is not None and shared > 0:
         return shared, "共有GPUメモリ"
     return None, None
+
+
+def _is_integrated_adapter(adapter):
+    if adapter is None:
+        return False
+    vendor = adapter.get("vendor")
+    name = adapter.get("name", "").lower()
+    if vendor == GPU_VENDORS["intel"]:
+        if re.search(r"\b(?:hd graphics|uhd graphics|iris(?: xe)? graphics)\b", name):
+            return True
+        dedicated = adapter.get("dedicated")
+        shared = adapter.get("shared")
+        if dedicated is not None and 0 <= dedicated <= 256 * 1024 ** 2 and shared:
+            return True
+    return False
 
 
 def gpu_memory_capacity(provider=None, gpu_index=0, directml_device_index=0,
@@ -217,6 +236,7 @@ def gpu_memory_capacity(provider=None, gpu_index=0, directml_device_index=0,
             return detected, "専用VRAM"
 
     dedicated = shared = None
+    integrated = False
     try:
         system = platform.system()
         if system == "Linux":
@@ -230,16 +250,17 @@ def gpu_memory_capacity(provider=None, gpu_index=0, directml_device_index=0,
         if selected is not None:
             dedicated = selected.get("dedicated")
             shared = selected.get("shared")
+            integrated = _is_integrated_adapter(selected)
     except (OSError, ValueError, AttributeError):
         pass
 
     if provider == "intel":
         openvino_dedicated, openvino_shared = _openvino_gpu_memory(openvino_device)
-        if dedicated is None or dedicated <= 0:
-            dedicated = openvino_dedicated
         if openvino_shared is not None and openvino_shared > 0:
-            shared = openvino_shared
-    return select_gpu_memory(dedicated, shared)
+            return select_gpu_memory(dedicated, openvino_shared, integrated=True)
+        if openvino_dedicated is not None and openvino_dedicated > 0:
+            return select_gpu_memory(openvino_dedicated, shared)
+    return select_gpu_memory(dedicated, shared, integrated=integrated)
 
 
 def detect_low_memory(args):
