@@ -37,6 +37,7 @@ _dbv4_wd14_tagger() {
         '(-n --no-recursive)'{-n,--no-recursive}'[再帰検索を無効化]' \
         '(-b --batch-size)'{-b,--batch-size}'[推論バッチサイズ]:batch size:' \
         '(-w --io-workers)'{-w,--io-workers}'[前処理の並列ワーカー数]:workers:' \
+        '(-lm --low-memory)'{-lm,--low-memory}'[低メモリモード（バッチ1・読込並列0・Server同時処理1）]' \
         '(-m --model-profile)'{-m,--model-profile}'[モデルプロファイル]:profile:($profiles)' \
         '(-e --model-repo)'{-e,--model-repo}'[Hugging FaceリポジトリID]:repository:' \
         '(-M --model-file)'{-M,--model-file}'[モデルファイル名またはパス]:model file:_files' \
