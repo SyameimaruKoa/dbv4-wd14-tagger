@@ -1,0 +1,12 @@
+[
+    {
+        "sha256":  "F160232C7809FCDD148289751C45554EE656AA5CCCC37CBCED6D0958FD1E884D",
+        "name":  "model.onnx",
+        "bytes":  324944
+    },
+    {
+        "sha256":  "1256108728AB9A013A96F78D93407F21495B0E4DCB32648DC96CEDFF0D2B8967",
+        "name":  "model.onnx_data",
+        "bytes":  2770470128
+    }
+]

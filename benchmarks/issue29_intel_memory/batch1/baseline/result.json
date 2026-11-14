@@ -1,0 +1,1 @@
+{"load_seconds": 22.83467967598699, "inference_seconds": [12.720600151980761, 5.43362588097807, 5.12215691502206], "executed_providers": ["OpenVINOExecutionProvider"], "output_shape": [1, 12476], "ort_version": "1.24.1"}

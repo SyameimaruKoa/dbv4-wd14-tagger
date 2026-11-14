@@ -1,0 +1,89 @@
+{
+  "model": "C:\\Users\\kouki\\Documents\\MyApp\\wd14-tagger-xmp\\.dbv4\\models\\53e96223459a3046\\model.onnx",
+  "device": "GPU.0",
+  "sample_interval_seconds": 0.05,
+  "runs": [
+    {
+      "load_seconds": 11.688312799999949,
+      "inference_seconds": [
+        19.58808080000017,
+        10.38355920000049,
+        10.305827300000601,
+        9.870827699999609,
+        9.610462499999812
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        4,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "batch_size": 4,
+      "device_name": "Intel(R) Iris(R) Xe Graphics (iGPU)",
+      "mode": "baseline",
+      "baseline": {
+        "available_mib": 15391.35546875,
+        "system_commit_mib": 23405.98046875,
+        "commit_limit_mib": 65236.88671875,
+        "rss_mib": 28.63671875,
+        "private_commit_mib": 404.34375
+      },
+      "loaded": {
+        "available_mib": 11668.38671875,
+        "system_commit_mib": 27622.21484375,
+        "commit_limit_mib": 65236.88671875,
+        "rss_mib": 3044.0234375,
+        "private_commit_mib": 3448.50390625
+      },
+      "peak_rss_mib": 16036.09375,
+      "min_available_mib": 16.77734375,
+      "peak_private_commit_mib": 16636.203125,
+      "max_system_commit_growth_mib": 18123.26953125
+    },
+    {
+      "load_seconds": 31.675336000000243,
+      "inference_seconds": [
+        4.007544699999926,
+        2.1374415000000226,
+        2.585889799999677,
+        2.5777900000002774,
+        2.5878010000005816
+      ],
+      "executed_providers": [
+        "OpenVINOExecutionProvider"
+      ],
+      "output_shape": [
+        1,
+        12476
+      ],
+      "ort_version": "1.24.1",
+      "batch_size": 1,
+      "device_name": "Intel(R) Iris(R) Xe Graphics (iGPU)",
+      "mode": "current",
+      "baseline": {
+        "available_mib": 16471.98828125,
+        "system_commit_mib": 24691.0078125,
+        "commit_limit_mib": 65236.88671875,
+        "rss_mib": 46.3046875,
+        "private_commit_mib": 422.08984375
+      },
+      "loaded": {
+        "available_mib": 13556.94921875,
+        "system_commit_mib": 27981.55078125,
+        "commit_limit_mib": 65236.88671875,
+        "rss_mib": 3151.83203125,
+        "private_commit_mib": 3495.44921875
+      },
+      "peak_rss_mib": 8400.3984375,
+      "min_available_mib": 8417.65234375,
+      "peak_private_commit_mib": 8747.58984375,
+      "max_system_commit_growth_mib": 8373.86328125
+    }
+  ],
+  "comparison": {
+    "max_abs_difference": 3.0517578125e-05,
+    "allclose_rtol_1e-4_atol_1e-5": true
+  }
+}

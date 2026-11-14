@@ -14,6 +14,14 @@ from webgpu_vendor import vendor_name
 # Keep DLL search paths and loaded libraries alive for all live sessions.
 _RUNTIME_HANDLES = []
 
+
+def configure_openvino(session_options):
+    """Let OpenVINO optimize the graph without retaining CPU arena buffers."""
+    session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+    session_options.enable_cpu_mem_arena = False
+    session_options.enable_mem_pattern = False
+
+
 def prepare_tensorrt_windows(explicit_dir):
     """Load TensorRT and its ORT bridge before session creation on Windows."""
     name = "nvinfer_10.dll"

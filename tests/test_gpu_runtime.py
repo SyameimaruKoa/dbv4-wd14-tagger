@@ -31,6 +31,17 @@ class GPUInitializationTests(unittest.TestCase):
         self.assertEqual(name, 'OpenVINOExecutionProvider')
         self.assertEqual(options['device_type'], 'GPU.2')
         self.assertEqual(json.loads(options['load_config'])['GPU']['INFERENCE_PRECISION_HINT'], 'f32')
+        config = json.loads(options['load_config'])['GPU']
+        self.assertEqual(config['NUM_STREAMS'], '1')
+        self.assertEqual(config['PERFORMANCE_HINT'], 'LATENCY')
+
+    def test_openvino_disables_ort_graph_and_retained_cpu_buffers(self):
+        options = app.ort.SessionOptions()
+        gpu.configure_openvino(options)
+        self.assertEqual(options.graph_optimization_level,
+                         app.ort.GraphOptimizationLevel.ORT_DISABLE_ALL)
+        self.assertFalse(options.enable_cpu_mem_arena)
+        self.assertFalse(options.enable_mem_pattern)
 
     def test_powershell_tensorrt_fallback_reuses_prepared_environment(self):
         launcher = (Path(app.SCRIPT_DIR) / 'run_tagger.ps1').read_text(encoding='utf-8-sig')
