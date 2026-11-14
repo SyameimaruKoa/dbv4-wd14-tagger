@@ -263,10 +263,15 @@ compinit
 | 再帰検索 | `-r` / `--recursive` | `-r` / `-Recursive` |
 | 再帰検索OFF | `-n` / `--no-recursive` | `-n` / `-NoRecursive` |
 | バッチサイズ | `-b` / `--batch-size` | `-b` / `-BatchSize` |
+| 低メモリモード | `-lm` / `--low-memory` | `-lm` / `-LowMemory` |
 | モデルプロファイル | `-m` / `--model-profile` | `-m` / `-ModelProfile` |
 | Server | `-S` / `--server` | `-s` / `-Server` |
 | Client | `-K` / `--client` | `-c` / `-Client` |
 | Help | `-h` / `--help` | `-h` / `-Help` |
+
+低メモリモード（LM）は、起動時にRAMが16GiB未満 **または** 選択GPUのメモリが8GiB未満なら自動有効化する（OR条件、境界値ちょうどなら無効）。GPUメモリは**独立したGPU用メモリを持つdGPUでは専用VRAMのみ、iGPUでは共有GPUメモリのみ**を採用し、専用と共有を合算しない。Intel iGPUが互換性のために報告する128MiBなどの専用VRAM表示は、独立したGPU用メモリとみなさない。LinuxではDRM/OpenVINO、WindowsではDXGI/OpenVINOから検出する。容量が検出できない場合は判定できた側の条件のみ適用し、`-lm` / `--low-memory` で手動強制もできる。CPUのみの実行ではRAM条件だけを確認する。
+
+LMではモデル・GPU実行プロバイダ・演算精度を維持したまま、バッチサイズを1、画像読込ワーカーを0へ固定する。Serverでは同時処理数と受信バッチ上限も1に制限する。`-b` / `-w` の指定より優先し、解除条件を満たす環境では従来どおり動作する。HD Graphics 530でultraをOpenVINO FP32実行した際、batch=4でメモリ不足、batch=1で動作した実例に対応する。
 
 全オプションと短縮形は `./run_tagger.sh -h` または `.\\run_tagger.ps1 -h` で確認できる。
 

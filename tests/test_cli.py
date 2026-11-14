@@ -147,6 +147,67 @@ class CliShortOptionTests(unittest.TestCase):
         self.assertTrue(args.gen_config)
         self.assertTrue(args.webgpu)
 
+
+    def test_low_memory_cli_overrides_parallel_settings(self):
+        parser = create_parser()
+        self.assertTrue(parser.parse_args(["-lm"]).low_memory)
+        for mode in ("standalone", "server"):
+            with self.subTest(mode=mode):
+                cli_args = [
+                    "tagger", "--mode", mode, "--low-memory",
+                    "--batch-size", "4", "--io-workers", "2",
+                ]
+                if mode == "standalone":
+                    cli_args.append("example.png")
+                with (
+                    mock.patch.object(sys, "argv", cli_args),
+                    mock.patch.object(tagger, "process_images") as process,
+                    mock.patch.object(tagger, "run_server") as server,
+                    contextlib.redirect_stdout(io.StringIO()),
+                ):
+                    tagger.main()
+                    handler = server if mode == "server" else process
+                    args = handler.call_args.args[0]
+                    self.assertEqual(args.batch_size, 1)
+                    self.assertEqual(args.io_workers, 0)
+
+    def test_automatic_low_memory_controls_batch_size(self):
+        for enabled in (False, True):
+            with self.subTest(enabled=enabled):
+                reasons = ["専用VRAM 4.00 GiB < 8 GiB"] if enabled else []
+                with (
+                    mock.patch.object(sys, "argv", [
+                        "tagger", "--provider", "intel", "--gpu",
+                        "--batch-size", "4", "--io-workers", "2", "example.png",
+                    ]),
+                    mock.patch.object(tagger.memory_policy, "detect_low_memory",
+                                      return_value=(enabled, reasons, 32 * 1024 ** 3, 4 * 1024 ** 3)),
+                    mock.patch.object(tagger, "process_images") as process,
+                    contextlib.redirect_stdout(io.StringIO()),
+                ):
+                    tagger.main()
+                    args = process.call_args.args[0]
+                    self.assertEqual(args.low_memory, enabled)
+                    self.assertEqual(args.batch_size, 1 if enabled else 4)
+                    self.assertEqual(args.io_workers, 0 if enabled else 2)
+
+    def test_low_memory_server_limits_batch_and_workers(self):
+        for enabled in (False, True):
+            with self.subTest(low_memory=enabled):
+                cli = ["--mode", "server"] + (["--low-memory"] if enabled else [])
+                args = create_parser().parse_args(cli)
+                args.port = 0
+                with (
+                    mock.patch.dict(tagger.APP_CONFIG, {"server_workers": 4}),
+                    mock.patch.object(tagger, "ParallelTagServer") as server_factory,
+                    mock.patch.object(tagger.threading, "Thread"),
+                    contextlib.redirect_stdout(io.StringIO()),
+                ):
+                    tagger.run_server(args)
+                    self.assertEqual(server_factory.call_args.args[2], 1 if enabled else 4)
+                    handler = server_factory.call_args.args[1]
+                    self.assertEqual(handler.batch_limit_override, 1 if enabled else None)
+
     def test_ncnn_provider_and_precision_reach_runtime(self):
         args = create_parser().parse_args([
             "--provider", "ncnn", "--ncnn-precision", "fp16-arithmetic",
